@@ -7,15 +7,21 @@ A CLI tool that compresses any video to fit within Discord's **10 MB** file-size
 - **One-command usage** — `potatomaker video.mp4` produces `video_discord.mp4` next to the input
 - **GPU-accelerated encoding** — uses NVIDIA NVENC (`hevc_nvenc`) by default, with automatic fallback to CPU two-pass (`libx265`)
 - **Automatic crop detection** — detects and removes black bars (letterbox/pillarbox) to maximize picture quality
-- **Smart resolution scaling** — dynamically chooses 1080p / 720p / 480p based on available bitrate budget
+- **Smart resolution scaling** — dynamically chooses 1080p / 720p based on available bitrate budget
 - **Auto-splitting** — if a single file can't meet the quality floor, it splits into up to 10 parts that each fit under the limit
 - **Apple/browser compatibility** — all output is tagged `hvc1` with `faststart` for broad playback support
 
 ## Requirements
 
-- **FFmpeg** — must be on your system `PATH` (not bundled)
-- **.NET 10** runtime for buidling from source (or use the self-contained published binary)
-- **NVIDIA GPU + drivers** (optional) — for NVENC hardware encoding; falls back to CPU if unavailable
+- **FFmpeg** — must be on your system `PATH` (not bundled).  
+  Download from [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html).
+- **.NET 10 SDK** — required for building from source.  
+  Download from [https://dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
+- **NVIDIA GPU + drivers** — required for NVENC hardware encoding; falls back to CPU (`libx265`) if unavailable.
+
+### Supported NVIDIA GPUs for NVENC (HEVC)
+
+NVENC HEVC encoding requires a Maxwell (2nd gen) or newer NVIDIA GPU. For the full compatibility matrix, see [NVIDIA's Video Encode and Decode GPU Support Matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new).
 
 ## Installation
 
@@ -101,8 +107,7 @@ PotatoMaker/
 ├── CropDetector.cs       # Black bar detection via ffmpeg cropdetect
 ├── VideoEncoder.cs       # NVENC and libx265 encoding with progress bars
 ├── EncodeJob.cs          # Data record passed between planner and encoder
-├── ConsoleHelper.cs      # Colored console output utility
-└── PotatoMaker.csproj    # .NET 10, win-x64, FFMpegCore 5.4.0
+└── ConsoleHelper.cs      # Colored console output utility
 ```
 
 ## License
