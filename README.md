@@ -1,15 +1,15 @@
 # PotatoMaker
 
-A CLI tool that compresses any video to fit within Discord's **10 MB** file-size limit using HEVC (H.265) encoding. Just point it at a video and get a Discord-ready `.mp4` back.
+A CLI tool that compresses any video to fit within Discord's file-size limit using AV1 encoding. Just point it at a video and get a Discord-ready `.mp4` back.
 
 ## Features
 
 - **One-command usage** — `potatomaker video.mp4` produces `video_discord.mp4` next to the input
-- **GPU-accelerated encoding** — uses NVIDIA NVENC (`hevc_nvenc`) by default, with automatic fallback to CPU two-pass (`libx265`)
+- **GPU-accelerated encoding** — uses NVIDIA NVENC (`av1_nvenc`) by default, with automatic fallback to CPU two-pass (`libsvtav1`)
 - **Automatic crop detection** — detects and removes black bars (letterbox/pillarbox) to maximize picture quality
 - **Smart resolution scaling** — dynamically chooses 1080p / 720p based on available bitrate budget
 - **Auto-splitting** — if a single file can't meet the quality floor, it splits into up to 10 parts that each fit under the limit
-- **Apple/browser compatibility** — all output is tagged `hvc1` with `faststart` for broad playback support
+- **Streaming-friendly output** — all output uses `-movflags +faststart` for immediate playback
 
 ## Requirements
 
@@ -17,11 +17,11 @@ A CLI tool that compresses any video to fit within Discord's **10 MB** file-size
   Download from [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html).
 - **.NET 10 SDK** — required for building from source.  
   Download from [https://dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
-- **NVIDIA GPU + drivers** — required for NVENC hardware encoding; falls back to CPU (`libx265`) if unavailable.
+- **NVIDIA GPU + drivers** — optional; enables `av1_nvenc` hardware encoding. Falls back to CPU (`libsvtav1`) automatically if unavailable.
 
-### Supported NVIDIA GPUs for NVENC (HEVC)
+### Supported NVIDIA GPUs for NVENC (AV1)
 
-NVENC HEVC encoding requires a Maxwell (2nd gen) or newer NVIDIA GPU. For the full compatibility matrix, see [NVIDIA's Video Encode and Decode GPU Support Matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new).
+NVENC AV1 encoding requires an Ada Lovelace (RTX 40-series) or newer NVIDIA GPU. For the full compatibility matrix, see [NVIDIA's Video Encode and Decode GPU Support Matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new).
 
 ## Installation
 
@@ -66,7 +66,7 @@ potatomaker --cpu "C:\clips\gameplay.mp4"
 
 | Flag    | Description                                               |
 |---------|-----------------------------------------------------------|
-| `--cpu` | Use libx265 CPU two-pass encoder instead of NVENC (GPU)   |
+| `--cpu` | Use libsvtav1 CPU two-pass encoder instead of NVENC (GPU)  |
 
 ### Output
 
@@ -86,16 +86,16 @@ PotatoMaker runs a five-stage pipeline:
    - &ge; 1000 kbps &rarr; 1080p (capped, never upscaled)
    - &ge; 500 kbps &rarr; 720p
    - &lt; 500 kbps &rarr; split into parts to stay above the floor
-5. **Encode** — encodes with HEVC; NVENC uses constrained VBR (`-rc vbr`), libx265 uses true two-pass with a temp stats file
+5. **Encode** — encodes with AV1; NVENC uses constrained VBR (`-rc vbr`), libsvtav1 uses true two-pass with a temp stats file
 
 ### Encoding Details
 
 | Encoder       | Mode                                                        |
 |---------------|-------------------------------------------------------------|
-| `hevc_nvenc`  | Single-pass constrained VBR (`-rc vbr -preset p5`)         |
-| `libx265`     | Two-pass (stats file in `%TEMP%`, cleaned up automatically) |
+| `av1_nvenc`   | Single-pass constrained VBR (`-rc vbr -preset p5`)         |
+| `libsvtav1`   | Two-pass (stats file in `%TEMP%`, cleaned up automatically) |
 
-Both paths output `-tag:v hvc1 -movflags +faststart` for maximum compatibility.
+Both paths output `-movflags +faststart` for streaming-friendly MP4.
 
 ## Project Structure
 
@@ -105,7 +105,7 @@ PotatoMaker/
 ├── ProcessingPipeline.cs # Orchestrates probe → crop → plan → encode
 ├── EncodePlanner.cs      # Bitrate math, resolution selection, split planning
 ├── CropDetector.cs       # Black bar detection via ffmpeg cropdetect
-├── VideoEncoder.cs       # NVENC and libx265 encoding with progress bars
+├── VideoEncoder.cs       # NVENC and libsvtav1 encoding with progress bars
 ├── EncodeJob.cs          # Data record passed between planner and encoder
 └── ConsoleHelper.cs      # Colored console output utility
 ```

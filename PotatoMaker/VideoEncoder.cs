@@ -7,13 +7,13 @@ enum EncoderChoice { Nvenc, SvtAv1 }
 
 static class VideoEncoder
 {
-    public static async Task EncodeAsync(EncodeJob job, EncoderChoice encoder, string label = "")
+    public static async Task EncodeAsync(EncodeJob job, EncoderChoice encoder, string label = "", CancellationToken ct = default)
     {
         if (encoder == EncoderChoice.SvtAv1)
         {
             Console.WriteLine($"  Encoder: libsvtav1 (CPU two-pass)");
             Console.WriteLine();
-            await EncodeSvtAv1TwoPassAsync(job, label);
+            await EncodeSvtAv1TwoPassAsync(job, label, ct);
             ConsoleHelper.WriteColored("  ✓ libsvtav1 encode complete.", ConsoleColor.Green);
             return;
         }
@@ -22,9 +22,10 @@ static class VideoEncoder
 
         try
         {
-            await EncodeNvencAsync(job, label);
+            await EncodeNvencAsync(job, label, ct);
             ConsoleHelper.WriteColored("  ✓ NVENC AV1 encode complete.", ConsoleColor.Green);
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             ConsoleHelper.WriteColored("not available.", ConsoleColor.Yellow);
@@ -32,19 +33,13 @@ static class VideoEncoder
             Console.WriteLine();
             Console.WriteLine("  Falling back to libsvtav1 two-pass (CPU)...");
             Console.WriteLine();
-            await EncodeSvtAv1TwoPassAsync(job, label);
+            await EncodeSvtAv1TwoPassAsync(job, label, ct);
             ConsoleHelper.WriteColored("  ✓ libsvtav1 encode complete.", ConsoleColor.Green);
         }
     }
 
-    private static async Task EncodeNvencAsync(EncodeJob job, string label)
+    private static async Task EncodeNvencAsync(EncodeJob job, string label, CancellationToken ct)
     {
-        int bufsize = job.VideoBitrateKbps * 2;
-
-        string extraArgs = $"-rc vbr -maxrate {job.VideoBitrateKbps}k -bufsize {bufsize}k -preset p5 -movflags +faststart";
-        if (job.VideoFilter != null) extraArgs += $" -vf {job.VideoFilter}";
-        if (job.SegmentSecs.HasValue) extraArgs += $" -t {job.SegmentSecs.Value:F3}";
-
         bool started = false;
         var  progressDuration = job.SegmentSecs.HasValue
             ? TimeSpan.FromSeconds(job.SegmentSecs.Value)
@@ -55,13 +50,24 @@ static class VideoEncoder
             {
                 if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
             })
-            .OutputToFile(job.OutputPath, overwrite: true, o => o
-                .WithVideoCodec("av1_nvenc")
-                .WithVideoBitrate(job.VideoBitrateKbps)
-                .WithAudioCodec("aac")
-                .WithAudioBitrate(job.AudioBitrateKbps)
-                .WithCustomArgument(extraArgs)
-            )
+            .OutputToFile(job.OutputPath, overwrite: true, o =>
+            {
+                o.WithVideoCodec("av1_nvenc")
+                 .WithVideoBitrate(job.VideoBitrateKbps)
+                 .WithAudioCodec("aac")
+                 .WithAudioBitrate(job.AudioBitrateKbps)
+                 .WithCustomArgument("-rc vbr")
+                 .WithCustomArgument($"-maxrate {job.VideoBitrateKbps}k")
+                 .WithCustomArgument($"-bufsize {job.VideoBitrateKbps * 2}k")
+                 .WithCustomArgument("-preset p5")
+                 .WithFastStart();
+
+                if (job.VideoFilter != null)
+                    o.WithCustomArgument($"-vf {job.VideoFilter}");
+                if (job.SegmentSecs.HasValue)
+                    o.WithDuration(TimeSpan.FromSeconds(job.SegmentSecs.Value));
+            })
+            .CancellableThrough(ct)
             .NotifyOnProgress(pct =>
             {
                 if (!started) { Console.WriteLine(); started = true; }
@@ -72,7 +78,7 @@ static class VideoEncoder
         if (started) Console.WriteLine();
     }
 
-    private static async Task EncodeSvtAv1TwoPassAsync(EncodeJob job, string label)
+    private static async Task EncodeSvtAv1TwoPassAsync(EncodeJob job, string label, CancellationToken ct)
     {
         string statsBase = Path.Combine(Path.GetTempPath(), $"pm_{Guid.NewGuid():N}");
         string statsArg  = statsBase.Replace("\\", "/");
@@ -80,9 +86,6 @@ static class VideoEncoder
         var progressDuration = job.SegmentSecs.HasValue
             ? TimeSpan.FromSeconds(job.SegmentSecs.Value)
             : job.TotalDuration;
-
-        string durationArg = job.SegmentSecs.HasValue ? $"-t {job.SegmentSecs.Value:F3} " : "";
-        string filterArg   = job.VideoFilter != null ? $"-vf {job.VideoFilter}" : "";
 
         try
         {
@@ -93,14 +96,22 @@ static class VideoEncoder
                 {
                     if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
                 })
-                .OutputToFile("NUL", overwrite: true, o => o
-                    .WithVideoCodec("libsvtav1")
-                    .WithVideoBitrate(job.VideoBitrateKbps)
-                    .WithCustomArgument($"-preset 6 -pass 1 -passlogfile '{statsArg}'")
-                    .WithCustomArgument(durationArg + filterArg)
-                    .DisableChannel(Channel.Audio)
-                    .ForceFormat("null")
-                )
+                .OutputToFile("NUL", overwrite: true, o =>
+                {
+                    o.WithVideoCodec("libsvtav1")
+                     .WithVideoBitrate(job.VideoBitrateKbps)
+                     .WithCustomArgument("-preset 6")
+                     .WithCustomArgument("-pass 1")
+                     .WithCustomArgument($"-passlogfile {statsArg}")
+                     .DisableChannel(Channel.Audio)
+                     .ForceFormat("null");
+
+                    if (job.VideoFilter != null)
+                        o.WithCustomArgument($"-vf {job.VideoFilter}");
+                    if (job.SegmentSecs.HasValue)
+                        o.WithDuration(TimeSpan.FromSeconds(job.SegmentSecs.Value));
+                })
+                .CancellableThrough(ct)
                 .NotifyOnProgress(pct =>
                 {
                     if (!p1) p1 = true;
@@ -119,15 +130,25 @@ static class VideoEncoder
                 {
                     if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
                 })
-                .OutputToFile(job.OutputPath, overwrite: true, o => o
-                    .WithVideoCodec("libsvtav1")
-                    .WithVideoBitrate(job.VideoBitrateKbps)
-                    .WithCustomArgument($"-preset 6 -pass 2 -passlogfile '{statsArg}'")
-                    .WithAudioCodec("aac")
-                    .WithAudioBitrate(job.AudioBitrateKbps)
-                    .WithCustomArgument(durationArg + filterArg)
-                    .WithCustomArgument("-movflags +faststart")
-                )
+                .OutputToFile(job.OutputPath, overwrite: true, o =>
+                {
+                    o.WithVideoCodec("libsvtav1")
+                     .WithVideoBitrate(job.VideoBitrateKbps)
+                     .WithCustomArgument("-preset 6")
+                     .WithCustomArgument("-pass 2")
+                     .WithCustomArgument($"-passlogfile {statsArg}")
+                     .WithCustomArgument($"-maxrate {job.VideoBitrateKbps}k")
+                     .WithCustomArgument($"-bufsize {job.VideoBitrateKbps * 2}k")
+                     .WithAudioCodec("aac")
+                     .WithAudioBitrate(job.AudioBitrateKbps)
+                     .WithFastStart();
+
+                    if (job.VideoFilter != null)
+                        o.WithCustomArgument($"-vf {job.VideoFilter}");
+                    if (job.SegmentSecs.HasValue)
+                        o.WithDuration(TimeSpan.FromSeconds(job.SegmentSecs.Value));
+                })
+                .CancellableThrough(ct)
                 .NotifyOnProgress(pct =>
                 {
                     if (!p2) p2 = true;

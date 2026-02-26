@@ -23,16 +23,17 @@ class ProcessingPipeline
         _probe      = probe;
     }
 
-    public static async Task<ProcessingPipeline> CreateAsync(string inputPath, EncoderChoice encoder)
+    public static async Task<ProcessingPipeline> CreateAsync(string inputPath, EncoderChoice encoder, CancellationToken ct = default)
     {
         Console.Write("Probing file... ");
+        ct.ThrowIfCancellationRequested();
         var probe = await FFProbe.AnalyseAsync(inputPath);
         ConsoleHelper.WriteColored("done.", ConsoleColor.Green);
         Console.WriteLine();
         return new ProcessingPipeline(inputPath, encoder, probe);
     }
 
-    public async Task RunAsync()
+    public async Task RunAsync(CancellationToken ct = default)
     {
         double durationSecs   = _probe.Duration.TotalSeconds;
         long   inputSizeBytes = new FileInfo(_inputPath).Length;
@@ -50,7 +51,7 @@ class ProcessingPipeline
         Console.WriteLine();
 
         Console.WriteLine("--- Crop Detection ----------------------------------");
-        string? cropFilter = await CropDetector.DetectAsync(_inputPath, _probe.Duration, origWidth, origHeight);
+        string? cropFilter = await CropDetector.DetectAsync(_inputPath, _probe.Duration, origWidth, origHeight, ct);
         Console.WriteLine();
 
         Console.WriteLine("--- Determining Encoding Strategy -------------------------------");
@@ -78,12 +79,16 @@ class ProcessingPipeline
         string? videoFilter = EncodePlanner.BuildVideoFilter(cropFilter, encodePlan.ScaleFilter);
 
         if (encodePlan.Parts == 1)
-            await RunSingleAsync(encodePlan.VideoBitrateKbps, videoFilter);
+        {
+            await RunSingleAsync(encodePlan.VideoBitrateKbps, videoFilter, ct);
+        }
         else
-            await RunSplitAsync(encodePlan.VideoBitrateKbps, videoFilter, encodePlan.Parts, durationSecs);
+        {
+            await RunSplitAsync(encodePlan.VideoBitrateKbps, videoFilter, encodePlan.Parts, durationSecs, ct);
+        }
     }
 
-    private async Task RunSingleAsync(int videoBitrateKbps, string? videoFilter)
+    private async Task RunSingleAsync(int videoBitrateKbps, string? videoFilter, CancellationToken ct)
     {
         Console.WriteLine("--- Encoding ----------------------------------------");
 
@@ -96,11 +101,11 @@ class ProcessingPipeline
             VideoFilter:      videoFilter
         );
 
-        await VideoEncoder.EncodeAsync(job, _encoder);
+        await VideoEncoder.EncodeAsync(job, _encoder, ct: ct);
         PrintSummary([job.OutputPath]);
     }
 
-    private async Task RunSplitAsync(int videoBitrateKbps, string? videoFilter, int parts, double totalSecs)
+    private async Task RunSplitAsync(int videoBitrateKbps, string? videoFilter, int parts, double totalSecs, CancellationToken ct)
     {
         double segSecs = totalSecs / parts;
 
@@ -129,7 +134,7 @@ class ProcessingPipeline
                 SegmentSecs:      segSecs
             );
 
-            await VideoEncoder.EncodeAsync(job, _encoder, label: $"[{i + 1}/{parts}] ");
+            await VideoEncoder.EncodeAsync(job, _encoder, label: $"[{i + 1}/{parts}] ", ct: ct);
             Console.WriteLine();
         }
 

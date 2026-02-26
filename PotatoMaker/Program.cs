@@ -4,6 +4,13 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
+        using var cts = new CancellationTokenSource();
+        Console.CancelKeyPress += (_, e) =>
+        {
+            e.Cancel = true;          // prevent immediate process kill so we can clean up
+            cts.Cancel();
+        };
+
         Console.WriteLine("+------------------------------------------+");
         Console.WriteLine("|          PotatoMaker  v0.1               |");
         Console.WriteLine("+------------------------------------------+");
@@ -37,9 +44,15 @@ class Program
 
         try
         {
-            var crusher = await ProcessingPipeline.CreateAsync(inputPath, encoder);
-            await crusher.RunAsync();
+            var crusher = await ProcessingPipeline.CreateAsync(inputPath, encoder, cts.Token);
+            await crusher.RunAsync(cts.Token);
             return 0;
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine();
+            ConsoleHelper.WriteColored("Cancelled by user.", ConsoleColor.Yellow);
+            return 130;
         }
         catch (Exception ex)
         {

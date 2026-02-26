@@ -17,10 +17,11 @@ static class CropDetector
     /// filter string, or null if no significant symmetric black bars are found.
     /// </summary>
     public static async Task<string?> DetectAsync(
-        string   inputPath,
-        TimeSpan totalDuration,
-        int      srcWidth,
-        int      srcHeight)
+        string            inputPath,
+        TimeSpan          totalDuration,
+        int               srcWidth,
+        int               srcHeight,
+        CancellationToken ct = default)
     {
         double seekSecs = totalDuration.TotalSeconds * StartOffsetPercent;
         string seekArg  = seekSecs > 1.0 ? $"-ss {seekSecs:F1} " : "";
@@ -41,9 +42,14 @@ static class CropDetector
         try
         {
             using var proc = Process.Start(psi)!;
+            await using var reg = ct.Register(() =>
+            {
+                try { if (!proc.HasExited) proc.Kill(entireProcessTree: true); } catch { }
+            });
             stderr = await proc.StandardError.ReadToEndAsync();
-            await proc.WaitForExitAsync();
+            await proc.WaitForExitAsync(ct);
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             ConsoleHelper.WriteColored($"  cropdetect failed to launch ffmpeg: {ex.Message}", ConsoleColor.Red);
