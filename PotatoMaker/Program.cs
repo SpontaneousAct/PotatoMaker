@@ -13,7 +13,7 @@ class Program
         var positional = args.Where(a => !a.StartsWith('-')).ToArray();
 
         bool useCpu = flags.Contains("--cpu");
-        var encoder = useCpu ? EncoderChoice.Libx265 : EncoderChoice.Nvenc;
+        var encoder = useCpu ? EncoderChoice.SvtAv1 : EncoderChoice.Nvenc;
 
         if (positional.Length == 0)
         {
@@ -23,7 +23,7 @@ class Program
             Console.WriteLine("        potatomaker --cpu \"C:\\clips\\gameplay.mp4\"");
             Console.WriteLine();
             Console.WriteLine("Options:");
-            Console.WriteLine("  --cpu    Use libx265 CPU two-pass encoder (default: hevc_nvenc GPU)");
+            Console.WriteLine("  --cpu    Use libsvtav1 CPU two-pass encoder (default: av1_nvenc GPU)");
             return 1;
         }
 

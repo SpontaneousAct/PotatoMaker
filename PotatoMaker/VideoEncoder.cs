@@ -3,37 +3,37 @@ using FFMpegCore.Enums;
 
 namespace PotatoMaker;
 
-enum EncoderChoice { Nvenc, Libx265 }
+enum EncoderChoice { Nvenc, SvtAv1 }
 
 static class VideoEncoder
 {
     public static async Task EncodeAsync(EncodeJob job, EncoderChoice encoder, string label = "")
     {
-        if (encoder == EncoderChoice.Libx265)
+        if (encoder == EncoderChoice.SvtAv1)
         {
-            Console.WriteLine($"  Encoder: libx265 (CPU two-pass)");
+            Console.WriteLine($"  Encoder: libsvtav1 (CPU two-pass)");
             Console.WriteLine();
-            await EncodeSoftwareTwoPassAsync(job, label);
-            ConsoleHelper.WriteColored("  ✓ libx265 encode complete.", ConsoleColor.Green);
+            await EncodeSvtAv1TwoPassAsync(job, label);
+            ConsoleHelper.WriteColored("  ✓ libsvtav1 encode complete.", ConsoleColor.Green);
             return;
         }
 
-        Console.Write("  Trying hevc_nvenc... ");
+        Console.Write("  Trying av1_nvenc... ");
 
         try
         {
             await EncodeNvencAsync(job, label);
-            ConsoleHelper.WriteColored("  ✓ NVENC encode complete.", ConsoleColor.Green);
+            ConsoleHelper.WriteColored("  ✓ NVENC AV1 encode complete.", ConsoleColor.Green);
         }
         catch (Exception ex)
         {
             ConsoleHelper.WriteColored("not available.", ConsoleColor.Yellow);
             ConsoleHelper.WriteColored($"    Reason: {ex.Message.Split('\n')[0].Trim()}", ConsoleColor.Yellow);
             Console.WriteLine();
-            Console.WriteLine("  Falling back to libx265 two-pass (CPU)...");
+            Console.WriteLine("  Falling back to libsvtav1 two-pass (CPU)...");
             Console.WriteLine();
-            await EncodeSoftwareTwoPassAsync(job, label);
-            ConsoleHelper.WriteColored("  ✓ libx265 encode complete.", ConsoleColor.Green);
+            await EncodeSvtAv1TwoPassAsync(job, label);
+            ConsoleHelper.WriteColored("  ✓ libsvtav1 encode complete.", ConsoleColor.Green);
         }
     }
 
@@ -41,7 +41,7 @@ static class VideoEncoder
     {
         int bufsize = job.VideoBitrateKbps * 2;
 
-        string extraArgs = $"-rc vbr -maxrate {job.VideoBitrateKbps}k -bufsize {bufsize}k -preset p5 -tag:v hvc1 -movflags +faststart";
+        string extraArgs = $"-rc vbr -maxrate {job.VideoBitrateKbps}k -bufsize {bufsize}k -preset p5 -movflags +faststart";
         if (job.VideoFilter != null) extraArgs += $" -vf {job.VideoFilter}";
         if (job.SegmentSecs.HasValue) extraArgs += $" -t {job.SegmentSecs.Value:F3}";
 
@@ -56,7 +56,7 @@ static class VideoEncoder
                 if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
             })
             .OutputToFile(job.OutputPath, overwrite: true, o => o
-                .WithVideoCodec("hevc_nvenc")
+                .WithVideoCodec("av1_nvenc")
                 .WithVideoBitrate(job.VideoBitrateKbps)
                 .WithAudioCodec("aac")
                 .WithAudioBitrate(job.AudioBitrateKbps)
@@ -72,7 +72,7 @@ static class VideoEncoder
         if (started) Console.WriteLine();
     }
 
-    private static async Task EncodeSoftwareTwoPassAsync(EncodeJob job, string label)
+    private static async Task EncodeSvtAv1TwoPassAsync(EncodeJob job, string label)
     {
         string statsBase = Path.Combine(Path.GetTempPath(), $"pm_{Guid.NewGuid():N}");
         string statsArg  = statsBase.Replace("\\", "/");
@@ -94,9 +94,9 @@ static class VideoEncoder
                     if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
                 })
                 .OutputToFile("NUL", overwrite: true, o => o
-                    .WithVideoCodec("libx265")
+                    .WithVideoCodec("libsvtav1")
                     .WithVideoBitrate(job.VideoBitrateKbps)
-                    .WithCustomArgument($"-x265-params pass=1:stats='{statsArg}.log'")
+                    .WithCustomArgument($"-preset 6 -pass 1 -passlogfile '{statsArg}'")
                     .WithCustomArgument(durationArg + filterArg)
                     .DisableChannel(Channel.Audio)
                     .ForceFormat("null")
@@ -120,13 +120,13 @@ static class VideoEncoder
                     if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
                 })
                 .OutputToFile(job.OutputPath, overwrite: true, o => o
-                    .WithVideoCodec("libx265")
+                    .WithVideoCodec("libsvtav1")
                     .WithVideoBitrate(job.VideoBitrateKbps)
-                    .WithCustomArgument($"-x265-params pass=2:stats='{statsArg}.log'")
+                    .WithCustomArgument($"-preset 6 -pass 2 -passlogfile '{statsArg}'")
                     .WithAudioCodec("aac")
                     .WithAudioBitrate(job.AudioBitrateKbps)
                     .WithCustomArgument(durationArg + filterArg)
-                    .WithCustomArgument("-tag:v hvc1 -movflags +faststart")
+                    .WithCustomArgument("-movflags +faststart")
                 )
                 .NotifyOnProgress(pct =>
                 {

@@ -6,7 +6,7 @@ namespace PotatoMaker;
 static class CropDetector
 {
     private const int    CropLimit          = 64;   // higher than default 24 for NVIDIA limited-range
-    private const int    CropRound          = 2;    // HEVC needs even dimensions
+    private const int    CropRound          = 2;    // AV1 needs even dimensions
     private const int    CropReset          = 0;    // accumulate stable max crop
     private const int    SampleFrames       = 100;
     private const double StartOffsetPercent = 0.05; // skip first 5% of clip

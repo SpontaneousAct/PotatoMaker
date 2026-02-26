@@ -65,7 +65,7 @@ static class EncodePlanner
         (int)(EffectiveTargetMb * 8192.0 / durationSecs) - AudioBitrateKbps;
 
     // -2 preserves aspect ratio for any AR (16:9, 21:9, 32:9, …)
-    // and ensures width is divisible by 2, required by all HEVC encoders.
+    // and ensures width is divisible by 2, required by AV1 encoders.
     // min(ih,N) prevents upscaling sources that are already below the target height.
     // The \\, is an FFmpeg filter-graph escape for the comma separator.
     private static string ScaleFilter(int maxHeight) =>
