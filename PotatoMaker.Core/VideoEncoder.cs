@@ -1,47 +1,49 @@
 using FFMpegCore;
 using FFMpegCore.Enums;
+using Microsoft.Extensions.Logging;
 
-namespace PotatoMaker;
+namespace PotatoMaker.Core;
 
-enum EncoderChoice { Nvenc, SvtAv1 }
-
-static class VideoEncoder
+public static class VideoEncoder
 {
-    public static async Task EncodeAsync(EncodeJob job, EncoderChoice encoder, string label = "", CancellationToken ct = default)
+    public static async Task EncodeAsync(
+        EncodeJob                  job,
+        EncoderChoice              encoder,
+        ILogger                    logger,
+        IProgress<EncodeProgress>? progress = null,
+        string                     label    = "",
+        CancellationToken          ct       = default)
     {
         if (encoder == EncoderChoice.SvtAv1)
         {
-            Console.WriteLine($"  Encoder: libsvtav1 (CPU two-pass)");
-            Console.WriteLine();
-            await EncodeSvtAv1TwoPassAsync(job, label, ct);
-            ConsoleHelper.WriteColored("  ✓ libsvtav1 encode complete.", ConsoleColor.Green);
+            logger.LogInformation("  Encoder: libsvtav1 (CPU two-pass)");
+            await EncodeSvtAv1TwoPassAsync(job, logger, progress, label, ct);
+            logger.LogInformation(PipelineEvents.Success, "  ✓ libsvtav1 encode complete.");
             return;
         }
 
-        Console.Write("  Trying av1_nvenc... ");
+        logger.LogInformation("  Trying av1_nvenc...");
 
         try
         {
-            await EncodeNvencAsync(job, label, ct);
-            ConsoleHelper.WriteColored("  ✓ NVENC AV1 encode complete.", ConsoleColor.Green);
+            await EncodeNvencAsync(job, logger, progress, label, ct);
+            logger.LogInformation(PipelineEvents.Success, "  ✓ NVENC AV1 encode complete.");
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
-            ConsoleHelper.WriteColored("not available.", ConsoleColor.Yellow);
-            ConsoleHelper.WriteColored($"    Reason: {ex.Message.Split('\n')[0].Trim()}", ConsoleColor.Yellow);
-            Console.WriteLine();
-            Console.WriteLine("  Falling back to libsvtav1 two-pass (CPU)...");
-            Console.WriteLine();
-            await EncodeSvtAv1TwoPassAsync(job, label, ct);
-            ConsoleHelper.WriteColored("  ✓ libsvtav1 encode complete.", ConsoleColor.Green);
+            logger.LogWarning("  av1_nvenc not available.");
+            logger.LogWarning("    Reason: {Reason}", ex.Message.Split('\n')[0].Trim());
+            logger.LogInformation("  Falling back to libsvtav1 two-pass (CPU)...");
+            await EncodeSvtAv1TwoPassAsync(job, logger, progress, label, ct);
+            logger.LogInformation(PipelineEvents.Success, "  ✓ libsvtav1 encode complete.");
         }
     }
 
-    private static async Task EncodeNvencAsync(EncodeJob job, string label, CancellationToken ct)
+    private static async Task EncodeNvencAsync(
+        EncodeJob job, ILogger logger, IProgress<EncodeProgress>? progress, string label, CancellationToken ct)
     {
-        bool started = false;
-        var  progressDuration = job.SegmentSecs.HasValue
+        var progressDuration = job.SegmentSecs.HasValue
             ? TimeSpan.FromSeconds(job.SegmentSecs.Value)
             : job.TotalDuration;
 
@@ -70,15 +72,13 @@ static class VideoEncoder
             .CancellableThrough(ct)
             .NotifyOnProgress(pct =>
             {
-                if (!started) { Console.WriteLine(); started = true; }
-                RenderProgressBar($"  {label}[NVENC]", (int)pct);
+                progress?.Report(new EncodeProgress($"  {label}[NVENC]", (int)pct));
             }, progressDuration)
             .ProcessAsynchronously();
-
-        if (started) Console.WriteLine();
     }
 
-    private static async Task EncodeSvtAv1TwoPassAsync(EncodeJob job, string label, CancellationToken ct)
+    private static async Task EncodeSvtAv1TwoPassAsync(
+        EncodeJob job, ILogger logger, IProgress<EncodeProgress>? progress, string label, CancellationToken ct)
     {
         string statsBase = Path.Combine(Path.GetTempPath(), $"pm_{Guid.NewGuid():N}");
         string statsArg  = statsBase.Replace("\\", "/");
@@ -90,7 +90,6 @@ static class VideoEncoder
         try
         {
             // Pass 1
-            bool p1 = false;
             await FFMpegArguments
                 .FromFileInput(job.InputPath, false, o =>
                 {
@@ -114,17 +113,13 @@ static class VideoEncoder
                 .CancellableThrough(ct)
                 .NotifyOnProgress(pct =>
                 {
-                    if (!p1) p1 = true;
-                    RenderProgressBar($"  {label}[Pass 1/2] Analyzing", (int)pct);
+                    progress?.Report(new EncodeProgress($"  {label}[Pass 1/2] Analyzing", (int)pct));
                 }, progressDuration)
                 .ProcessAsynchronously();
 
-            Console.WriteLine();
-            ConsoleHelper.WriteColored($"  {label}[Pass 1/2] done.", ConsoleColor.Green);
-            Console.WriteLine();
+            logger.LogInformation(PipelineEvents.Success, "  {Label}[Pass 1/2] done.", label);
 
             // Pass 2
-            bool p2 = false;
             await FFMpegArguments
                 .FromFileInput(job.InputPath, false, o =>
                 {
@@ -151,25 +146,14 @@ static class VideoEncoder
                 .CancellableThrough(ct)
                 .NotifyOnProgress(pct =>
                 {
-                    if (!p2) p2 = true;
-                    RenderProgressBar($"  {label}[Pass 2/2] Encoding ", (int)pct);
+                    progress?.Report(new EncodeProgress($"  {label}[Pass 2/2] Encoding ", (int)pct));
                 }, progressDuration)
                 .ProcessAsynchronously();
-
-            Console.WriteLine();
         }
         finally
         {
             foreach (string f in Directory.GetFiles(Path.GetTempPath(), $"pm_*.log*"))
                 try { File.Delete(f); } catch {  }
         }
-    }
-
-    public static void RenderProgressBar(string label, int percent)
-    {
-        percent = Math.Clamp(percent, 0, 100);
-        int    filled = percent / 5;
-        string bar    = new string('█', filled) + new string('░', 20 - filled);
-        Console.Write($"\r{label}  [{bar}] {percent,3}%   ");
     }
 }

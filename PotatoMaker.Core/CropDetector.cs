@@ -1,9 +1,10 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
-namespace PotatoMaker;
+namespace PotatoMaker.Core;
 
-static class CropDetector
+public static class CropDetector
 {
     private const int    CropLimit          = 64;   // higher than default 24 for NVIDIA limited-range
     private const int    CropRound          = 2;    // AV1 needs even dimensions
@@ -21,13 +22,14 @@ static class CropDetector
         TimeSpan          totalDuration,
         int               srcWidth,
         int               srcHeight,
+        ILogger           logger,
         CancellationToken ct = default)
     {
         double seekSecs = totalDuration.TotalSeconds * StartOffsetPercent;
         string seekArg  = seekSecs > 1.0 ? $"-ss {seekSecs:F1} " : "";
 
         string arguments = $"{seekArg}-i \"{inputPath}\" -frames:v {SampleFrames} -vf cropdetect={CropLimit}:{CropRound}:{CropReset} -an -f null NUL";
-        Console.WriteLine($"  ffmpeg {arguments}");
+        logger.LogInformation("  ffmpeg {Arguments}", arguments);
 
         var psi = new ProcessStartInfo
         {
@@ -52,7 +54,7 @@ static class CropDetector
         catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
-            ConsoleHelper.WriteColored($"  cropdetect failed to launch ffmpeg: {ex.Message}", ConsoleColor.Red);
+            logger.LogError("  cropdetect failed to launch ffmpeg: {Message}", ex.Message);
             return null;
         }
 
@@ -60,11 +62,14 @@ static class CropDetector
         //   [Parsed_cropdetect_0 @ 0x...] ... crop=3440:1440:840:0
         // The last line has the most stable accumulated value.
         var matches = Regex.Matches(stderr, @"crop=(\d+):(\d+):(\d+):(\d+)");
+
         if (matches.Count == 0)
         {
-            ConsoleHelper.WriteColored("  cropdetect produced no values.", ConsoleColor.Yellow);
-            foreach (string l in stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries).TakeLast(5))
-                Console.WriteLine($"  ffmpeg: {l.Trim()}");
+            logger.LogWarning("  cropdetect produced no values.");
+
+            foreach (string l in stderr.Split('\n', StringSplitOptions.RemoveEmptyEntries).TakeLast(5)) {
+                logger.LogInformation("  ffmpeg: {Line}", l.Trim());
+            }
             return null;
         }
 
@@ -81,17 +86,22 @@ static class CropDetector
 
         if (!hasPillarbox && !hasLetterbox)
         {
-            Console.WriteLine($"  No black bars detected — full {srcWidth}x{srcHeight} frame is picture.");
+            logger.LogInformation("  No black bars detected — full {Width}x{Height} frame is picture.", srcWidth, srcHeight);
             return null;
         }
 
-        if (hasPillarbox)
-            ConsoleHelper.WriteColored($"  Pillarbox: {srcWidth}x{srcHeight} ({AspectLabel(srcWidth, srcHeight)}) -> picture {cropW}x{cropH} ({AspectLabel(cropW, cropH)})", ConsoleColor.Yellow);
+        if (hasPillarbox) 
+        {
+            logger.LogWarning("  Pillarbox: {SrcW}x{SrcH} ({SrcAspect}) -> picture {CropW}x{CropH} ({CropAspect})",
+                srcWidth, srcHeight, AspectLabel(srcWidth, srcHeight), cropW, cropH, AspectLabel(cropW, cropH));
+        }
 
-        if (hasLetterbox)
-            ConsoleHelper.WriteColored($"  Letterbox: {srcWidth}x{srcHeight} ({AspectLabel(srcWidth, srcHeight)}) -> picture {cropW}x{cropH} ({AspectLabel(cropW, cropH)})", ConsoleColor.Yellow);
+        if (hasLetterbox) {
+            logger.LogWarning("  Letterbox: {SrcW}x{SrcH} ({SrcAspect}) -> picture {CropW}x{CropH} ({CropAspect})",
+                srcWidth, srcHeight, AspectLabel(srcWidth, srcHeight), cropW, cropH, AspectLabel(cropW, cropH));
+        }
 
-        Console.WriteLine($"  Filter: crop={cropW}:{cropH}:{cropX}:{cropY}");
+        logger.LogInformation("  Filter: crop={CropW}:{CropH}:{CropX}:{CropY}", cropW, cropH, cropX, cropY);
 
         return $"crop={cropW}:{cropH}:{cropX}:{cropY}";
     }

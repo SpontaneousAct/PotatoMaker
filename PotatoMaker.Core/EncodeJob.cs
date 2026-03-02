@@ -1,6 +1,6 @@
-namespace PotatoMaker;
+namespace PotatoMaker.Core;
 
-record EncodeJob(
+public record EncodeJob(
     string    InputPath,
     string    OutputPath,
     TimeSpan  TotalDuration,

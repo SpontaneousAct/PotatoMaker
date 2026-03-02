@@ -1,13 +1,24 @@
-namespace PotatoMaker;
+using Microsoft.Extensions.Logging;
+using PotatoMaker.Cli;
+using PotatoMaker.Core;
 
 class Program
 {
     static async Task<int> Main(string[] args)
     {
+        using var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Information);
+            builder.AddProvider(new PipelineConsoleLoggerProvider());
+        });
+
+        var logger   = loggerFactory.CreateLogger<ProcessingPipeline>();
+        var progress = new ConsoleProgressHandler();
+
         using var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) =>
         {
-            e.Cancel = true;          // prevent immediate process kill so we can clean up
+            e.Cancel = true;
             cts.Cancel();
         };
 
@@ -24,7 +35,7 @@ class Program
 
         if (positional.Length == 0)
         {
-            ConsoleHelper.WriteColored("Error: No input file specified.", ConsoleColor.Red);
+            logger.LogError("Error: No input file specified.");
             Console.WriteLine("Usage:  potatomaker [--cpu] <video_file>");
             Console.WriteLine("        potatomaker \"C:\\clips\\gameplay.mp4\"");
             Console.WriteLine("        potatomaker --cpu \"C:\\clips\\gameplay.mp4\"");
@@ -38,26 +49,26 @@ class Program
 
         if (!File.Exists(inputPath))
         {
-            ConsoleHelper.WriteColored($"Error: File not found: {inputPath}", ConsoleColor.Red);
+            logger.LogError("Error: File not found: {Path}", inputPath);
             return 1;
         }
 
         try
         {
-            var crusher = await ProcessingPipeline.CreateAsync(inputPath, encoder, cts.Token);
-            await crusher.RunAsync(cts.Token);
+            var processingPipeline = await ProcessingPipeline.CreateAsync(inputPath, encoder, logger, progress, cts.Token);
+            await processingPipeline.RunAsync(cts.Token);
             return 0;
         }
         catch (OperationCanceledException)
         {
             Console.WriteLine();
-            ConsoleHelper.WriteColored("Cancelled by user.", ConsoleColor.Yellow);
+            logger.LogWarning("Cancelled by user.");
             return 130;
         }
         catch (Exception ex)
         {
             Console.WriteLine();
-            ConsoleHelper.WriteColored($"Fatal error: {ex.Message}", ConsoleColor.Red);
+            logger.LogError("Fatal error: {Message}", ex.Message);
             return 1;
         }
     }

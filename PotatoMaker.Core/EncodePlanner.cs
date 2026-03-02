@@ -1,21 +1,21 @@
-namespace PotatoMaker;
+namespace PotatoMaker.Core;
 
-static class EncodePlanner
+public static class EncodePlanner
 {
     // Budget constants
-    internal const double TargetSizeMb        = 9.5;
-    internal const double EffectiveTargetMb   = 9.0;
-    internal const int    AudioBitrateKbps    = 128;
-    internal const int    MinVideoBitrateKbps = 100;
+    public const double TargetSizeMb        = 9.5;
+    public const double EffectiveTargetMb   = 9.0;
+    public const int    AudioBitrateKbps    = 128;
+    public const int    MinVideoBitrateKbps = 100;
 
     // Quality-floor thresholds
     private const int FullHdFloorKbps = 1000;
     private const int HdFloorKbps     = 500;
     private const int MaxSplitParts   = 10;
 
-    internal record EncodePlan(int VideoBitrateKbps, int Parts, string? ScaleFilter, string ResolutionLabel);
+    public record EncodePlan(int VideoBitrateKbps, int Parts, string? ScaleFilter, string ResolutionLabel);
 
-    internal static EncodePlan PlanStrategy(double durationSecs, int origHeight)
+    public static EncodePlan PlanStrategy(double durationSecs, int origHeight)
     {
         int bitrate = CalculateVideoBitrate(durationSecs);
 
@@ -36,7 +36,7 @@ static class EncodePlanner
         }
 
         int parts = 1;
-        
+
         while (bitrate < HdFloorKbps && parts < MaxSplitParts)
         {
             parts++;
@@ -52,7 +52,7 @@ static class EncodePlanner
         return new EncodePlan(bitrate, parts, ScaleFilter(1080), splitLabel);
     }
 
-    internal static string? BuildVideoFilter(string? crop, string? scale) =>
+    public static string? BuildVideoFilter(string? crop, string? scale) =>
         (crop, scale) switch
         {
             (null, null)   => null,
