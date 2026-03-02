@@ -55,8 +55,12 @@ class Program
 
         try
         {
-            var processingPipeline = await ProcessingPipeline.CreateAsync(inputPath, encoder, logger, progress, cts.Token);
-            await processingPipeline.RunAsync(cts.Token);
+            logger.LogInformation("Probing file...");
+            var info = await VideoInfo.ProbeAsync(inputPath, cts.Token);
+            logger.LogInformation(PipelineEvents.Success, "Probe complete.");
+
+            var pipeline = new ProcessingPipeline(inputPath, info, encoder, logger, progress);
+            await pipeline.RunAsync(cts.Token);
             return 0;
         }
         catch (OperationCanceledException)

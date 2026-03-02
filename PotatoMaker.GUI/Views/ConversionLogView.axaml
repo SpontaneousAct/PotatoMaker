@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PotatoMaker.GUI.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="200"
+             x:Class="PotatoMaker.GUI.Views.ConversionLogView"
+             x:DataType="vm:ConversionLogViewModel">
+
+    <Design.DataContext>
+        <vm:ConversionLogViewModel/>
+    </Design.DataContext>
+
+    <Border Padding="16"
+            CornerRadius="8"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+        <StackPanel Spacing="8">
+            <DockPanel>
+                <TextBlock Text="Conversion Log" FontWeight="SemiBold" FontSize="14"
+                           DockPanel.Dock="Left"/>
+                <TextBlock Text="{Binding ProgressLabel}"
+                           HorizontalAlignment="Right"
+                           Opacity="0.7"/>
+            </DockPanel>
+            <ProgressBar Minimum="0" Maximum="100"
+                         Value="{Binding ProgressPercent}"
+                         IsVisible="{Binding IsProcessing}"
+                         Height="6"/>
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    CornerRadius="4"
+                    Padding="8"
+                    MinHeight="120"
+                    MaxHeight="200">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              x:Name="LogScroller">
+                    <ItemsControl ItemsSource="{Binding LogLines}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}"
+                                           FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

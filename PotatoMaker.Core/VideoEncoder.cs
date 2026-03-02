@@ -132,8 +132,6 @@ public static class VideoEncoder
                      .WithCustomArgument("-preset 6")
                      .WithCustomArgument("-pass 2")
                      .WithCustomArgument($"-passlogfile {statsArg}")
-                     .WithCustomArgument($"-maxrate {job.VideoBitrateKbps}k")
-                     .WithCustomArgument($"-bufsize {job.VideoBitrateKbps * 2}k")
                      .WithAudioCodec("aac")
                      .WithAudioBitrate(job.AudioBitrateKbps)
                      .WithFastStart();

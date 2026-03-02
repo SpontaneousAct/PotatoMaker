@@ -1,11 +1,11 @@
-using FFMpegCore;
 using Microsoft.Extensions.Logging;
 
 namespace PotatoMaker.Core;
 
 /// <summary>
-/// Orchestrates the full processing pipeline: probe -> crop detect -> plan -> encode.
-/// All bitrate/scale/split planning is delegated to <see cref="EncodePlanner"/>.
+/// Orchestrates the full processing pipeline: crop detect → plan → encode.
+/// Probing is the caller's responsibility — pass a <see cref="VideoInfo"/> obtained
+/// from <see cref="VideoInfo.ProbeAsync"/> so front-ends can probe once and reuse the result.
 /// </summary>
 public class ProcessingPipeline
 {
@@ -13,45 +13,33 @@ public class ProcessingPipeline
     private readonly string _outputDir;
     private readonly string _outputBase;
     private readonly EncoderChoice _encoder;
-    private readonly IMediaAnalysis _probe;
+    private readonly VideoInfo _info;
     private readonly ILogger<ProcessingPipeline> _logger;
     private readonly IProgress<EncodeProgress>? _progress;
 
-    private ProcessingPipeline(
-        string inputPath, EncoderChoice encoder, IMediaAnalysis probe,
-        ILogger<ProcessingPipeline> logger, IProgress<EncodeProgress>? progress)
+    public ProcessingPipeline(
+        string inputPath, VideoInfo info, EncoderChoice encoder,
+        ILogger<ProcessingPipeline> logger, IProgress<EncodeProgress>? progress = null)
     {
         _inputPath  = inputPath;
         _outputDir  = Path.GetDirectoryName(Path.GetFullPath(inputPath)) ?? ".";
         _outputBase = Path.GetFileNameWithoutExtension(inputPath);
+        _info       = info;
         _encoder    = encoder;
-        _probe      = probe;
         _logger     = logger;
         _progress   = progress;
     }
 
-    public static async Task<ProcessingPipeline> CreateAsync(
-        string inputPath, EncoderChoice encoder,
-        ILogger<ProcessingPipeline> logger, IProgress<EncodeProgress>? progress = null,
-        CancellationToken ct = default)
-    {
-        logger.LogInformation("Probing file...");
-        ct.ThrowIfCancellationRequested();
-        var probe = await FFProbe.AnalyseAsync(inputPath);
-        logger.LogInformation(PipelineEvents.Success, "Probe complete.");
-        return new ProcessingPipeline(inputPath, encoder, probe, logger, progress);
-    }
-
     public async Task RunAsync(CancellationToken ct = default)
     {
-        double durationSecs   = _probe.Duration.TotalSeconds;
+        double durationSecs   = _info.Duration.TotalSeconds;
         long   inputSizeBytes = new FileInfo(_inputPath).Length;
-        int    origWidth      = _probe.PrimaryVideoStream?.Width  ?? 0;
-        int    origHeight     = _probe.PrimaryVideoStream?.Height ?? 0;
+        int    origWidth      = _info.Width;
+        int    origHeight     = _info.Height;
 
-        string durationFmt = _probe.Duration.TotalHours >= 1
-            ? _probe.Duration.ToString(@"h\:mm\:ss\.f")
-            : _probe.Duration.ToString(@"m\:ss\.f");
+        string durationFmt = _info.Duration.TotalHours >= 1
+            ? _info.Duration.ToString(@"h\:mm\:ss\.f")
+            : _info.Duration.ToString(@"m\:ss\.f");
 
         _logger.LogInformation("  Input     : {FileName}", Path.GetFileName(_inputPath));
         _logger.LogInformation("  Duration  : {Duration}  ({Seconds:F1}s)", durationFmt, durationSecs);
@@ -60,7 +48,7 @@ public class ProcessingPipeline
         _logger.LogInformation("");
 
         _logger.LogInformation("--- Crop Detection ----------------------------------");
-        string? cropFilter = await CropDetector.DetectAsync(_inputPath, _probe.Duration, origWidth, origHeight, _logger, ct);
+        string? cropFilter = await CropDetector.DetectAsync(_inputPath, _info.Duration, origWidth, origHeight, _logger, ct);
         _logger.LogInformation("");
 
         _logger.LogInformation("--- Determining Encoding Strategy -------------------------------");
@@ -105,7 +93,7 @@ public class ProcessingPipeline
         var job = new EncodeJob(
             InputPath:        _inputPath,
             OutputPath:       Path.Combine(_outputDir, $"{_outputBase}_discord.mp4"),
-            TotalDuration:    _probe.Duration,
+            TotalDuration:    _info.Duration,
             VideoBitrateKbps: videoBitrateKbps,
             AudioBitrateKbps: EncodePlanner.AudioBitrateKbps,
             VideoFilter:      videoFilter
@@ -136,7 +124,7 @@ public class ProcessingPipeline
             var job = new EncodeJob(
                 InputPath:        _inputPath,
                 OutputPath:       outputPath,
-                TotalDuration:    _probe.Duration,
+                TotalDuration:    _info.Duration,
                 VideoBitrateKbps: videoBitrateKbps,
                 AudioBitrateKbps: EncodePlanner.AudioBitrateKbps,
                 VideoFilter:      videoFilter,

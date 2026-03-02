@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace PotatoMaker.GUI.Views;
 
-public partial class MainWindow : Window
+public partial class OutputSettingsView : UserControl
 {
-    public MainWindow()
+    public OutputSettingsView()
     {
         InitializeComponent();
     }
