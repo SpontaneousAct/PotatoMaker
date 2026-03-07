@@ -53,7 +53,7 @@ public partial class FileInputView : UserControl
     {
         var dropZone = this.FindControl<Border>("DropZone");
 
-        bool hasFiles = e.Data.Contains(DataFormats.Files);
+        bool hasFiles = e.DataTransfer.Contains(DataFormat.File);
         e.DragEffects = hasFiles
             ? DragDropEffects.Copy
             : DragDropEffects.None;
@@ -78,9 +78,7 @@ public partial class FileInputView : UserControl
         var dropZone = this.FindControl<Border>("DropZone");
         dropZone?.Classes.Remove("drag-over");
 
-#pragma warning disable CS0618
-        var files = e.Data.GetFiles()?.ToList();
-#pragma warning restore CS0618
+        var files = e.DataTransfer.TryGetFiles()?.ToList();
 
         var path = files?.FirstOrDefault()?.TryGetLocalPath();
         if (path is not null)
