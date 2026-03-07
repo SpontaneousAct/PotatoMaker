@@ -1,114 +1,115 @@
 # PotatoMaker
 
-A CLI tool that compresses any video to fit within Discord's file-size limit using AV1 encoding. Just point it at a video and get a Discord-ready `.mp4` back.
+PotatoMaker compresses videos to fit Discord-sized uploads using AV1 encoding.
+It includes both a command-line app and a desktop GUI, backed by a shared core pipeline.
 
 ## Features
 
-- **One-command usage** — `potatomaker video.mp4` produces `video_discord.mp4` next to the input
-- **GPU-accelerated encoding** — uses NVIDIA NVENC (`av1_nvenc`) by default, with automatic fallback to CPU two-pass (`libsvtav1`)
-- **Automatic crop detection** — detects and removes black bars (letterbox/pillarbox) to maximize picture quality
-- **Smart resolution scaling** — dynamically chooses 1080p / 720p based on available bitrate budget
-- **Auto-splitting** — if a single file can't meet the quality floor, it splits into up to 10 parts that each fit under the limit
-- **Streaming-friendly output** — all output uses `-movflags +faststart` for immediate playback
+- One-command CLI usage: `potatomaker video.mp4` outputs `video_discord.mp4`
+- Desktop GUI built with Avalonia
+- GPU-accelerated encoding with NVIDIA NVENC (`av1_nvenc`) when available
+- Automatic fallback to CPU two-pass encoding (`libsvtav1`) when NVENC is unavailable
+- Automatic crop detection to remove black bars
+- Smart resolution scaling based on bitrate budget
+- Automatic splitting into multiple parts for long videos
+- Streaming-friendly output (`-movflags +faststart`)
 
 ## Requirements
 
-- **FFmpeg** — must be on your system `PATH` (not bundled).  
-  Download from [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html).
-- **.NET 10 SDK** — required for building from source.  
-  Download from [https://dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
-- **NVIDIA GPU + drivers** — optional; enables `av1_nvenc` hardware encoding. Falls back to CPU (`libsvtav1`) automatically if unavailable.
+- FFmpeg on system `PATH` (not bundled): https://ffmpeg.org/download.html
+- .NET 10 SDK: https://dotnet.microsoft.com/download/dotnet/10.0
+- Optional NVIDIA GPU for AV1 NVENC (Ada Lovelace / RTX 40-series or newer)
 
-### Supported NVIDIA GPUs for NVENC (AV1)
+NVIDIA compatibility matrix:
+https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new
 
-NVENC AV1 encoding requires an Ada Lovelace (RTX 40-series) or newer NVIDIA GPU. For the full compatibility matrix, see [NVIDIA's Video Encode and Decode GPU Support Matrix](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new).
+## Solution Layout
 
-## Installation
+```text
+PotatoMaker/
+|- PotatoMaker.Core/   # Shared probe/crop/plan/encode pipeline
+|- PotatoMaker.Cli/    # CLI front-end (assembly name: potatomaker)
+|- PotatoMaker.GUI/    # Avalonia desktop front-end
+|- PotatoMaker.slnx
+`- README.md
+```
 
-### From source
+## Build
 
 ```bash
-# Clone the repo
-git clone https://github.com/SpontaneousAct/PotatoMaker.git
-cd PotatoMaker
-
-# Publish self-contained single-file binary (win-x64)
-dotnet publish PotatoMaker/PotatoMaker.csproj -c Release -r win-x64
+dotnet build PotatoMaker.slnx
 ```
 
-The published binary will be in `PotatoMaker/bin/Release/net10.0/win-x64/publish/`.
+## Run
 
-### Add to Windows right-click "Open with"
+### CLI
 
-1. Copy `potatomaker.exe` to a permanent location (e.g. `C:\Tools\potatomaker.exe`)
-2. Right-click any video file → **Open with** → **Choose another app**
-3. Scroll down and click **Choose an app on your PC**, then browse to `potatomaker.exe`
-
-After selecting it once, PotatoMaker will appear in the "Open with" list for that file type going forward.
-
-## CLI Usage
-
+```bash
+dotnet run --project PotatoMaker.Cli -- "C:\clips\gameplay.mp4"
+dotnet run --project PotatoMaker.Cli -- --cpu "C:\clips\gameplay.mp4"
 ```
+
+CLI syntax:
+
+```text
 potatomaker [--cpu] <video_file>
 ```
 
-### Examples
+`--cpu` forces libsvtav1 two-pass instead of NVENC.
+
+### GUI
 
 ```bash
-# Compress a video (GPU encoding, auto-detect best settings)
-potatomaker "C:\clips\gameplay.mp4"
-
-# Force CPU two-pass encoding (slower but no GPU required)
-potatomaker --cpu "C:\clips\gameplay.mp4"
+dotnet run --project PotatoMaker.GUI
 ```
 
-### Options
+In the GUI, pick a file, review the probe summary, optionally enable CPU mode, and start encoding.
 
-| Flag    | Description                                               |
-|---------|-----------------------------------------------------------|
-| `--cpu` | Use libsvtav1 CPU two-pass encoder instead of NVENC (GPU)  |
+## Publish
 
-### Output
+### CLI (single-file, self-contained win-x64)
 
-- Single file: `{name}_discord.mp4`
-- Split files: `{name}_discord_part1.mp4`, `{name}_discord_part2.mp4`, …
-
-Output files are written next to the input file.
-
-## How It Works
-
-PotatoMaker runs a five-stage pipeline:
-
-1. **Probe** — reads duration, resolution, and metadata via FFProbe
-2. **Crop detection** — runs FFmpeg's `cropdetect` filter to find and remove symmetric black bars (letterbox/pillarbox)
-3. **Encode planning** — calculates the video bitrate to fit within 9.0 MB (with 128 kbps reserved for audio). If the bitrate falls below the quality floor (500 kbps at 720p), it splits the video into multiple parts
-4. **Resolution selection** — picks output height based on bitrate budget:
-   - &ge; 1000 kbps &rarr; 1080p (capped, never upscaled)
-   - &ge; 500 kbps &rarr; 720p
-   - &lt; 500 kbps &rarr; split into parts to stay above the floor
-5. **Encode** — encodes with AV1; NVENC uses constrained VBR (`-rc vbr`), libsvtav1 uses true two-pass with a temp stats file
-
-### Encoding Details
-
-| Encoder       | Mode                                                        |
-|---------------|-------------------------------------------------------------|
-| `av1_nvenc`   | Single-pass constrained VBR (`-rc vbr -preset p5`)         |
-| `libsvtav1`   | Two-pass (stats file in `%TEMP%`, cleaned up automatically) |
-
-Both paths output `-movflags +faststart` for streaming-friendly MP4.
-
-## Project Structure
-
+```bash
+dotnet publish PotatoMaker.Cli/PotatoMaker.Cli.csproj -c Release -r win-x64
 ```
-PotatoMaker/
-├── Program.cs            # Entry point, argument parsing
-├── ProcessingPipeline.cs # Orchestrates probe → crop → plan → encode
-├── EncodePlanner.cs      # Bitrate math, resolution selection, split planning
-├── CropDetector.cs       # Black bar detection via ffmpeg cropdetect
-├── VideoEncoder.cs       # NVENC and libsvtav1 encoding with progress bars
-├── EncodeJob.cs          # Data record passed between planner and encoder
-└── ConsoleHelper.cs      # Colored console output utility
+
+Output path:
+
+```text
+PotatoMaker.Cli/bin/Release/net10.0/win-x64/publish/
 ```
+
+### GUI
+
+```bash
+dotnet publish PotatoMaker.GUI/PotatoMaker.GUI.csproj -c Release -r win-x64
+```
+
+## Output Naming
+
+- Single output: `{name}_discord.mp4`
+- Split output: `{name}_discord_part1.mp4`, `{name}_discord_part2.mp4`, ...
+
+Outputs are written next to the input file.
+
+## Pipeline Overview
+
+1. Probe input media (duration, resolution, metadata)
+2. Detect crop (optional) using FFmpeg `cropdetect`
+3. Plan bitrate/resolution/splitting against target size budget
+4. Encode with AV1:
+   - `av1_nvenc` single-pass constrained VBR, or
+   - `libsvtav1` two-pass (with temp passlog files)
+5. Write MP4 with `+faststart`
+
+Default planning values (from `EncodeSettings`):
+
+- Hard size limit: 9.5 MB
+- Effective budget: 9.0 MB
+- Audio reserve: 128 kbps
+- 1080p threshold: 1000 kbps
+- 720p threshold: 500 kbps
+- Max split parts: 10
 
 ## License
 

@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="80"
+             mc:Ignorable="d" d:DesignWidth="240" d:DesignHeight="120"
              x:Class="PotatoMaker.GUI.Views.OutputSettingsView"
              x:DataType="vm:OutputSettingsViewModel">
 
@@ -11,15 +11,16 @@
         <vm:OutputSettingsViewModel/>
     </Design.DataContext>
 
-    <Border Padding="16"
-            CornerRadius="8"
-            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-        <StackPanel Spacing="6">
-            <TextBlock Text="Output Settings" FontWeight="SemiBold" FontSize="14"/>
-            <Separator/>
-            <CheckBox Content="Use CPU encoder (libsvtav1 — slower, no GPU needed)"
-                      IsChecked="{Binding UseCpuEncoder}"
-                      Margin="0,4,0,0"/>
+    <Border Classes="pm-card"
+            Padding="12">
+        <StackPanel Spacing="8">
+            <TextBlock Text="Settings"
+                       Classes="pm-section-title"/>
+            <CheckBox Content="CPU encoder (slower)"
+                      IsChecked="{Binding UseCpuEncoder}"/>
+            <TextBlock Text="Unchecked = NVENC with CPU fallback"
+                       Classes="pm-muted"
+                       TextWrapping="Wrap"/>
         </StackPanel>
     </Border>
 </UserControl>

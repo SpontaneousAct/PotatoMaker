@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="200"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="190"
              x:Class="PotatoMaker.GUI.Views.ConversionLogView"
              x:DataType="vm:ConversionLogViewModel">
 
@@ -11,26 +11,45 @@
         <vm:ConversionLogViewModel/>
     </Design.DataContext>
 
-    <Border Padding="16"
-            CornerRadius="8"
-            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-        <StackPanel Spacing="8">
-            <DockPanel>
-                <TextBlock Text="Conversion Log" FontWeight="SemiBold" FontSize="14"
-                           DockPanel.Dock="Left"/>
-                <TextBlock Text="{Binding ProgressLabel}"
+    <Border Classes="pm-card"
+            Padding="12"
+            Height="220">
+        <Grid RowDefinitions="Auto,Auto,*"
+              RowSpacing="8">
+            <Grid Grid.Row="0"
+                  ColumnDefinitions="*,Auto"
+                  ColumnSpacing="10">
+                <TextBlock Grid.Column="0"
+                           Text="Processing Log"
+                           Classes="pm-section-title"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ProgressLabel}"
                            HorizontalAlignment="Right"
-                           Opacity="0.7"/>
-            </DockPanel>
-            <ProgressBar Minimum="0" Maximum="100"
-                         Value="{Binding ProgressPercent}"
-                         IsVisible="{Binding IsProcessing}"
-                         Height="6"/>
-            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                    CornerRadius="4"
-                    Padding="8"
-                    MinHeight="120"
-                    MaxHeight="200">
+                           Classes="pm-muted"/>
+            </Grid>
+
+            <Grid Grid.Row="1"
+                  ColumnDefinitions="*,Auto"
+                  IsVisible="{Binding IsProcessing}"
+                  ColumnSpacing="8">
+                <ProgressBar Grid.Column="0"
+                             Minimum="0"
+                             Maximum="100"
+                             Value="{Binding ProgressPercent}"
+                             Height="7"
+                             VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding ProgressPercent, StringFormat={}{0}%}"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"/>
+            </Grid>
+
+            <Border Grid.Row="2"
+                    Background="#0F141C"
+                    BorderBrush="#273143"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="8">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               x:Name="LogScroller">
                     <ItemsControl ItemsSource="{Binding LogLines}">
@@ -39,12 +58,13 @@
                                 <TextBlock Text="{Binding}"
                                            FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
                                            FontSize="12"
+                                           Margin="0,0,0,3"
                                            TextWrapping="Wrap"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
             </Border>
-        </StackPanel>
+        </Grid>
     </Border>
 </UserControl>

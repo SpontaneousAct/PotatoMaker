@@ -3,66 +3,76 @@
         xmlns:vm="using:PotatoMaker.GUI.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="700"
+        mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="680"
         x:Class="PotatoMaker.GUI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="PotatoMaker"
-        Width="600" MinWidth="450"
-        Height="700" MinHeight="500">
+        Width="820" MinWidth="700"
+        Height="680" MinHeight="620">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <DockPanel>
-        <!-- ═══ Top Bar ═══ -->
-        <Border DockPanel.Dock="Top"
-                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                Padding="16,10">
-            <TextBlock Text="🥔PotatoMaker"
-                       FontSize="20" FontWeight="Bold"
-                       HorizontalAlignment="Center"/>
+    <Grid Margin="16"
+          RowDefinitions="Auto,Auto,Auto,Auto,*"
+          RowSpacing="10">
+        <Border Grid.Row="0"
+                Classes="pm-card pm-hero"
+                Padding="14,12">
+            <DockPanel LastChildFill="True">
+                <Border DockPanel.Dock="Right"
+                        Padding="8,4"
+                        CornerRadius="8"
+                        Background="#151E2A">
+                    <TextBlock Text="{Binding VersionText}"
+                               Opacity="0.8"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Orientation="Horizontal"
+                            Spacing="10">
+                    <TextBlock Text="PotatoMaker"
+                               Classes="pm-heading"
+                               FontSize="22"/>
+                    <TextBlock Text="Discord-ready AV1 compression"
+                               Classes="pm-muted"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
         </Border>
 
-        <!-- ═══ Bottom Bar ═══ -->
-        <Border DockPanel.Dock="Bottom"
-                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                Padding="8,4">
-            <TextBlock Text="{Binding VersionText}"
-                       FontSize="11"
-                       Opacity="0.6"
-                       HorizontalAlignment="Right"/>
-        </Border>
+        <ContentControl Grid.Row="1"
+                        Content="{Binding FileInput}"/>
 
-        <!-- ═══ Main Content ═══ -->
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                      VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="20" Spacing="16">
+        <Grid Grid.Row="2"
+              ColumnDefinitions="2*,*"
+              ColumnSpacing="10">
+            <ContentControl Grid.Column="0"
+                            Content="{Binding VideoSummary}"/>
+            <ContentControl Grid.Column="1"
+                            Content="{Binding OutputSettings}"/>
+        </Grid>
 
-                <!-- ── 1. File Input ── -->
-                <ContentControl Content="{Binding FileInput}"/>
-
-                <!-- ── 2. Video Summary ── -->
-                <ContentControl Content="{Binding VideoSummary}"
-                                IsVisible="{Binding VideoSummary.HasData}"/>
-
-                <!-- ── 3. Output Settings ── -->
-                <ContentControl Content="{Binding OutputSettings}"/>
-
-                <!-- ── Start Button ── -->
-                <Button Content="Start Compression"
+        <Border Grid.Row="3"
+                Classes="pm-card"
+                Padding="10,8">
+            <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="10">
+                <TextBlock Grid.Column="0"
+                           Text="Output files are written next to the selected source file."
+                           Classes="pm-muted"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Content="Start Compression"
                         Command="{Binding StartEncodeCommand}"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        Padding="12"
-                        FontWeight="SemiBold"
-                        Classes="accent"/>
+                        MinWidth="190"
+                        Classes="pm-primary"/>
+            </Grid>
+        </Border>
 
-                <!-- ── 4. Conversion Log ── -->
-                <ContentControl Content="{Binding ConversionLog}"/>
-
-            </StackPanel>
-        </ScrollViewer>
-    </DockPanel>
+        <ContentControl Grid.Row="4"
+                        Content="{Binding ConversionLog}"/>
+    </Grid>
 </Window>

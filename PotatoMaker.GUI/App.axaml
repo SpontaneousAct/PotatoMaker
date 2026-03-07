@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="PotatoMaker.GUI.App"
              xmlns:local="using:PotatoMaker.GUI"
-             RequestedThemeVariant="Dark">
+             RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
@@ -11,5 +11,88 @@
   
     <Application.Styles>
         <FluentTheme />
+        <Style Selector="Window">
+            <Setter Property="Background" Value="#0E1116"/>
+        </Style>
+
+        <Style Selector="Border.pm-card">
+            <Setter Property="Background" Value="#1A202A"/>
+            <Setter Property="BorderBrush" Value="#2A3342"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+        </Style>
+
+        <Style Selector="Border.pm-hero">
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#243448" Offset="0"/>
+                    <GradientStop Color="#161E29" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter>
+            <Setter Property="BorderBrush" Value="#3A4D67"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-heading">
+            <Setter Property="FontFamily" Value="Cascadia Code,Consolas,monospace"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="Foreground" Value="#F2F7FF"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-section-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Foreground" Value="#E7EDF7"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-muted">
+            <Setter Property="Opacity" Value="0.75"/>
+            <Setter Property="Foreground" Value="#D3DCEC"/>
+        </Style>
+
+        <Style Selector="Button.pm-primary">
+            <Setter Property="Background" Value="#3A7AFE"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#5A91FF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style Selector="Button.pm-primary:pointerover">
+            <Setter Property="Background" Value="#4A86FF"/>
+        </Style>
+
+        <Style Selector="Button.pm-primary:pressed">
+            <Setter Property="Background" Value="#2A68E8"/>
+        </Style>
+
+        <Style Selector="Button.pm-primary:disabled">
+            <Setter Property="Background" Value="#2A3342"/>
+            <Setter Property="BorderBrush" Value="#2A3342"/>
+            <Setter Property="Foreground" Value="#98A6BB"/>
+        </Style>
+
+        <Style Selector="Border.pm-dropzone">
+            <Setter Property="Background" Value="#151B25"/>
+            <Setter Property="BorderBrush" Value="#41506A"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="16"/>
+        </Style>
+
+        <Style Selector="Border.pm-dropzone.drag-over">
+            <Setter Property="Background" Value="#1E2A3A"/>
+            <Setter Property="BorderBrush" Value="#5F95FF"/>
+        </Style>
+
+        <Style Selector="Border.pm-stat">
+            <Setter Property="Background" Value="#121821"/>
+            <Setter Property="BorderBrush" Value="#273143"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="MinWidth" Value="0"/>
+        </Style>
     </Application.Styles>
 </Application>

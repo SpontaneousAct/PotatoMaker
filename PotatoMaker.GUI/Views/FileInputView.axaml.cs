@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using PotatoMaker.GUI.ViewModels;
 
@@ -16,11 +17,12 @@ public partial class FileInputView : UserControl
         var dropZone = this.FindControl<Border>("DropZone")!;
         dropZone.AddHandler(DragDrop.DropEvent, OnDrop);
         dropZone.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        dropZone.AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
     }
 
     private FileInputViewModel Vm => (FileInputViewModel)DataContext!;
 
-    protected override void OnLoaded(Avalonia.Interactivity.RoutedEventArgs e)
+    protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
         Vm.FilePickerRequested = OpenFilePickerAsync;
@@ -49,16 +51,37 @@ public partial class FileInputView : UserControl
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
-#pragma warning disable CS0618
-        e.DragEffects = e.Data.Contains(DataFormats.Files)
+        var dropZone = this.FindControl<Border>("DropZone");
+
+        bool hasFiles = e.Data.Contains(DataFormats.Files);
+        e.DragEffects = hasFiles
             ? DragDropEffects.Copy
             : DragDropEffects.None;
+
+        if (dropZone is not null)
+        {
+            if (hasFiles)
+                dropZone.Classes.Add("drag-over");
+            else
+                dropZone.Classes.Remove("drag-over");
+        }
+    }
+
+    private void OnDragLeave(object? sender, RoutedEventArgs e)
+    {
+        var dropZone = this.FindControl<Border>("DropZone");
+        dropZone?.Classes.Remove("drag-over");
     }
 
     private void OnDrop(object? sender, DragEventArgs e)
     {
+        var dropZone = this.FindControl<Border>("DropZone");
+        dropZone?.Classes.Remove("drag-over");
+
+#pragma warning disable CS0618
         var files = e.Data.GetFiles()?.ToList();
 #pragma warning restore CS0618
+
         var path = files?.FirstOrDefault()?.TryGetLocalPath();
         if (path is not null)
             Vm.SetFile(path);
