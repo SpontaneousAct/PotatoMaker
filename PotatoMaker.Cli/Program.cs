@@ -31,7 +31,10 @@ class Program
         var positional = args.Where(a => !a.StartsWith('-')).ToArray();
 
         bool useCpu = flags.Contains("--cpu");
-        var encoder = useCpu ? EncoderChoice.SvtAv1 : EncoderChoice.Nvenc;
+        var settings = new EncodeSettings
+        {
+            Encoder = useCpu ? EncoderChoice.SvtAv1 : EncoderChoice.Nvenc
+        };
 
         if (positional.Length == 0)
         {
@@ -59,7 +62,7 @@ class Program
             var info = await VideoInfo.ProbeAsync(inputPath, cts.Token);
             logger.LogInformation(PipelineEvents.Success, "Probe complete.");
 
-            var pipeline = new ProcessingPipeline(inputPath, info, encoder, logger, progress);
+            var pipeline = new ProcessingPipeline(inputPath, info, settings, logger, progress);
             await pipeline.RunAsync(cts.Token);
             return 0;
         }

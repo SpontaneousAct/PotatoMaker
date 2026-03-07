@@ -2,24 +2,13 @@ namespace PotatoMaker.Core;
 
 public static class EncodePlanner
 {
-    // Budget constants
-    public const double TargetSizeMb        = 9.5;
-    public const double EffectiveTargetMb   = 9.0;
-    public const int    AudioBitrateKbps    = 128;
-    public const int    MinVideoBitrateKbps = 100;
-
-    // Quality-floor thresholds
-    private const int FullHdFloorKbps = 1000;
-    private const int HdFloorKbps     = 500;
-    private const int MaxSplitParts   = 10;
-
     public record EncodePlan(int VideoBitrateKbps, int Parts, string? ScaleFilter, string ResolutionLabel);
 
-    public static EncodePlan PlanStrategy(double durationSecs, int origHeight)
+    public static EncodePlan PlanStrategy(double durationSecs, int origHeight, EncodeSettings settings)
     {
-        int bitrate = CalculateVideoBitrate(durationSecs);
+        int bitrate = CalculateVideoBitrate(durationSecs, settings);
 
-        if (bitrate >= FullHdFloorKbps)
+        if (bitrate >= settings.FullHdFloorKbps)
         {
             string label = origHeight <= 1080
                 ? $"{origHeight}p (original)"
@@ -27,7 +16,7 @@ public static class EncodePlanner
             return new EncodePlan(bitrate, 1, ScaleFilter(1080), label);
         }
 
-        if (bitrate >= HdFloorKbps)
+        if (bitrate >= settings.HdFloorKbps)
         {
             string label = origHeight <= 720
                 ? $"{origHeight}p (original)"
@@ -37,13 +26,13 @@ public static class EncodePlanner
 
         int parts = 1;
 
-        while (bitrate < HdFloorKbps && parts < MaxSplitParts)
+        while (bitrate < settings.HdFloorKbps && parts < settings.MaxParts)
         {
             parts++;
-            bitrate = CalculateVideoBitrate(durationSecs / parts);
+            bitrate = CalculateVideoBitrate(durationSecs / parts, settings);
         }
 
-        bitrate = Math.Max(bitrate, MinVideoBitrateKbps);
+        bitrate = Math.Max(bitrate, settings.MinVideoBitrateKbps);
 
         string splitLabel = origHeight <= 1080
             ? $"{Math.Min(origHeight, 1080)}p, {parts} parts"
@@ -61,8 +50,8 @@ public static class EncodePlanner
             (var c, var s) => $"{c},{s}"
         };
 
-    private static int CalculateVideoBitrate(double durationSecs) =>
-        (int)(EffectiveTargetMb * 8192.0 / durationSecs) - AudioBitrateKbps;
+    private static int CalculateVideoBitrate(double durationSecs, EncodeSettings settings) =>
+        (int)(settings.EffectiveTargetMb * 8192.0 / durationSecs) - settings.AudioBitrateKbps;
 
     // -2 preserves aspect ratio for any AR (16:9, 21:9, 32:9, …)
     // and ensures width is divisible by 2, required by AV1 encoders.

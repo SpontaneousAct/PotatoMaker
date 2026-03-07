@@ -12,20 +12,20 @@ public class ProcessingPipeline
     private readonly string _inputPath;
     private readonly string _outputDir;
     private readonly string _outputBase;
-    private readonly EncoderChoice _encoder;
+    private readonly EncodeSettings _settings;
     private readonly VideoInfo _info;
     private readonly ILogger<ProcessingPipeline> _logger;
     private readonly IProgress<EncodeProgress>? _progress;
 
     public ProcessingPipeline(
-        string inputPath, VideoInfo info, EncoderChoice encoder,
+        string inputPath, VideoInfo info, EncodeSettings settings,
         ILogger<ProcessingPipeline> logger, IProgress<EncodeProgress>? progress = null)
     {
         _inputPath  = inputPath;
         _outputDir  = Path.GetDirectoryName(Path.GetFullPath(inputPath)) ?? ".";
         _outputBase = Path.GetFileNameWithoutExtension(inputPath);
         _info       = info;
-        _encoder    = encoder;
+        _settings   = settings;
         _logger     = logger;
         _progress   = progress;
     }
@@ -48,21 +48,25 @@ public class ProcessingPipeline
         _logger.LogInformation("");
 
         _logger.LogInformation("--- Crop Detection ----------------------------------");
-        string? cropFilter = await CropDetector.DetectAsync(_inputPath, _info.Duration, origWidth, origHeight, _logger, ct);
+        string? cropFilter = _settings.SkipCropDetect
+            ? null
+            : await CropDetector.DetectAsync(_inputPath, _info.Duration, origWidth, origHeight, _logger, ct);
+        if (_settings.SkipCropDetect)
+            _logger.LogInformation("  Skipped (disabled in settings).");
         _logger.LogInformation("");
 
         _logger.LogInformation("--- Determining Encoding Strategy -------------------------------");
-        var encodePlan = EncodePlanner.PlanStrategy(durationSecs, origHeight);
+        var encodePlan = EncodePlanner.PlanStrategy(durationSecs, origHeight, _settings);
 
-        _logger.LogInformation("  Target size   : {Target} MB  (hard limit: {Limit} MB)", EncodePlanner.EffectiveTargetMb, EncodePlanner.TargetSizeMb);
-        _logger.LogInformation("  Audio reserve : {Audio} kbps", EncodePlanner.AudioBitrateKbps);
+        _logger.LogInformation("  Target size   : {Target} MB  (hard limit: {Limit} MB)", _settings.EffectiveTargetMb, _settings.TargetSizeMb);
+        _logger.LogInformation("  Audio reserve : {Audio} kbps", _settings.AudioBitrateKbps);
         _logger.LogInformation("  Resolution    : {Resolution}", encodePlan.ResolutionLabel);
         _logger.LogInformation("  Bitrate       : {Bitrate} kbps", encodePlan.VideoBitrateKbps);
         _logger.LogInformation("  Files         : {Parts}", encodePlan.Parts);
 
-        if (encodePlan.VideoBitrateKbps <= EncodePlanner.MinVideoBitrateKbps)
+        if (encodePlan.VideoBitrateKbps <= _settings.MinVideoBitrateKbps)
         {
-            _logger.LogError("  Video bitrate : {Bitrate} kbps — clamped to {Min} kbps", encodePlan.VideoBitrateKbps, EncodePlanner.MinVideoBitrateKbps);
+            _logger.LogError("  Video bitrate : {Bitrate} kbps — clamped to {Min} kbps", encodePlan.VideoBitrateKbps, _settings.MinVideoBitrateKbps);
             _logger.LogError("  Warning: clip is very long - output quality will be poor.");
         }
         else
@@ -95,11 +99,11 @@ public class ProcessingPipeline
             OutputPath:       Path.Combine(_outputDir, $"{_outputBase}_discord.mp4"),
             TotalDuration:    _info.Duration,
             VideoBitrateKbps: videoBitrateKbps,
-            AudioBitrateKbps: EncodePlanner.AudioBitrateKbps,
+            AudioBitrateKbps: _settings.AudioBitrateKbps,
             VideoFilter:      videoFilter
         );
 
-        await VideoEncoder.EncodeAsync(job, _encoder, _logger, _progress, ct: ct);
+        await VideoEncoder.EncodeAsync(job, _settings.Encoder, _logger, _progress, ct: ct);
         PrintSummary([job.OutputPath]);
     }
 
@@ -126,13 +130,13 @@ public class ProcessingPipeline
                 OutputPath:       outputPath,
                 TotalDuration:    _info.Duration,
                 VideoBitrateKbps: videoBitrateKbps,
-                AudioBitrateKbps: EncodePlanner.AudioBitrateKbps,
+                AudioBitrateKbps: _settings.AudioBitrateKbps,
                 VideoFilter:      videoFilter,
                 StartOffsetSecs:  i * segSecs,
                 SegmentSecs:      segSecs
             );
 
-            await VideoEncoder.EncodeAsync(job, _encoder, _logger, _progress, label: $"[{i + 1}/{parts}] ", ct: ct);
+            await VideoEncoder.EncodeAsync(job, _settings.Encoder, _logger, _progress, label: $"[{i + 1}/{parts}] ", ct: ct);
         }
 
         PrintSummary(outputPaths);
@@ -146,7 +150,7 @@ public class ProcessingPipeline
         {
             if (!File.Exists(path)) continue;
             double outMb = new FileInfo(path).Length / 1_048_576.0;
-            bool   fits  = outMb <= EncodePlanner.TargetSizeMb;
+            bool   fits  = outMb <= _settings.TargetSizeMb;
             if (fits)
                 _logger.LogInformation(PipelineEvents.Success, "  {File}  -  {Size:F2} MB  ✓", Path.GetFileName(path), outMb);
             else

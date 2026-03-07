@@ -36,16 +36,19 @@ public partial class MainWindowViewModel : ViewModelBase
         ConversionLog.IsProcessing = true;
         StartEncodeCommand.NotifyCanExecuteChanged();
 
-        var encoder = OutputSettings.UseCpuEncoder
-            ? EncoderChoice.SvtAv1
-            : EncoderChoice.Nvenc;
+        var settings = new EncodeSettings
+        {
+            Encoder = OutputSettings.UseCpuEncoder
+                ? EncoderChoice.SvtAv1
+                : EncoderChoice.Nvenc
+        };
 
         var logger   = new ViewModelLogger(ConversionLog);
         var progress = new ViewModelProgressHandler(ConversionLog);
 
         try
         {
-            var pipeline = new ProcessingPipeline(path, info, encoder, logger, progress);
+            var pipeline = new ProcessingPipeline(path, info, settings, logger, progress);
             await pipeline.RunAsync(_cts.Token);
             ConversionLog.AddLog("Done!");
         }
