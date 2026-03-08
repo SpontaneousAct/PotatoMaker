@@ -3,6 +3,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
+using Avalonia.Styling;
+using PotatoMaker.GUI.Services;
 using PotatoMaker.GUI.ViewModels;
 using PotatoMaker.GUI.Views;
 using System.Linq;
@@ -23,9 +25,13 @@ namespace PotatoMaker.GUI
                 // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
                 // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
                 DisableAvaloniaDataAnnotationValidation();
+
+                var appSettings = SettingsService.Load();
+                RequestedThemeVariant = appSettings.IsDarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
+
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(),
+                    DataContext = new MainWindowViewModel(appSettings),
                 };
             }
 

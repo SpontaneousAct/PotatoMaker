@@ -5,6 +5,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using PotatoMaker.Core;
 using PotatoMaker.GUI.Services;
 using System;
+using System.ComponentModel;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,12 +25,20 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _isDarkMode;
 
     private CancellationTokenSource? _cts;
+    private bool _isApplyingSettings;
 
-    public MainWindowViewModel()
+    public string? LastOutputFolder { get; private set; }
+
+    public MainWindowViewModel(AppSettings? initialSettings = null)
     {
         FileInput.FileSelected += OnFileSelected;
         FileInput.FileCleared += OnFileCleared;
-        IsDarkMode = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
+        FileInput.PropertyChanged += OnEncodePrerequisiteChanged;
+        VideoSummary.PropertyChanged += OnEncodePrerequisiteChanged;
+        ConversionLog.PropertyChanged += OnEncodePrerequisiteChanged;
+        OutputSettings.PropertyChanged += OnOutputSettingsChanged;
+
+        ApplyInitialSettings(initialSettings);
     }
 
     [RelayCommand(CanExecute = nameof(CanStartEncode))]
@@ -42,7 +52,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
         ConversionLog.Clear();
         ConversionLog.IsProcessing = true;
-        StartEncodeCommand.NotifyCanExecuteChanged();
 
         var settings = new EncodeSettings
         {
@@ -75,18 +84,20 @@ public partial class MainWindowViewModel : ViewModelBase
             ConversionLog.ProgressLabel = null;
             _cts.Dispose();
             _cts = null;
-            StartEncodeCommand.NotifyCanExecuteChanged();
         }
     }
 
-    private bool CanStartEncode() => FileInput.HasFile && !ConversionLog.IsProcessing;
+    private bool CanStartEncode() => FileInput.HasFile && VideoSummary.HasData && !ConversionLog.IsProcessing;
 
     private async void OnFileSelected(string path)
     {
         try
         {
+            LastOutputFolder = Path.GetDirectoryName(Path.GetFullPath(path));
+            SaveSettingsSafely();
+
+            VideoSummary.Clear();
             await VideoSummary.ProbeAsync(path);
-            StartEncodeCommand.NotifyCanExecuteChanged();
         }
         catch (Exception ex)
         {
@@ -98,12 +109,70 @@ public partial class MainWindowViewModel : ViewModelBase
     private void OnFileCleared()
     {
         VideoSummary.Clear();
-        StartEncodeCommand.NotifyCanExecuteChanged();
+    }
+
+    private void OnEncodePrerequisiteChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(FileInputViewModel.HasFile) or nameof(VideoSummaryViewModel.HasData) or nameof(ConversionLogViewModel.IsProcessing))
+            StartEncodeCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnIsDarkModeChanged(bool value)
     {
         if (Application.Current is null) return;
         Application.Current.RequestedThemeVariant = value ? ThemeVariant.Dark : ThemeVariant.Light;
+
+        if (!_isApplyingSettings)
+            SaveSettingsSafely();
+    }
+
+    private void OnOutputSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(OutputSettingsViewModel.UseCpuEncoder))
+            SaveSettingsSafely();
+    }
+
+    private void ApplyInitialSettings(AppSettings? settings)
+    {
+        var loaded = settings ?? new AppSettings
+        {
+            IsDarkMode = Application.Current?.ActualThemeVariant == ThemeVariant.Dark
+        };
+
+        _isApplyingSettings = true;
+        try
+        {
+            LastOutputFolder = loaded.LastOutputFolder;
+            OutputSettings.UseCpuEncoder = loaded.UseCpuEncoder;
+            IsDarkMode = loaded.IsDarkMode;
+        }
+        finally
+        {
+            _isApplyingSettings = false;
+        }
+    }
+
+    private async void SaveSettingsSafely()
+    {
+        try
+        {
+            await PersistSettingsAsync();
+        }
+        catch
+        {
+            // Ignore persistence failures; the app should continue working with in-memory values.
+        }
+    }
+
+    private Task PersistSettingsAsync()
+    {
+        var settings = new AppSettings
+        {
+            IsDarkMode = IsDarkMode,
+            UseCpuEncoder = OutputSettings.UseCpuEncoder,
+            LastOutputFolder = LastOutputFolder
+        };
+
+        return SettingsService.SaveAsync(settings);
     }
 }

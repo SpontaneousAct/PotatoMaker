@@ -2,12 +2,11 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
-using PotatoMaker.Core;
 
 namespace PotatoMaker.GUI.Services;
 
 /// <summary>
-/// Persists <see cref="EncodeSettings"/> as JSON in <c>%APPDATA%/PotatoMaker/settings.json</c>.
+/// Persists <see cref="AppSettings"/> as JSON in <c>%APPDATA%/PotatoMaker/settings.json</c>.
 /// </summary>
 public static class SettingsService
 {
@@ -20,29 +19,46 @@ public static class SettingsService
         WriteIndented = true
     };
 
-    public static async Task<EncodeSettings> LoadAsync()
+    public static AppSettings Load()
     {
         if (!File.Exists(SettingsPath))
-            return new EncodeSettings();
+            return new AppSettings();
 
         try
         {
-            var json = await File.ReadAllTextAsync(SettingsPath);
-            return JsonSerializer.Deserialize<EncodeSettings>(json, JsonOptions) ?? new EncodeSettings();
+            var json = File.ReadAllText(SettingsPath);
+            return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
         }
         catch
         {
-            // Corrupted file — return defaults
-            return new EncodeSettings();
+            // Corrupted or incompatible file: return defaults.
+            return new AppSettings();
         }
     }
 
-    public static async Task SaveAsync(EncodeSettings settings)
+    public static async Task<AppSettings> LoadAsync()
+    {
+        if (!File.Exists(SettingsPath))
+            return new AppSettings();
+
+        try
+        {
+            var json = await File.ReadAllTextAsync(SettingsPath).ConfigureAwait(false);
+            return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+        }
+        catch
+        {
+            // Corrupted or incompatible file: return defaults.
+            return new AppSettings();
+        }
+    }
+
+    public static async Task SaveAsync(AppSettings settings)
     {
         var dir = Path.GetDirectoryName(SettingsPath)!;
         Directory.CreateDirectory(dir);
 
         var json = JsonSerializer.Serialize(settings, JsonOptions);
-        await File.WriteAllTextAsync(SettingsPath, json);
+        await File.WriteAllTextAsync(SettingsPath, json).ConfigureAwait(false);
     }
 }
