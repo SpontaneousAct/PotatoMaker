@@ -32,14 +32,14 @@ public partial class OutputSettingsViewModel : ViewModelBase
 
     public bool HasSourceFolder => !string.IsNullOrWhiteSpace(SourceFolder);
 
-    public bool CanResetOutputFolder => HasSourceFolder && !string.IsNullOrWhiteSpace(CustomOutputFolder);
+    public bool CanResetOutputFolder => !string.IsNullOrWhiteSpace(CustomOutputFolder);
 
     /// <summary>
     /// Set by the View to open the native folder picker dialog.
     /// </summary>
     public Action? OutputFolderPickerRequested { get; set; }
 
-    [RelayCommand(CanExecute = nameof(HasSourceFolder))]
+    [RelayCommand]
     private void SelectOutputFolder()
     {
         OutputFolderPickerRequested?.Invoke();
@@ -58,7 +58,6 @@ public partial class OutputSettingsViewModel : ViewModelBase
 
     partial void OnSourceFolderChanged(string? value)
     {
-        SelectOutputFolderCommand.NotifyCanExecuteChanged();
         ResetOutputFolderCommand.NotifyCanExecuteChanged();
     }
 
