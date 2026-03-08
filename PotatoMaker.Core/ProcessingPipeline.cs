@@ -19,10 +19,12 @@ public class ProcessingPipeline
 
     public ProcessingPipeline(
         string inputPath, VideoInfo info, EncodeSettings settings,
-        ILogger<ProcessingPipeline> logger, IProgress<EncodeProgress>? progress = null)
+        ILogger<ProcessingPipeline> logger, IProgress<EncodeProgress>? progress = null, string? outputDirectory = null)
     {
         _inputPath  = inputPath;
-        _outputDir  = Path.GetDirectoryName(Path.GetFullPath(inputPath)) ?? ".";
+        _outputDir  = string.IsNullOrWhiteSpace(outputDirectory)
+            ? Path.GetDirectoryName(Path.GetFullPath(inputPath)) ?? "."
+            : Path.GetFullPath(outputDirectory);
         _outputBase = Path.GetFileNameWithoutExtension(inputPath);
         _info       = info;
         _settings   = settings;
@@ -32,6 +34,8 @@ public class ProcessingPipeline
 
     public async Task RunAsync(CancellationToken ct = default)
     {
+        Directory.CreateDirectory(_outputDir);
+
         double durationSecs   = _info.Duration.TotalSeconds;
         long   inputSizeBytes = new FileInfo(_inputPath).Length;
         int    origWidth      = _info.Width;

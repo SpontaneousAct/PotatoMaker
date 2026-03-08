@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="150"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="130"
              x:Class="PotatoMaker.GUI.Views.FileInputView"
              x:DataType="vm:FileInputViewModel">
 
@@ -13,11 +13,11 @@
 
     <Border x:Name="DropZone"
             Classes="pm-card pm-dropzone"
-            Padding="14"
-            MinHeight="150"
+            Padding="10"
+            MinHeight="106"
             DragDrop.AllowDrop="True">
         <Grid RowDefinitions="Auto,Auto,Auto"
-              RowSpacing="8">
+              RowSpacing="5">
             <TextBlock Grid.Row="0"
                        Text="Source Video"
                        Classes="pm-section-title"/>
@@ -60,13 +60,13 @@
 
             <Grid Grid.Row="2"
                   ColumnDefinitions="Auto,*"
-                  ColumnSpacing="10">
+                  ColumnSpacing="8">
                 <Button Grid.Column="0"
-                        Content="Browse"
+                        Content="Browse..."
                         Command="{Binding SelectFileCommand}"
                         Classes="pm-primary"/>
                 <TextBlock Grid.Column="1"
-                           Text="Drop to replace. Supported: mp4, mkv, avi, mov, webm, wmv, flv"
+                           Text="Drag and drop a video here, or browse."
                            VerticalAlignment="Center"
                            Classes="pm-muted"
                            TextTrimming="CharacterEllipsis"/>

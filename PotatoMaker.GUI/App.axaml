@@ -12,35 +12,35 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="PmWindowBackground">#FFF4F7FB</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmWindowBackground">#FFF2F4F8</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCardBackground">#FFFFFFFF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmCardBorderBrush">#FFD6DEEA</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCardBorderBrush">#FFD7DCE5</SolidColorBrush>
                     <LinearGradientBrush x:Key="PmHeroBackground" StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FFE5F0FF" Offset="0"/>
-                        <GradientStop Color="#FFD7E7FF" Offset="1"/>
+                        <GradientStop Color="#FFEAF1FA" Offset="0"/>
+                        <GradientStop Color="#FFDEE8F5" Offset="1"/>
                     </LinearGradientBrush>
-                    <SolidColorBrush x:Key="PmHeroBorderBrush">#FFAFC7EE</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmHeadingForeground">#FF152130</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSectionTitleForeground">#FF1E2B3D</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmMutedForeground">#FF4B5E78</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHeroBorderBrush">#FFC8D7EA</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHeadingForeground">#FF151D2B</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSectionTitleForeground">#FF223045</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmMutedForeground">#FF5A667B</SolidColorBrush>
 
-                    <SolidColorBrush x:Key="PmPrimaryBackground">#FF2F6DF5</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF3F7AF7</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryPressed">#FF1F5CDD</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryBorder">#FF5C8EF8</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FFE0E7F2</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FFD0D9E8</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF7C8EA7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryBackground">#FF176FE5</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF267BEF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPressed">#FF0E5EC8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryBorder">#FF3A86EA</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FFE4E8EF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FFD3D9E4</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF7A8699</SolidColorBrush>
 
-                    <SolidColorBrush x:Key="PmDropzoneBackground">#FFF8FBFF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmDropzoneBorderBrush">#FF9DB6D9</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmDropzoneDragBackground">#FFE8F1FF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmDropzoneDragBorderBrush">#FF5A88DC</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneBackground">#FFF6F9FD</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneBorderBrush">#FFB4C3D8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBackground">#FFE9F1FB</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBorderBrush">#FF4E7EB8</SolidColorBrush>
 
-                    <SolidColorBrush x:Key="PmStatBackground">#FFF8FBFF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatBorderBrush">#FFD4E0F0</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmInsetBackground">#FFF2F7FF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmInsetBorderBrush">#FFD5E1F0</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatBackground">#FFF6F8FB</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatBorderBrush">#FFD6DEE9</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBackground">#FFF4F7FB</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBorderBrush">#FFD6DEE8</SolidColorBrush>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Dark">
@@ -89,7 +89,7 @@
             <Setter Property="Background" Value="{DynamicResource PmCardBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmCardBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="CornerRadius" Value="12"/>
         </Style>
 
         <Style Selector="Border.pm-hero">
@@ -98,15 +98,15 @@
         </Style>
 
         <Style Selector="TextBlock.pm-heading">
-            <Setter Property="FontFamily" Value="Cascadia Code,Consolas,monospace"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="FontFamily" Value="Bahnschrift,Segoe UI Semibold"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="24"/>
             <Setter Property="Foreground" Value="{DynamicResource PmHeadingForeground}"/>
         </Style>
 
         <Style Selector="TextBlock.pm-section-title">
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
 
@@ -115,13 +115,21 @@
             <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
         </Style>
 
+        <Style Selector="Button">
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
         <Style Selector="Button.pm-primary">
             <Setter Property="Background" Value="{DynamicResource PmPrimaryBackground}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
 
@@ -142,8 +150,8 @@
         <Style Selector="Border.pm-dropzone">
             <Setter Property="Background" Value="{DynamicResource PmDropzoneBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmDropzoneBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
         </Style>
 
         <Style Selector="Border.pm-dropzone.drag-over">
@@ -155,8 +163,8 @@
             <Setter Property="Background" Value="{DynamicResource PmStatBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmStatBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="8"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Padding" Value="7"/>
             <Setter Property="MinWidth" Value="0"/>
         </Style>
     </Application.Styles>

@@ -8,19 +8,20 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="PotatoMaker"
-        Width="820" MinWidth="700"
-        Height="680" MinHeight="620">
+        Width="960"
+        Height="680"
+        CanResize="False">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid Margin="16"
-          RowDefinitions="Auto,Auto,Auto,Auto,*"
+    <Grid Margin="14"
+          RowDefinitions="Auto,Auto,*"
           RowSpacing="10">
         <Border Grid.Row="0"
                 Classes="pm-card pm-hero"
-                Padding="14,12">
+                Padding="10,8">
             <DockPanel LastChildFill="True">
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
@@ -52,36 +53,32 @@
             </DockPanel>
         </Border>
 
-        <ContentControl Grid.Row="1"
-                        Content="{Binding FileInput}"/>
-
-        <Grid Grid.Row="2"
+        <Grid Grid.Row="1"
               ColumnDefinitions="2*,*"
               ColumnSpacing="10">
-            <ContentControl Grid.Column="0"
-                            Content="{Binding VideoSummary}"/>
-            <ContentControl Grid.Column="1"
-                            Content="{Binding OutputSettings}"/>
-        </Grid>
+            <StackPanel Grid.Column="0"
+                        Spacing="10">
+                <ContentControl Content="{Binding FileInput}"/>
+                <ContentControl Content="{Binding VideoSummary}"/>
+            </StackPanel>
 
-        <Border Grid.Row="3"
-                Classes="pm-card"
-                Padding="10,8">
-            <Grid ColumnDefinitions="*,Auto"
-                  ColumnSpacing="10">
-                <TextBlock Grid.Column="0"
-                           Text="Output files are written next to the selected source file."
-                           Classes="pm-muted"
-                           VerticalAlignment="Center"/>
-                <Button Grid.Column="1"
+            <Grid Grid.Column="1"
+                  RowDefinitions="Auto,*"
+                  RowSpacing="10"
+                  VerticalAlignment="Stretch">
+                <ContentControl Grid.Row="0"
+                                Content="{Binding OutputSettings}"/>
+                <Button Grid.Row="1"
                         Content="Start Compression"
                         Command="{Binding StartEncodeCommand}"
-                        MinWidth="190"
+                        MinHeight="38"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Stretch"
                         Classes="pm-primary"/>
             </Grid>
-        </Border>
+        </Grid>
 
-        <ContentControl Grid.Row="4"
+        <ContentControl Grid.Row="2"
                         Content="{Binding ConversionLog}"/>
     </Grid>
 </Window>

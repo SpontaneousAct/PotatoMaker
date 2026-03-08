@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="120"
+             mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="150"
              x:Class="PotatoMaker.GUI.Views.VideoSummaryView"
              x:DataType="vm:VideoSummaryViewModel">
 
@@ -12,14 +12,17 @@
     </Design.DataContext>
 
     <Border Classes="pm-card"
-            Padding="12">
-        <StackPanel Spacing="8">
-            <TextBlock Text="Video Summary"
+            Padding="10">
+        <StackPanel Spacing="6">
+            <TextBlock Text="Video"
                        Classes="pm-section-title"/>
 
-            <Grid ColumnDefinitions="*,*,*,*"
+            <Grid ColumnDefinitions="*,*"
+                  RowDefinitions="Auto,Auto"
+                  RowSpacing="8"
                   ColumnSpacing="8">
-                <Border Grid.Column="0"
+                <Border Grid.Row="0"
+                        Grid.Column="0"
                         Classes="pm-stat">
                     <StackPanel Spacing="2">
                         <TextBlock Text="Size" Classes="pm-muted"/>
@@ -27,7 +30,8 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="1"
+                <Border Grid.Row="0"
+                        Grid.Column="1"
                         Classes="pm-stat">
                     <StackPanel Spacing="2">
                         <TextBlock Text="Duration" Classes="pm-muted"/>
@@ -35,7 +39,8 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="2"
+                <Border Grid.Row="1"
+                        Grid.Column="0"
                         Classes="pm-stat">
                     <StackPanel Spacing="2">
                         <TextBlock Text="Resolution" Classes="pm-muted"/>
@@ -43,7 +48,8 @@
                     </StackPanel>
                 </Border>
 
-                <Border Grid.Column="3"
+                <Border Grid.Row="1"
+                        Grid.Column="1"
                         Classes="pm-stat">
                     <StackPanel Spacing="2">
                         <TextBlock Text="FPS" Classes="pm-muted"/>

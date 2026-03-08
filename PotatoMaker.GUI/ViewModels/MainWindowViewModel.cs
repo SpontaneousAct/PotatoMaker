@@ -27,8 +27,6 @@ public partial class MainWindowViewModel : ViewModelBase
     private CancellationTokenSource? _cts;
     private bool _isApplyingSettings;
 
-    public string? LastOutputFolder { get; private set; }
-
     public MainWindowViewModel(AppSettings? initialSettings = null)
     {
         FileInput.FileSelected += OnFileSelected;
@@ -62,10 +60,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var logger   = new ViewModelLogger(ConversionLog);
         var progress = new ViewModelProgressHandler(ConversionLog);
+        var outputFolder = OutputSettings.OutputFolderPath
+            ?? Path.GetDirectoryName(Path.GetFullPath(path))
+            ?? ".";
 
         try
         {
-            var pipeline = new ProcessingPipeline(path, info, settings, logger, progress);
+            var pipeline = new ProcessingPipeline(path, info, settings, logger, progress, outputDirectory: outputFolder);
             await pipeline.RunAsync(_cts.Token);
             ConversionLog.AddLog("Done!");
         }
@@ -93,8 +94,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            LastOutputFolder = Path.GetDirectoryName(Path.GetFullPath(path));
-            SaveSettingsSafely();
+            OutputSettings.SetSourceFolder(Path.GetDirectoryName(Path.GetFullPath(path)));
 
             VideoSummary.Clear();
             await VideoSummary.ProbeAsync(path);
@@ -108,6 +108,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void OnFileCleared()
     {
+        OutputSettings.SetSourceFolder(null);
         VideoSummary.Clear();
     }
 
@@ -128,7 +129,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void OnOutputSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(OutputSettingsViewModel.UseCpuEncoder))
+        if (e.PropertyName is nameof(OutputSettingsViewModel.UseCpuEncoder) or nameof(OutputSettingsViewModel.CustomOutputFolder))
             SaveSettingsSafely();
     }
 
@@ -142,7 +143,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _isApplyingSettings = true;
         try
         {
-            LastOutputFolder = loaded.LastOutputFolder;
+            OutputSettings.CustomOutputFolder = loaded.LastOutputFolder;
             OutputSettings.UseCpuEncoder = loaded.UseCpuEncoder;
             IsDarkMode = loaded.IsDarkMode;
         }
@@ -170,7 +171,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             IsDarkMode = IsDarkMode,
             UseCpuEncoder = OutputSettings.UseCpuEncoder,
-            LastOutputFolder = LastOutputFolder
+            LastOutputFolder = OutputSettings.CustomOutputFolder
         };
 
         return SettingsService.SaveAsync(settings);
