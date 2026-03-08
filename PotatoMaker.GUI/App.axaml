@@ -3,57 +3,122 @@
              x:Class="PotatoMaker.GUI.App"
              xmlns:local="using:PotatoMaker.GUI"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-  
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="PmWindowBackground">#FFF4F7FB</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCardBackground">#FFFFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCardBorderBrush">#FFD6DEEA</SolidColorBrush>
+                    <LinearGradientBrush x:Key="PmHeroBackground" StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FFE5F0FF" Offset="0"/>
+                        <GradientStop Color="#FFD7E7FF" Offset="1"/>
+                    </LinearGradientBrush>
+                    <SolidColorBrush x:Key="PmHeroBorderBrush">#FFAFC7EE</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHeadingForeground">#FF152130</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSectionTitleForeground">#FF1E2B3D</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmMutedForeground">#FF4B5E78</SolidColorBrush>
+
+                    <SolidColorBrush x:Key="PmPrimaryBackground">#FF2F6DF5</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF3F7AF7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPressed">#FF1F5CDD</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryBorder">#FF5C8EF8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FFE0E7F2</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FFD0D9E8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF7C8EA7</SolidColorBrush>
+
+                    <SolidColorBrush x:Key="PmDropzoneBackground">#FFF8FBFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneBorderBrush">#FF9DB6D9</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBackground">#FFE8F1FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBorderBrush">#FF5A88DC</SolidColorBrush>
+
+                    <SolidColorBrush x:Key="PmStatBackground">#FFF8FBFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatBorderBrush">#FFD4E0F0</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBackground">#FFF2F7FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBorderBrush">#FFD5E1F0</SolidColorBrush>
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="PmWindowBackground">#FF0E1116</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCardBackground">#FF1A202A</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCardBorderBrush">#FF2A3342</SolidColorBrush>
+                    <LinearGradientBrush x:Key="PmHeroBackground" StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FF243448" Offset="0"/>
+                        <GradientStop Color="#FF161E29" Offset="1"/>
+                    </LinearGradientBrush>
+                    <SolidColorBrush x:Key="PmHeroBorderBrush">#FF3A4D67</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHeadingForeground">#FFF2F7FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSectionTitleForeground">#FFE7EDF7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmMutedForeground">#FFD3DCEC</SolidColorBrush>
+
+                    <SolidColorBrush x:Key="PmPrimaryBackground">#FF3A7AFE</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF4A86FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPressed">#FF2A68E8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryBorder">#FF5A91FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FF2A3342</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FF2A3342</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF98A6BB</SolidColorBrush>
+
+                    <SolidColorBrush x:Key="PmDropzoneBackground">#FF151B25</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneBorderBrush">#FF41506A</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBackground">#FF1E2A3A</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBorderBrush">#FF5F95FF</SolidColorBrush>
+
+                    <SolidColorBrush x:Key="PmStatBackground">#FF121821</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatBorderBrush">#FF273143</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBackground">#FF0F141C</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBorderBrush">#FF273143</SolidColorBrush>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
+
         <Style Selector="Window">
-            <Setter Property="Background" Value="#0E1116"/>
+            <Setter Property="Background" Value="{DynamicResource PmWindowBackground}"/>
         </Style>
 
         <Style Selector="Border.pm-card">
-            <Setter Property="Background" Value="#1A202A"/>
-            <Setter Property="BorderBrush" Value="#2A3342"/>
+            <Setter Property="Background" Value="{DynamicResource PmCardBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCardBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="14"/>
         </Style>
 
         <Style Selector="Border.pm-hero">
-            <Setter Property="Background">
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#243448" Offset="0"/>
-                    <GradientStop Color="#161E29" Offset="1"/>
-                </LinearGradientBrush>
-            </Setter>
-            <Setter Property="BorderBrush" Value="#3A4D67"/>
+            <Setter Property="Background" Value="{DynamicResource PmHeroBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmHeroBorderBrush}"/>
         </Style>
 
         <Style Selector="TextBlock.pm-heading">
             <Setter Property="FontFamily" Value="Cascadia Code,Consolas,monospace"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="28"/>
-            <Setter Property="Foreground" Value="#F2F7FF"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmHeadingForeground}"/>
         </Style>
 
         <Style Selector="TextBlock.pm-section-title">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="15"/>
-            <Setter Property="Foreground" Value="#E7EDF7"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
 
         <Style Selector="TextBlock.pm-muted">
             <Setter Property="Opacity" Value="0.75"/>
-            <Setter Property="Foreground" Value="#D3DCEC"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
         </Style>
 
         <Style Selector="Button.pm-primary">
-            <Setter Property="Background" Value="#3A7AFE"/>
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryBackground}"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#5A91FF"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="14,10"/>
@@ -61,34 +126,34 @@
         </Style>
 
         <Style Selector="Button.pm-primary:pointerover">
-            <Setter Property="Background" Value="#4A86FF"/>
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryPointerOver}"/>
         </Style>
 
         <Style Selector="Button.pm-primary:pressed">
-            <Setter Property="Background" Value="#2A68E8"/>
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryPressed}"/>
         </Style>
 
         <Style Selector="Button.pm-primary:disabled">
-            <Setter Property="Background" Value="#2A3342"/>
-            <Setter Property="BorderBrush" Value="#2A3342"/>
-            <Setter Property="Foreground" Value="#98A6BB"/>
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
         </Style>
 
         <Style Selector="Border.pm-dropzone">
-            <Setter Property="Background" Value="#151B25"/>
-            <Setter Property="BorderBrush" Value="#41506A"/>
+            <Setter Property="Background" Value="{DynamicResource PmDropzoneBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmDropzoneBorderBrush}"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="CornerRadius" Value="16"/>
         </Style>
 
         <Style Selector="Border.pm-dropzone.drag-over">
-            <Setter Property="Background" Value="#1E2A3A"/>
-            <Setter Property="BorderBrush" Value="#5F95FF"/>
+            <Setter Property="Background" Value="{DynamicResource PmDropzoneDragBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmDropzoneDragBorderBrush}"/>
         </Style>
 
         <Style Selector="Border.pm-stat">
-            <Setter Property="Background" Value="#121821"/>
-            <Setter Property="BorderBrush" Value="#273143"/>
+            <Setter Property="Background" Value="{DynamicResource PmStatBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmStatBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="8"/>

@@ -22,14 +22,23 @@
                 Classes="pm-card pm-hero"
                 Padding="14,12">
             <DockPanel LastChildFill="True">
-                <Border DockPanel.Dock="Right"
-                        Padding="8,4"
-                        CornerRadius="8"
-                        Background="#151E2A">
-                    <TextBlock Text="{Binding VersionText}"
-                               Opacity="0.8"
-                               VerticalAlignment="Center"/>
-                </Border>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <ToggleSwitch IsChecked="{Binding IsDarkMode}"
+                                  OnContent="Dark"
+                                  OffContent="Light"/>
+                    <Border Padding="8,4"
+                            CornerRadius="8"
+                            Background="{DynamicResource PmInsetBackground}"
+                            BorderBrush="{DynamicResource PmInsetBorderBrush}"
+                            BorderThickness="1">
+                        <TextBlock Text="{Binding VersionText}"
+                                   Opacity="0.8"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
 
                 <StackPanel Orientation="Horizontal"
                             Spacing="10">

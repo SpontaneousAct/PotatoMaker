@@ -23,8 +23,8 @@
                        Classes="pm-section-title"/>
 
             <Border Grid.Row="1"
-                    Background="#11161E"
-                    BorderBrush="#2A3342"
+                    Background="{DynamicResource PmInsetBackground}"
+                    BorderBrush="{DynamicResource PmInsetBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="10"
                     Padding="10,8">

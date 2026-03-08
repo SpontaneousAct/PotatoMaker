@@ -45,8 +45,8 @@
             </Grid>
 
             <Border Grid.Row="2"
-                    Background="#0F141C"
-                    BorderBrush="#273143"
+                    Background="{DynamicResource PmInsetBackground}"
+                    BorderBrush="{DynamicResource PmInsetBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="10"
                     Padding="8">

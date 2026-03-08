@@ -1,4 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.Input;
+using Avalonia;
+using Avalonia.Styling;
+using CommunityToolkit.Mvvm.ComponentModel;
 using PotatoMaker.Core;
 using PotatoMaker.GUI.Services;
 using System;
@@ -16,11 +19,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public string VersionText => $"v{GetType().Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
 
+    [ObservableProperty]
+    private bool _isDarkMode;
+
     private CancellationTokenSource? _cts;
 
     public MainWindowViewModel()
     {
         FileInput.FileSelected += OnFileSelected;
+        IsDarkMode = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
     }
 
     [RelayCommand(CanExecute = nameof(CanStartEncode))]
@@ -85,5 +92,11 @@ public partial class MainWindowViewModel : ViewModelBase
             VideoSummary.Clear();
             ConversionLog.AddLog($"Error probing file: {ex.Message}");
         }
+    }
+
+    partial void OnIsDarkModeChanged(bool value)
+    {
+        if (Application.Current is null) return;
+        Application.Current.RequestedThemeVariant = value ? ThemeVariant.Dark : ThemeVariant.Light;
     }
 }
