@@ -27,6 +27,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         FileInput.FileSelected += OnFileSelected;
+        FileInput.FileCleared += OnFileCleared;
         IsDarkMode = Application.Current?.ActualThemeVariant == ThemeVariant.Dark;
     }
 
@@ -92,6 +93,12 @@ public partial class MainWindowViewModel : ViewModelBase
             VideoSummary.Clear();
             ConversionLog.AddLog($"Error probing file: {ex.Message}");
         }
+    }
+
+    private void OnFileCleared()
+    {
+        VideoSummary.Clear();
+        StartEncodeCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnIsDarkModeChanged(bool value)

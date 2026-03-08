@@ -28,8 +28,9 @@
                     BorderThickness="1"
                     CornerRadius="10"
                     Padding="10,8">
-                <Grid ColumnDefinitions="Auto,*"
-                      ColumnSpacing="8">
+                <Grid ColumnDefinitions="Auto,*,24"
+                      ColumnSpacing="8"
+                      MinHeight="24">
                     <TextBlock Grid.Column="0"
                                Text="File:"
                                Classes="pm-muted"
@@ -39,6 +40,21 @@
                                FontWeight="SemiBold"
                                TextTrimming="CharacterEllipsis"
                                VerticalAlignment="Center"/>
+                    <Button Grid.Column="2"
+                            Content="X"
+                            Command="{Binding ClearFileCommand}"
+                            IsVisible="{Binding HasFile}"
+                            Width="24"
+                            Height="24"
+                            MinWidth="24"
+                            MinHeight="24"
+                            Padding="0"
+                            FontWeight="Bold"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Remove selected file"/>
                 </Grid>
             </Border>
 

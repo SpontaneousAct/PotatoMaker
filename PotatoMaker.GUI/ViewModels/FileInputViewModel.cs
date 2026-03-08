@@ -25,11 +25,24 @@ public partial class FileInputViewModel : ViewModelBase
     /// Raised after a valid file path has been set so the parent can coordinate probing.
     /// </summary>
     public event Action<string>? FileSelected;
+    public event Action? FileCleared;
 
     [RelayCommand]
     private void SelectFile()
     {
         FilePickerRequested?.Invoke();
+    }
+
+    [RelayCommand(CanExecute = nameof(HasFile))]
+    private void ClearFile()
+    {
+        Clear();
+        FileCleared?.Invoke();
+    }
+
+    partial void OnInputFilePathChanged(string? value)
+    {
+        ClearFileCommand.NotifyCanExecuteChanged();
     }
 
     public void SetFile(string path)
