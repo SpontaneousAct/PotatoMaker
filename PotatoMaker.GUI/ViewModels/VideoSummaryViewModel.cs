@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using PotatoMaker.Core;
@@ -19,34 +20,41 @@ public partial class VideoSummaryViewModel : ViewModelBase
     /// </summary>
     public VideoInfo? Info { get; private set; }
 
-    public async Task ProbeAsync(string path)
+    public async Task ProbeAsync(string path, CancellationToken ct = default)
     {
         try
         {
-            FileSize = FormatFileSize(new FileInfo(path).Length);
-
-            var info = await VideoInfo.ProbeAsync(path);
-            Info = info;
-
-            Duration = info.Duration.TotalHours >= 1
-                ? info.Duration.ToString(@"h\:mm\:ss")
-                : info.Duration.ToString(@"m\:ss");
-
-            Resolution = info.Width > 0
-                ? $"{info.Width}×{info.Height}"
-                : "N/A";
-
-            FrameRate = info.FrameRate > 0
-                ? $"{info.FrameRate:0.##} fps"
-                : "N/A";
-
-            HasData = true;
+            var info = await VideoInfo.ProbeAsync(path, ct);
+            SetProbeResult(path, info);
         }
         catch (Exception)
         {
             Clear();
             throw; // let the caller handle logging
         }
+    }
+
+    public void SetProbeResult(string path, VideoInfo info)
+    {
+        FileSize = File.Exists(path)
+            ? FormatFileSize(new FileInfo(path).Length)
+            : "N/A";
+
+        Info = info;
+
+        Duration = info.Duration.TotalHours >= 1
+            ? info.Duration.ToString(@"h\:mm\:ss")
+            : info.Duration.ToString(@"m\:ss");
+
+        Resolution = info.Width > 0
+            ? $"{info.Width}×{info.Height}"
+            : "N/A";
+
+        FrameRate = info.FrameRate > 0
+            ? $"{info.FrameRate:0.##} fps"
+            : "N/A";
+
+        HasData = true;
     }
 
     public void Clear()

@@ -47,9 +47,13 @@ public partial class FileInputViewModel : ViewModelBase
 
     public void SetFile(string path)
     {
-        InputFilePath = path;
-        FileName = Path.GetFileName(path);
-        FileSelected?.Invoke(path);
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return;
+
+        string fullPath = Path.GetFullPath(path);
+        InputFilePath = fullPath;
+        FileName = Path.GetFileName(fullPath);
+        FileSelected?.Invoke(fullPath);
     }
 
     public void Clear()

@@ -25,6 +25,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _isDarkMode;
 
     private CancellationTokenSource? _cts;
+    private CancellationTokenSource? _probeCts;
+    private int _probeVersion;
     private bool _isApplyingSettings;
 
     public MainWindowViewModel(AppSettings? initialSettings = null)
@@ -92,24 +94,57 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private async void OnFileSelected(string path)
     {
+        CancelPendingProbe();
+        var probeCts = new CancellationTokenSource();
+        _probeCts = probeCts;
+        int probeVersion = Interlocked.Increment(ref _probeVersion);
+
         try
         {
             OutputSettings.SetSourceFolder(Path.GetDirectoryName(Path.GetFullPath(path)));
 
             VideoSummary.Clear();
-            await VideoSummary.ProbeAsync(path);
+            var info = await VideoInfo.ProbeAsync(path, probeCts.Token);
+
+            if (probeCts.IsCancellationRequested ||
+                probeVersion != _probeVersion ||
+                !string.Equals(FileInput.InputFilePath, path, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            VideoSummary.SetProbeResult(path, info);
+        }
+        catch (OperationCanceledException) when (probeCts.IsCancellationRequested)
+        {
         }
         catch (Exception ex)
         {
+            if (probeVersion != _probeVersion) return;
             VideoSummary.Clear();
             ConversionLog.AddLog($"Error probing file: {ex.Message}");
+        }
+        finally
+        {
+            if (ReferenceEquals(_probeCts, probeCts))
+                _probeCts = null;
+
+            probeCts.Dispose();
         }
     }
 
     private void OnFileCleared()
     {
+        CancelPendingProbe();
         OutputSettings.SetSourceFolder(null);
         VideoSummary.Clear();
+    }
+
+    private void CancelPendingProbe()
+    {
+        _probeCts?.Cancel();
+        _probeCts?.Dispose();
+        _probeCts = null;
     }
 
     private void OnEncodePrerequisiteChanged(object? sender, PropertyChangedEventArgs e)

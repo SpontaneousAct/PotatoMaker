@@ -82,6 +82,8 @@ public static class VideoEncoder
     {
         string statsBase = Path.Combine(Path.GetTempPath(), $"pm_{Guid.NewGuid():N}");
         string statsArg  = statsBase.Replace("\\", "/");
+        string statsDir  = Path.GetDirectoryName(statsBase) ?? Path.GetTempPath();
+        string statsName = Path.GetFileName(statsBase);
 
         var progressDuration = job.SegmentSecs.HasValue
             ? TimeSpan.FromSeconds(job.SegmentSecs.Value)
@@ -150,7 +152,7 @@ public static class VideoEncoder
         }
         finally
         {
-            foreach (string f in Directory.GetFiles(Path.GetTempPath(), $"pm_*.log*"))
+            foreach (string f in Directory.EnumerateFiles(statsDir, $"{statsName}*"))
                 try { File.Delete(f); } catch {  }
         }
     }
