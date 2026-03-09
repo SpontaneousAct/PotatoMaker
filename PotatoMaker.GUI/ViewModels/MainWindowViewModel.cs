@@ -2,6 +2,7 @@
 using Avalonia;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging.Abstractions;
 using PotatoMaker.Core;
 using PotatoMaker.GUI.Services;
 using System;
@@ -46,20 +47,15 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var info = VideoSummary.Info;
         var path = FileInput.InputFilePath;
-        if (info is null || path is null) return;
+        var analysis = VideoSummary.StrategyAnalysis;
+        if (info is null || path is null || analysis is null) return;
 
         _cts = new CancellationTokenSource();
 
         ConversionLog.Clear();
         ConversionLog.IsProcessing = true;
 
-        var settings = new EncodeSettings
-        {
-            Encoder = OutputSettings.UseCpuEncoder
-                ? EncoderChoice.SvtAv1
-                : EncoderChoice.Nvenc
-        };
-
+        var settings = BuildEncodeSettings();
         var logger   = new ViewModelLogger(ConversionLog);
         var progress = new ViewModelProgressHandler(ConversionLog);
         var outputFolder = OutputSettings.OutputFolderPath
@@ -69,7 +65,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             var pipeline = new ProcessingPipeline(path, info, settings, logger, progress, outputDirectory: outputFolder);
-            await pipeline.RunAsync(_cts.Token);
+            await pipeline.RunAsync(analysis, _cts.Token);
             ConversionLog.AddLog("Done!");
         }
         catch (OperationCanceledException)
@@ -90,7 +86,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private bool CanStartEncode() => FileInput.HasFile && VideoSummary.HasData && !ConversionLog.IsProcessing;
+    private bool CanStartEncode() => FileInput.HasFile && VideoSummary.HasData && VideoSummary.HasStrategy && !ConversionLog.IsProcessing;
 
     private async void OnFileSelected(string path)
     {
@@ -114,6 +110,19 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             VideoSummary.SetProbeResult(path, info);
+
+            VideoSummary.SetStrategyPending();
+            var settings = BuildEncodeSettings();
+            var analysis = await StrategyAnalyzer.AnalyzeAsync(path, info, settings, NullLogger.Instance, probeCts.Token);
+
+            if (probeCts.IsCancellationRequested ||
+                probeVersion != _probeVersion ||
+                !string.Equals(FileInput.InputFilePath, path, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            VideoSummary.SetStrategyResult(analysis);
         }
         catch (OperationCanceledException) when (probeCts.IsCancellationRequested)
         {
@@ -121,8 +130,16 @@ public partial class MainWindowViewModel : ViewModelBase
         catch (Exception ex)
         {
             if (probeVersion != _probeVersion) return;
-            VideoSummary.Clear();
-            ConversionLog.AddLog($"Error probing file: {ex.Message}");
+            if (VideoSummary.Info is null)
+            {
+                VideoSummary.Clear();
+                ConversionLog.AddLog($"Error probing file: {ex.Message}");
+            }
+            else
+            {
+                VideoSummary.ClearStrategy();
+                ConversionLog.AddLog($"Error building strategy preview: {ex.Message}");
+            }
         }
         finally
         {
@@ -149,7 +166,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void OnEncodePrerequisiteChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(FileInputViewModel.HasFile) or nameof(VideoSummaryViewModel.HasData) or nameof(ConversionLogViewModel.IsProcessing))
+        if (e.PropertyName is nameof(FileInputViewModel.HasFile) or nameof(VideoSummaryViewModel.HasData) or nameof(VideoSummaryViewModel.HasStrategy) or nameof(ConversionLogViewModel.IsProcessing))
             StartEncodeCommand.NotifyCanExecuteChanged();
     }
 
@@ -167,6 +184,13 @@ public partial class MainWindowViewModel : ViewModelBase
         if (e.PropertyName is nameof(OutputSettingsViewModel.UseCpuEncoder) or nameof(OutputSettingsViewModel.CustomOutputFolder))
             SaveSettingsSafely();
     }
+
+    private EncodeSettings BuildEncodeSettings() => new()
+    {
+        Encoder = OutputSettings.UseCpuEncoder
+            ? EncoderChoice.SvtAv1
+            : EncoderChoice.Nvenc
+    };
 
     private void ApplyInitialSettings(AppSettings? settings)
     {

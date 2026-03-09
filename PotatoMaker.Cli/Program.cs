@@ -62,8 +62,12 @@ class Program
             var info = await VideoInfo.ProbeAsync(inputPath, cts.Token);
             logger.LogInformation(PipelineEvents.Success, "Probe complete.");
 
+            logger.LogInformation("Analyzing crop + strategy...");
+            var analysis = await StrategyAnalyzer.AnalyzeAsync(inputPath, info, settings, logger, cts.Token);
+            logger.LogInformation(PipelineEvents.Success, "Strategy ready.");
+
             var pipeline = new ProcessingPipeline(inputPath, info, settings, logger, progress);
-            await pipeline.RunAsync(cts.Token);
+            await pipeline.RunAsync(analysis, cts.Token);
             return 0;
         }
         catch (OperationCanceledException)

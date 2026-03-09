@@ -4,6 +4,24 @@ public static class EncodePlanner
 {
     public record EncodePlan(int VideoBitrateKbps, int Parts, string? ScaleFilter, string ResolutionLabel);
 
+    public static int ResolveSourceHeightForPlan(int originalHeight, string? cropFilter)
+    {
+        if (originalHeight <= 0 || string.IsNullOrWhiteSpace(cropFilter))
+            return originalHeight;
+
+        string filter = cropFilter.Trim();
+        if (!filter.StartsWith("crop=", StringComparison.OrdinalIgnoreCase))
+            return originalHeight;
+
+        string[] segments = filter["crop=".Length..].Split(':');
+        if (segments.Length != 4)
+            return originalHeight;
+
+        return int.TryParse(segments[1], out int cropHeight) && cropHeight > 0
+            ? Math.Min(cropHeight, originalHeight)
+            : originalHeight;
+    }
+
     public static EncodePlan PlanStrategy(double durationSecs, int origHeight, EncodeSettings settings)
     {
         int bitrate = CalculateVideoBitrate(durationSecs, settings);

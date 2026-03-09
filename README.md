@@ -27,7 +27,7 @@ https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new
 
 ```text
 PotatoMaker/
-|- PotatoMaker.Core/   # Shared probe/crop/plan/encode pipeline
+|- PotatoMaker.Core/   # Shared probe/crop/strategy/encode components
 |- PotatoMaker.Cli/    # CLI front-end (assembly name: potatomaker)
 |- PotatoMaker.GUI/    # Avalonia desktop front-end
 |- PotatoMaker.slnx
@@ -64,6 +64,7 @@ dotnet run --project PotatoMaker.GUI
 ```
 
 In the GUI, pick a file, review the probe summary, optionally enable CPU mode, and start encoding.
+The GUI also shows a precomputed strategy preview (crop/filter, bitrate, resolution, parts) before encoding starts.
 
 ## Publish
 
@@ -94,13 +95,15 @@ Outputs are written next to the input file.
 
 ## Pipeline Overview
 
-1. Probe input media (duration, resolution, metadata)
-2. Detect crop (optional) using FFmpeg `cropdetect`
-3. Plan bitrate/resolution/splitting against target size budget
-4. Encode with AV1:
+1. Preflight (run once):
+   - Probe input media (`VideoInfo.ProbeAsync`)
+   - Detect crop (optional) using FFmpeg `cropdetect` (`CropDetector.DetectAsync`)
+   - Plan bitrate/resolution/splitting (`EncodePlanner.PlanStrategy`)
+   - Combined helper: `StrategyAnalyzer.AnalyzeAsync`
+2. Encode with AV1 (`ProcessingPipeline.RunAsync(strategy, ...)`) using precomputed strategy:
    - `av1_nvenc` single-pass constrained VBR, or
    - `libsvtav1` two-pass (with temp passlog files)
-5. Write MP4 with `+faststart`
+3. Write MP4 with `+faststart`
 
 Default planning values (from `EncodeSettings`):
 
