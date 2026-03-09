@@ -44,13 +44,16 @@ public static class EncodePlanner
 
         int parts = 1;
 
-        while (bitrate < settings.HdFloorKbps && parts < settings.MaxParts)
+        // In split mode we target the 1080p tier, since each part gets its own size budget.
+        while (bitrate < settings.FullHdFloorKbps && parts < settings.MaxParts)
         {
             parts++;
             bitrate = CalculateVideoBitrate(durationSecs / parts, settings);
         }
 
-        bitrate = Math.Max(bitrate, settings.MinVideoBitrateKbps);
+        // Keep the plan within the size budget even for very long clips.
+        // The "minimum bitrate" setting is a quality preference, not a hard size override.
+        bitrate = Math.Max(1, bitrate);
 
         string splitLabel = origHeight <= 1080
             ? $"{Math.Min(origHeight, 1080)}p, {parts} parts"

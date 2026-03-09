@@ -68,10 +68,10 @@ public class ProcessingPipeline
         _logger.LogInformation("  Bitrate       : {Bitrate} kbps", encodePlan.VideoBitrateKbps);
         _logger.LogInformation("  Files         : {Parts}", encodePlan.Parts);
 
-        if (encodePlan.VideoBitrateKbps <= _settings.MinVideoBitrateKbps)
+        if (encodePlan.VideoBitrateKbps < _settings.MinVideoBitrateKbps)
         {
-            _logger.LogError("  Video bitrate : {Bitrate} kbps - clamped to {Min} kbps", encodePlan.VideoBitrateKbps, _settings.MinVideoBitrateKbps);
-            _logger.LogError("  Warning: clip is very long - output quality will be poor.");
+            _logger.LogWarning("  Video bitrate : {Bitrate} kbps - below preferred minimum {Min} kbps to stay within size target", encodePlan.VideoBitrateKbps, _settings.MinVideoBitrateKbps);
+            _logger.LogWarning("  Warning: clip is very long - output quality will be poor.");
         }
         else
         {
