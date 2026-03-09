@@ -48,11 +48,10 @@ class Program
             return 1;
         }
 
-        string inputPath = positional[0].Trim('"');
-
-        if (!File.Exists(inputPath))
+        string inputPath = Path.GetFullPath(positional[0].Trim('"'));
+        if (!InputMediaSupport.TryValidatePath(inputPath, out string validationError))
         {
-            logger.LogError("Error: File not found: {Path}", inputPath);
+            logger.LogError("Error: {Message}", validationError);
             return 1;
         }
 

@@ -12,18 +12,22 @@ public partial class OutputSettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(OutputFolderPath))]
+    [NotifyPropertyChangedFor(nameof(OutputFolderDisplay))]
     [NotifyPropertyChangedFor(nameof(OutputFolderSummary))]
     [NotifyPropertyChangedFor(nameof(CanResetOutputFolder))]
     private string? _customOutputFolder;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(OutputFolderPath))]
+    [NotifyPropertyChangedFor(nameof(OutputFolderDisplay))]
     [NotifyPropertyChangedFor(nameof(OutputFolderSummary))]
     [NotifyPropertyChangedFor(nameof(HasSourceFolder))]
     private string? _sourceFolder;
 
     public string? OutputFolderPath =>
         string.IsNullOrWhiteSpace(CustomOutputFolder) ? SourceFolder : CustomOutputFolder;
+
+    public string OutputFolderDisplay => OutputFolderPath ?? "Source file folder";
 
     public string OutputFolderSummary =>
         OutputFolderPath is { Length: > 0 } folder
@@ -32,7 +36,9 @@ public partial class OutputSettingsViewModel : ViewModelBase
 
     public bool HasSourceFolder => !string.IsNullOrWhiteSpace(SourceFolder);
 
-    public bool CanResetOutputFolder => !string.IsNullOrWhiteSpace(CustomOutputFolder);
+    public bool CanResetOutputFolder =>
+        !string.IsNullOrWhiteSpace(CustomOutputFolder) &&
+        !PathsEqual(CustomOutputFolder, SourceFolder);
 
     /// <summary>
     /// Set by the View to open the native folder picker dialog.
@@ -63,7 +69,10 @@ public partial class OutputSettingsViewModel : ViewModelBase
 
     public void SetSourceFolder(string? folder)
     {
-        SourceFolder = folder;
+        SourceFolder = NormalizeFolderPath(folder);
+
+        if (PathsEqual(CustomOutputFolder, SourceFolder))
+            CustomOutputFolder = null;
     }
 
     public void SetCustomOutputFolder(string folder)
@@ -71,6 +80,27 @@ public partial class OutputSettingsViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(folder))
             return;
 
-        CustomOutputFolder = Path.GetFullPath(folder);
+        var normalizedFolder = NormalizeFolderPath(folder);
+        CustomOutputFolder = PathsEqual(normalizedFolder, SourceFolder)
+            ? null
+            : normalizedFolder;
+    }
+
+    private static string? NormalizeFolderPath(string? folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder))
+            return null;
+
+        return Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
+    }
+
+    private static bool PathsEqual(string? left, string? right)
+    {
+        var normalizedLeft = NormalizeFolderPath(left);
+        var normalizedRight = NormalizeFolderPath(right);
+
+        return normalizedLeft is not null &&
+               normalizedRight is not null &&
+               string.Equals(normalizedLeft, normalizedRight, StringComparison.OrdinalIgnoreCase);
     }
 }

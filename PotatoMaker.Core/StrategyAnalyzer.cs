@@ -21,6 +21,7 @@ public static class StrategyAnalyzer
         CancellationToken ct = default)
     {
         string fullPath = Path.GetFullPath(inputPath);
+        InputMediaSupport.ThrowIfInvalidPath(fullPath);
 
         string? cropFilter = settings.SkipCropDetect
             ? null

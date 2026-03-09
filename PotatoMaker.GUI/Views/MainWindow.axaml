@@ -17,7 +17,7 @@
     </Design.DataContext>
 
     <Grid Margin="14"
-          RowDefinitions="Auto,Auto,*"
+          RowDefinitions="Auto,*"
           RowSpacing="10">
         <Border Grid.Row="0"
                 Classes="pm-card pm-hero"
@@ -54,31 +54,38 @@
         </Border>
 
         <Grid Grid.Row="1"
-              ColumnDefinitions="2*,*"
+              ColumnDefinitions="3*,2*"
               ColumnSpacing="10">
-            <StackPanel Grid.Column="0"
-                        Spacing="10">
-                <ContentControl Content="{Binding FileInput}"/>
-                <ContentControl Content="{Binding VideoSummary}"/>
-            </StackPanel>
+            <Grid Grid.Column="0"
+                  RowDefinitions="Auto,*"
+                  RowSpacing="10">
+                <ContentControl Grid.Row="0"
+                                Content="{Binding FileInput}"
+                                VerticalAlignment="Top"/>
+
+                <ContentControl Grid.Row="1"
+                                Content="{Binding ConversionLog}"/>
+            </Grid>
 
             <Grid Grid.Column="1"
                   RowDefinitions="Auto,*"
-                  RowSpacing="10"
-                  VerticalAlignment="Stretch">
+                  RowSpacing="10">
                 <ContentControl Grid.Row="0"
-                                Content="{Binding OutputSettings}"/>
-                <Button Grid.Row="1"
-                        Content="Start Compression"
-                        Command="{Binding StartEncodeCommand}"
-                        MinHeight="38"
-                        VerticalAlignment="Stretch"
-                        HorizontalAlignment="Stretch"
-                        Classes="pm-primary"/>
+                                Content="{Binding VideoSummary}"
+                                VerticalAlignment="Top"/>
+
+                <StackPanel Grid.Row="1"
+                            Spacing="10"
+                            VerticalAlignment="Top">
+                    <ContentControl Content="{Binding OutputSettings}"/>
+                    <Button Content="Start Compression"
+                            Command="{Binding StartEncodeCommand}"
+                            MinHeight="38"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top"
+                            Classes="pm-primary"/>
+                </StackPanel>
             </Grid>
         </Grid>
-
-        <ContentControl Grid.Row="2"
-                        Content="{Binding ConversionLog}"/>
     </Grid>
 </Window>

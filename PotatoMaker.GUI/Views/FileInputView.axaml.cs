@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using PotatoMaker.Core;
 using PotatoMaker.GUI.ViewModels;
 
 namespace PotatoMaker.GUI.Views;
@@ -39,8 +40,7 @@ public partial class FileInputView : UserControl
             AllowMultiple = false,
             FileTypeFilter =
             [
-                new FilePickerFileType("Video files") { Patterns = ["*.mp4", "*.mkv", "*.avi", "*.mov", "*.webm", "*.wmv", "*.flv"] },
-                new FilePickerFileType("All files") { Patterns = ["*.*"] }
+                new FilePickerFileType("Supported video files") { Patterns = InputMediaSupport.FileDialogPatterns.ToArray() }
             ]
         });
 
@@ -53,14 +53,16 @@ public partial class FileInputView : UserControl
     {
         var dropZone = this.FindControl<Border>("DropZone");
 
-        bool hasFiles = e.DataTransfer.Contains(DataFormat.File);
-        e.DragEffects = hasFiles
+        bool hasSupportedFile = TryGetSingleLocalFilePath(e.DataTransfer, out string? path) &&
+            InputMediaSupport.IsSupportedPath(path);
+
+        e.DragEffects = hasSupportedFile
             ? DragDropEffects.Copy
             : DragDropEffects.None;
 
         if (dropZone is not null)
         {
-            if (hasFiles)
+            if (hasSupportedFile)
                 dropZone.Classes.Add("drag-over");
             else
                 dropZone.Classes.Remove("drag-over");
@@ -78,10 +80,27 @@ public partial class FileInputView : UserControl
         var dropZone = this.FindControl<Border>("DropZone");
         dropZone?.Classes.Remove("drag-over");
 
-        var files = e.DataTransfer.TryGetFiles()?.ToList();
+        if (!TryGetSingleLocalFilePath(e.DataTransfer, out string? path) || path is null)
+        {
+            Vm.RejectFileSelection("Drop exactly one supported video file.");
+            return;
+        }
 
-        var path = files?.FirstOrDefault()?.TryGetLocalPath();
-        if (path is not null)
-            Vm.SetFile(path);
+        Vm.SetFile(path);
+    }
+
+    private static bool TryGetSingleLocalFilePath(IDataTransfer dataTransfer, out string? path)
+    {
+        path = null;
+
+        if (!dataTransfer.Contains(DataFormat.File))
+            return false;
+
+        var files = dataTransfer.TryGetFiles()?.ToList();
+        if (files is null || files.Count != 1)
+            return false;
+
+        path = files[0].TryGetLocalPath();
+        return path is not null;
     }
 }

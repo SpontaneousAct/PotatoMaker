@@ -17,7 +17,10 @@ public record VideoInfo(
     public static async Task<VideoInfo> ProbeAsync(string path, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
-        var analysis = await FFProbe.AnalyseAsync(path);
+        string fullPath = Path.GetFullPath(path);
+        InputMediaSupport.ThrowIfInvalidPath(fullPath);
+
+        var analysis = await FFProbe.AnalyseAsync(fullPath);
         var video = analysis.PrimaryVideoStream;
 
         return new VideoInfo(

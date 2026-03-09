@@ -20,11 +20,14 @@ public class ProcessingPipeline
         string inputPath, VideoInfo info, EncodeSettings settings,
         ILogger<ProcessingPipeline> logger, IProgress<EncodeProgress>? progress = null, string? outputDirectory = null)
     {
-        _inputPath = inputPath;
+        string fullInputPath = Path.GetFullPath(inputPath);
+        InputMediaSupport.ThrowIfInvalidPath(fullInputPath);
+
+        _inputPath = fullInputPath;
         _outputDir = string.IsNullOrWhiteSpace(outputDirectory)
-            ? Path.GetDirectoryName(Path.GetFullPath(inputPath)) ?? "."
+            ? Path.GetDirectoryName(fullInputPath) ?? "."
             : Path.GetFullPath(outputDirectory);
-        _outputBase = Path.GetFileNameWithoutExtension(inputPath);
+        _outputBase = Path.GetFileNameWithoutExtension(fullInputPath);
         _info = info;
         _settings = settings;
         _logger = logger;

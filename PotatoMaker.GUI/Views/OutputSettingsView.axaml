@@ -12,8 +12,8 @@
     </Design.DataContext>
 
     <Border Classes="pm-card"
-            Padding="12">
-        <StackPanel Spacing="10">
+            Padding="10">
+        <StackPanel Spacing="8">
             <TextBlock Text="Output"
                        Classes="pm-section-title"/>
 
@@ -23,16 +23,29 @@
             <TextBlock Text="Folder"
                        Classes="pm-muted"/>
 
-            <TextBox Text="{Binding OutputFolderPath}"
-                     IsReadOnly="True"
-                     AcceptsReturn="True"
-                     MinHeight="52"
-                     Watermark="Source file folder"
-                     TextWrapping="Wrap"
-                     VerticalContentAlignment="Top"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                     ToolTip.Tip="{Binding OutputFolderPath, TargetNullValue=Source file folder}"/>
+            <Border Background="{DynamicResource PmInsetBackground}"
+                    x:Name="OutputFolderHost"
+                    BorderBrush="{DynamicResource PmInsetBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="10,8"
+                    MinHeight="52">
+                <StackPanel Spacing="0"
+                            VerticalAlignment="Center">
+                    <ToolTip.Tip>
+                        <TextBlock Text="{Binding OutputFolderPath, TargetNullValue=Source file folder}"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="640"/>
+                    </ToolTip.Tip>
+                    <TextBlock x:Name="OutputFolderLine1"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="OutputFolderLine2"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis"
+                               IsVisible="False"/>
+                </StackPanel>
+            </Border>
 
             <Grid ColumnDefinitions="*,*"
                   ColumnSpacing="8">

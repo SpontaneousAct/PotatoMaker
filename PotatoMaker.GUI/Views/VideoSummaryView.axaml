@@ -12,15 +12,15 @@
     </Design.DataContext>
 
     <Border Classes="pm-card"
-            Padding="10">
-        <StackPanel Spacing="6">
+            Padding="9">
+        <StackPanel Spacing="5">
             <TextBlock Text="Video"
                        Classes="pm-section-title"/>
 
             <Grid ColumnDefinitions="*,*"
                   RowDefinitions="Auto,Auto"
-                  RowSpacing="8"
-                  ColumnSpacing="8">
+                  RowSpacing="6"
+                  ColumnSpacing="6">
                 <Border Grid.Row="0"
                         Grid.Column="0"
                         Classes="pm-stat">
@@ -60,17 +60,17 @@
 
             <TextBlock Text="Strategy Preview"
                        Classes="pm-section-title"
-                       Margin="0,4,0,0"/>
+                       Margin="0,2,0,0"/>
 
             <Border Classes="pm-stat">
-                <StackPanel Spacing="6">
+                <StackPanel Spacing="5">
                     <TextBlock Text="{Binding StrategyStatus, TargetNullValue=Waiting for analysis...}"
                                Classes="pm-muted"/>
 
                     <Grid ColumnDefinitions="*,*"
                           RowDefinitions="Auto,Auto,Auto"
-                          RowSpacing="6"
-                          ColumnSpacing="8">
+                          RowSpacing="5"
+                          ColumnSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
                             <TextBlock Text="Resolution" Classes="pm-muted"/>
                             <TextBlock Text="{Binding StrategyResolution, TargetNullValue=--}" FontWeight="SemiBold"/>
@@ -93,7 +93,10 @@
 
                         <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Spacing="2">
                             <TextBlock Text="FFmpeg filter" Classes="pm-muted"/>
-                            <TextBlock Text="{Binding StrategyFilter, TargetNullValue=--}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding StrategyFilter, TargetNullValue=--}"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       MaxHeight="40"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>

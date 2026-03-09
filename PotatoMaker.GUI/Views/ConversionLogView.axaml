@@ -48,7 +48,8 @@
                     BorderBrush="{DynamicResource PmInsetBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="10"
-                    Padding="8">
+                    Padding="8"
+                    MinHeight="260">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               x:Name="LogScroller">
                     <ItemsControl ItemsSource="{Binding LogLines}">

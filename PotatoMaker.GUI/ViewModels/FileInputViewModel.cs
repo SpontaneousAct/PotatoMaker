@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PotatoMaker.Core;
 
 namespace PotatoMaker.GUI.ViewModels;
 
@@ -14,7 +15,12 @@ public partial class FileInputViewModel : ViewModelBase
     [ObservableProperty]
     private string? _fileName;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasValidationMessage))]
+    private string? _validationMessage;
+
     public bool HasFile => !string.IsNullOrEmpty(InputFilePath);
+    public bool HasValidationMessage => !string.IsNullOrWhiteSpace(ValidationMessage);
 
     /// <summary>
     /// Set by the View to open the native file picker dialog.
@@ -45,20 +51,31 @@ public partial class FileInputViewModel : ViewModelBase
         ClearFileCommand.NotifyCanExecuteChanged();
     }
 
-    public void SetFile(string path)
+    public bool SetFile(string path)
     {
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-            return;
+        if (!InputMediaSupport.TryValidatePath(path, out string errorMessage))
+        {
+            ValidationMessage = errorMessage;
+            return false;
+        }
 
         string fullPath = Path.GetFullPath(path);
+        ValidationMessage = null;
         InputFilePath = fullPath;
         FileName = Path.GetFileName(fullPath);
         FileSelected?.Invoke(fullPath);
+        return true;
+    }
+
+    public void RejectFileSelection(string message)
+    {
+        ValidationMessage = message;
     }
 
     public void Clear()
     {
         InputFilePath = null;
         FileName = null;
+        ValidationMessage = null;
     }
 }

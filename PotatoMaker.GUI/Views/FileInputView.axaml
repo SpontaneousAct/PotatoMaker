@@ -16,7 +16,7 @@
             Padding="10"
             MinHeight="106"
             DragDrop.AllowDrop="True">
-        <Grid RowDefinitions="Auto,Auto,Auto"
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto"
               RowSpacing="5">
             <TextBlock Grid.Row="0"
                        Text="Source Video"
@@ -71,6 +71,13 @@
                            Classes="pm-muted"
                            TextTrimming="CharacterEllipsis"/>
             </Grid>
+
+            <TextBlock Grid.Row="3"
+                       Text="{Binding ValidationMessage}"
+                       IsVisible="{Binding HasValidationMessage}"
+                       Foreground="#D35454"
+                       FontSize="12"
+                       TextWrapping="Wrap"/>
         </Grid>
     </Border>
 </UserControl>
