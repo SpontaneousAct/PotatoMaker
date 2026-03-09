@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="130"
+             mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="116"
              x:Class="PotatoMaker.GUI.Views.FileInputView"
              x:DataType="vm:FileInputViewModel">
 
@@ -13,41 +13,38 @@
 
     <Border x:Name="DropZone"
             Classes="pm-card pm-dropzone"
-            Padding="10"
-            MinHeight="106"
+            Padding="8"
+            MinHeight="92"
             DragDrop.AllowDrop="True">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto"
-              RowSpacing="5">
+              RowSpacing="4">
             <TextBlock Grid.Row="0"
                        Text="Source Video"
                        Classes="pm-section-title"/>
 
             <Border Grid.Row="1"
-                    Background="{DynamicResource PmInsetBackground}"
-                    BorderBrush="{DynamicResource PmInsetBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="10"
-                    Padding="10,8">
-                <Grid ColumnDefinitions="Auto,*,24"
-                      ColumnSpacing="8"
+                    Classes="pm-inset">
+                <Grid ColumnDefinitions="Auto,*,Auto"
+                      ColumnSpacing="6"
                       MinHeight="24">
                     <TextBlock Grid.Column="0"
                                Text="File:"
-                               Classes="pm-muted"
+                               Classes="pm-caption"
                                VerticalAlignment="Center"/>
                     <TextBlock Grid.Column="1"
                                Text="{Binding FileName, TargetNullValue=No file selected yet}"
                                FontWeight="SemiBold"
                                TextTrimming="CharacterEllipsis"
+                               Margin="2,0,0,0"
                                VerticalAlignment="Center"/>
                     <Button Grid.Column="2"
-                            Content="X"
+                            Content="x"
                             Command="{Binding ClearFileCommand}"
                             IsVisible="{Binding HasFile}"
-                            Width="24"
-                            Height="24"
-                            MinWidth="24"
-                            MinHeight="24"
+                            Width="22"
+                            Height="22"
+                            MinWidth="22"
+                            MinHeight="22"
                             Padding="0"
                             FontWeight="Bold"
                             HorizontalContentAlignment="Center"
@@ -60,7 +57,7 @@
 
             <Grid Grid.Row="2"
                   ColumnDefinitions="Auto,*"
-                  ColumnSpacing="8">
+                  ColumnSpacing="6">
                 <Button Grid.Column="0"
                         Content="Browse..."
                         Command="{Binding SelectFileCommand}"
@@ -68,15 +65,15 @@
                 <TextBlock Grid.Column="1"
                            Text="Drag and drop a video here, or browse."
                            VerticalAlignment="Center"
-                           Classes="pm-muted"
+                           Classes="pm-caption"
                            TextTrimming="CharacterEllipsis"/>
             </Grid>
 
             <TextBlock Grid.Row="3"
                        Text="{Binding ValidationMessage}"
                        IsVisible="{Binding HasValidationMessage}"
-                       Foreground="#D35454"
-                       FontSize="12"
+                       Foreground="{DynamicResource PmErrorForeground}"
+                       FontSize="11"
                        TextWrapping="Wrap"/>
         </Grid>
     </Border>

@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="220"
+             mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="320"
              x:Class="PotatoMaker.GUI.Views.ConversionLogView"
              x:DataType="vm:ConversionLogViewModel">
 
@@ -12,30 +12,31 @@
     </Design.DataContext>
 
     <Border Classes="pm-card"
-            Padding="10">
+            Padding="8">
         <Grid RowDefinitions="Auto,Auto,*"
-              RowSpacing="6">
+              RowSpacing="5">
             <Grid Grid.Row="0"
                   ColumnDefinitions="*,Auto"
-                  ColumnSpacing="8">
+                  ColumnSpacing="6">
                 <TextBlock Grid.Column="0"
                            Text="Console"
                            Classes="pm-section-title"/>
                 <TextBlock Grid.Column="1"
                            Text="{Binding ProgressLabel}"
                            HorizontalAlignment="Right"
-                           Classes="pm-muted"/>
+                           Classes="pm-caption"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="190"/>
             </Grid>
 
             <Grid Grid.Row="1"
                   ColumnDefinitions="*,Auto"
                   IsVisible="{Binding IsProcessing}"
-                  ColumnSpacing="8">
+                  ColumnSpacing="6">
                 <ProgressBar Grid.Column="0"
                              Minimum="0"
                              Maximum="100"
                              Value="{Binding ProgressPercent}"
-                             Height="7"
                              VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1"
                            Text="{Binding ProgressPercent, StringFormat={}{0}%}"
@@ -44,21 +45,19 @@
             </Grid>
 
             <Border Grid.Row="2"
-                    Background="{DynamicResource PmInsetBackground}"
-                    BorderBrush="{DynamicResource PmInsetBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="10"
-                    Padding="8"
-                    MinHeight="260">
+                    Classes="pm-inset"
+                    Padding="6"
+                    MinHeight="0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
                               x:Name="LogScroller">
                     <ItemsControl ItemsSource="{Binding LogLines}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding}"
                                            FontFamily="Cascadia Mono,Consolas,Menlo,monospace"
-                                           FontSize="11.5"
-                                           Margin="0,0,0,2"
+                                           FontSize="11"
+                                           Margin="0,0,0,1"
                                            TextWrapping="Wrap"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

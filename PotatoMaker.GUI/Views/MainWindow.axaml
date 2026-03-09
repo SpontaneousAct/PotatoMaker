@@ -3,88 +3,93 @@
         xmlns:vm="using:PotatoMaker.GUI.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="680"
+        mc:Ignorable="d" d:DesignWidth="860" d:DesignHeight="560"
         x:Class="PotatoMaker.GUI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="PotatoMaker"
-        Width="960"
-        Height="680"
+        Width="860"
+        Height="560"
+        MinWidth="860"
+        MaxWidth="860"
+        MinHeight="560"
+        MaxHeight="560"
         CanResize="False">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid Margin="14"
+    <Grid Margin="10"
           RowDefinitions="Auto,*"
-          RowSpacing="10">
+          RowSpacing="8">
         <Border Grid.Row="0"
                 Classes="pm-card pm-hero"
-                Padding="10,8">
-            <DockPanel LastChildFill="True">
-                <StackPanel DockPanel.Dock="Right"
+                Padding="10,7">
+            <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="10">
+                <StackPanel Grid.Column="0"
+                            Spacing="0"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="PotatoMaker"
+                               Classes="pm-heading"/>
+                    <TextBlock Text="Discord-ready AV1 compression"
+                               Classes="pm-caption"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
-                            Spacing="10"
+                            Spacing="8"
                             VerticalAlignment="Center">
                     <ToggleSwitch IsChecked="{Binding IsDarkMode}"
                                   OnContent="Dark"
                                   OffContent="Light"/>
-                    <Border Padding="8,4"
-                            CornerRadius="8"
-                            Background="{DynamicResource PmInsetBackground}"
-                            BorderBrush="{DynamicResource PmInsetBorderBrush}"
-                            BorderThickness="1">
+                    <Border Classes="pm-inset"
+                            Padding="7,3">
                         <TextBlock Text="{Binding VersionText}"
-                                   Opacity="0.8"
+                                   Classes="pm-caption"
                                    VerticalAlignment="Center"/>
                     </Border>
                 </StackPanel>
-
-                <StackPanel Orientation="Horizontal"
-                            Spacing="10">
-                    <TextBlock Text="PotatoMaker"
-                               Classes="pm-heading"
-                               FontSize="22"/>
-                    <TextBlock Text="Discord-ready AV1 compression"
-                               Classes="pm-muted"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-            </DockPanel>
+            </Grid>
         </Border>
 
         <Grid Grid.Row="1"
-              ColumnDefinitions="3*,2*"
-              ColumnSpacing="10">
+              ColumnDefinitions="1.65*,*"
+              ColumnSpacing="8">
             <Grid Grid.Column="0"
                   RowDefinitions="Auto,*"
-                  RowSpacing="10">
+                  RowSpacing="8">
                 <ContentControl Grid.Row="0"
                                 Content="{Binding FileInput}"
+                                HorizontalAlignment="Stretch"
                                 VerticalAlignment="Top"/>
 
                 <ContentControl Grid.Row="1"
-                                Content="{Binding ConversionLog}"/>
+                                Content="{Binding ConversionLog}"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"/>
             </Grid>
 
             <Grid Grid.Column="1"
-                  RowDefinitions="Auto,*"
-                  RowSpacing="10">
+                  RowDefinitions="*,Auto,Auto"
+                  RowSpacing="8">
                 <ContentControl Grid.Row="0"
                                 Content="{Binding VideoSummary}"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"/>
+
+                <ContentControl Grid.Row="1"
+                                Content="{Binding OutputSettings}"
+                                HorizontalAlignment="Stretch"
                                 VerticalAlignment="Top"/>
 
-                <StackPanel Grid.Row="1"
-                            Spacing="10"
-                            VerticalAlignment="Top">
-                    <ContentControl Content="{Binding OutputSettings}"/>
-                    <Button Content="Start Compression"
-                            Command="{Binding StartEncodeCommand}"
-                            MinHeight="38"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Top"
-                            Classes="pm-primary"/>
-                </StackPanel>
+                <Button Grid.Row="2"
+                        Content="Start Compression"
+                        Command="{Binding StartEncodeCommand}"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Classes="pm-primary"/>
             </Grid>
         </Grid>
     </Grid>

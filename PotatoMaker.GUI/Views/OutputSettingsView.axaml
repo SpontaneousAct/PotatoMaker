@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="280" d:DesignHeight="160"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="166"
              x:Class="PotatoMaker.GUI.Views.OutputSettingsView"
              x:DataType="vm:OutputSettingsViewModel">
 
@@ -12,8 +12,8 @@
     </Design.DataContext>
 
     <Border Classes="pm-card"
-            Padding="10">
-        <StackPanel Spacing="8">
+            Padding="8">
+        <StackPanel Spacing="6">
             <TextBlock Text="Output"
                        Classes="pm-section-title"/>
 
@@ -21,34 +21,28 @@
                       IsChecked="{Binding UseCpuEncoder}"/>
 
             <TextBlock Text="Folder"
-                       Classes="pm-muted"/>
+                       Classes="pm-caption"/>
 
-            <Border Background="{DynamicResource PmInsetBackground}"
-                    x:Name="OutputFolderHost"
-                    BorderBrush="{DynamicResource PmInsetBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="10"
-                    Padding="10,8"
-                    MinHeight="52">
-                <StackPanel Spacing="0"
-                            VerticalAlignment="Center">
+            <Border x:Name="OutputFolderHost"
+                    Classes="pm-inset"
+                    MinHeight="38">
+                <StackPanel Spacing="2"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Stretch">
                     <ToolTip.Tip>
-                        <TextBlock Text="{Binding OutputFolderPath, TargetNullValue=Source file folder}"
+                        <TextBlock Text="{Binding OutputFolderDisplay}"
                                    TextWrapping="Wrap"
                                    MaxWidth="640"/>
                     </ToolTip.Tip>
-                    <TextBlock x:Name="OutputFolderLine1"
-                               TextWrapping="NoWrap"
-                               TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="OutputFolderLine2"
-                               TextWrapping="NoWrap"
+                    <TextBlock Text="{Binding OutputFolderDisplay}"
+                               FontWeight="SemiBold"
                                TextTrimming="CharacterEllipsis"
-                               IsVisible="False"/>
+                               TextWrapping="NoWrap"/>
                 </StackPanel>
             </Border>
 
             <Grid ColumnDefinitions="*,*"
-                  ColumnSpacing="8">
+                  ColumnSpacing="6">
                 <Button Grid.Column="0"
                         Content="Choose"
                         Command="{Binding SelectOutputFolderCommand}"

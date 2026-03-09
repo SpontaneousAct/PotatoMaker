@@ -41,6 +41,7 @@
                     <SolidColorBrush x:Key="PmStatBorderBrush">#FFD6DEE9</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBackground">#FFF4F7FB</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FFD6DEE8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmErrorForeground">#FFBC3030</SolidColorBrush>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Dark">
@@ -73,6 +74,7 @@
                     <SolidColorBrush x:Key="PmStatBorderBrush">#FF273143</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBackground">#FF0F141C</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FF273143</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmErrorForeground">#FFFF8E8E</SolidColorBrush>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -83,13 +85,14 @@
 
         <Style Selector="Window">
             <Setter Property="Background" Value="{DynamicResource PmWindowBackground}"/>
+            <Setter Property="FontSize" Value="13"/>
         </Style>
 
         <Style Selector="Border.pm-card">
             <Setter Property="Background" Value="{DynamicResource PmCardBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmCardBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="CornerRadius" Value="10"/>
         </Style>
 
         <Style Selector="Border.pm-hero">
@@ -97,30 +100,45 @@
             <Setter Property="BorderBrush" Value="{DynamicResource PmHeroBorderBrush}"/>
         </Style>
 
+        <Style Selector="Border.pm-inset">
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+
         <Style Selector="TextBlock.pm-heading">
             <Setter Property="FontFamily" Value="Bahnschrift,Segoe UI Semibold"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontSize" Value="20"/>
             <Setter Property="Foreground" Value="{DynamicResource PmHeadingForeground}"/>
         </Style>
 
         <Style Selector="TextBlock.pm-section-title">
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
 
         <Style Selector="TextBlock.pm-muted">
-            <Setter Property="Opacity" Value="0.75"/>
+            <Setter Property="Opacity" Value="0.82"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-caption">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Opacity" Value="0.82"/>
             <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
         </Style>
 
         <Style Selector="Button">
-            <Setter Property="Padding" Value="10,6"/>
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="CornerRadius" Value="7"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="MinHeight" Value="30"/>
         </Style>
 
         <Style Selector="Button.pm-primary">
@@ -128,8 +146,8 @@
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="9"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,6"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
 
@@ -151,7 +169,7 @@
             <Setter Property="Background" Value="{DynamicResource PmDropzoneBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmDropzoneBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="CornerRadius" Value="10"/>
         </Style>
 
         <Style Selector="Border.pm-dropzone.drag-over">
@@ -163,9 +181,13 @@
             <Setter Property="Background" Value="{DynamicResource PmStatBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmStatBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="9"/>
-            <Setter Property="Padding" Value="7"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="6"/>
             <Setter Property="MinWidth" Value="0"/>
+        </Style>
+
+        <Style Selector="ProgressBar">
+            <Setter Property="Height" Value="6"/>
         </Style>
     </Application.Styles>
 </Application>
