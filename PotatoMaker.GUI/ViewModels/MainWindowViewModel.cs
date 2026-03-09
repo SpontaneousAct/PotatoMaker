@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace PotatoMaker.GUI.ViewModels;
 
@@ -26,6 +27,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _isDarkMode;
+
+    public bool IsEncodeInProgress => ConversionLog.IsProcessing;
+    public bool IsEncodeIdle => !ConversionLog.IsProcessing;
+    public string EncodeButtonText => IsEncodeInProgress ? "Cancel Compression" : "Start Compression";
+    public ICommand EncodeButtonCommand => IsEncodeInProgress ? CancelEncodeCommand : StartEncodeCommand;
 
     private CancellationTokenSource? _cts;
     private CancellationTokenSource? _probeCts;
@@ -58,6 +64,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (info is null || path is null || analysis is null) return;
 
         _cts = new CancellationTokenSource();
+        CancelEncodeCommand.NotifyCanExecuteChanged();
 
         ConversionLog.Clear();
         ConversionLog.IsProcessing = true;
@@ -90,10 +97,24 @@ public partial class MainWindowViewModel : ViewModelBase
             ConversionLog.ProgressLabel = null;
             _cts.Dispose();
             _cts = null;
+            CancelEncodeCommand.NotifyCanExecuteChanged();
         }
     }
 
     private bool CanStartEncode() => FileInput.HasFile && VideoSummary.HasData && VideoSummary.HasStrategy && !ConversionLog.IsProcessing;
+
+    [RelayCommand(CanExecute = nameof(CanCancelEncode))]
+    private void CancelEncode()
+    {
+        if (_cts is null || _cts.IsCancellationRequested)
+            return;
+
+        ConversionLog.AddLog("Cancellation requested...");
+        _cts.Cancel();
+        CancelEncodeCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanCancelEncode() => ConversionLog.IsProcessing && _cts is not null && !_cts.IsCancellationRequested;
 
     private async void OnFileSelected(string path)
     {
@@ -175,7 +196,14 @@ public partial class MainWindowViewModel : ViewModelBase
     private void OnEncodePrerequisiteChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(FileInputViewModel.HasFile) or nameof(VideoSummaryViewModel.HasData) or nameof(VideoSummaryViewModel.HasStrategy) or nameof(ConversionLogViewModel.IsProcessing))
+        {
             StartEncodeCommand.NotifyCanExecuteChanged();
+            CancelEncodeCommand.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(IsEncodeInProgress));
+            OnPropertyChanged(nameof(IsEncodeIdle));
+            OnPropertyChanged(nameof(EncodeButtonText));
+            OnPropertyChanged(nameof(EncodeButtonCommand));
+        }
     }
 
     partial void OnIsDarkModeChanged(bool value)

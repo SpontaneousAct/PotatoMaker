@@ -47,34 +47,42 @@ public static class VideoEncoder
             ? TimeSpan.FromSeconds(job.SegmentSecs.Value)
             : job.TotalDuration;
 
-        await FFMpegArguments
-            .FromFileInput(job.InputPath, false, o =>
-            {
-                if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
-            })
-            .OutputToFile(job.OutputPath, overwrite: true, o =>
-            {
-                o.WithVideoCodec("av1_nvenc")
-                 .WithVideoBitrate(job.VideoBitrateKbps)
-                 .WithAudioCodec("aac")
-                 .WithAudioBitrate(job.AudioBitrateKbps)
-                 .WithCustomArgument("-rc vbr")
-                 .WithCustomArgument($"-maxrate {job.VideoBitrateKbps}k")
-                 .WithCustomArgument($"-bufsize {job.VideoBitrateKbps * 2}k")
-                 .WithCustomArgument("-preset p5")
-                 .WithFastStart();
+        try
+        {
+            await FFMpegArguments
+                .FromFileInput(job.InputPath, false, o =>
+                {
+                    if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
+                })
+                .OutputToFile(job.OutputPath, overwrite: true, o =>
+                {
+                    o.WithVideoCodec("av1_nvenc")
+                     .WithVideoBitrate(job.VideoBitrateKbps)
+                     .WithAudioCodec("aac")
+                     .WithAudioBitrate(job.AudioBitrateKbps)
+                     .WithCustomArgument("-rc vbr")
+                     .WithCustomArgument($"-maxrate {job.VideoBitrateKbps}k")
+                     .WithCustomArgument($"-bufsize {job.VideoBitrateKbps * 2}k")
+                     .WithCustomArgument("-preset p5")
+                     .WithFastStart();
 
-                if (job.VideoFilter != null)
-                    o.WithCustomArgument($"-vf {job.VideoFilter}");
-                if (job.SegmentSecs.HasValue)
-                    o.WithDuration(TimeSpan.FromSeconds(job.SegmentSecs.Value));
-            })
-            .CancellableThrough(ct)
-            .NotifyOnProgress(pct =>
-            {
-                progress?.Report(new EncodeProgress($"  {label}[NVENC]", (int)pct));
-            }, progressDuration)
-            .ProcessAsynchronously();
+                    if (job.VideoFilter != null)
+                        o.WithCustomArgument($"-vf {job.VideoFilter}");
+                    if (job.SegmentSecs.HasValue)
+                        o.WithDuration(TimeSpan.FromSeconds(job.SegmentSecs.Value));
+                })
+                .CancellableThrough(ct)
+                .NotifyOnProgress(pct =>
+                {
+                    progress?.Report(new EncodeProgress($"  {label}[NVENC]", (int)pct));
+                }, progressDuration)
+                .ProcessAsynchronously();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            TryDeleteFile(job.OutputPath);
+            throw;
+        }
     }
 
     private static async Task EncodeSvtAv1TwoPassAsync(
@@ -156,10 +164,28 @@ public static class VideoEncoder
 
             logger.LogInformation(PipelineEvents.Success, "  {Label}[Pass 2/2] done.", label);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            TryDeleteFile(job.OutputPath);
+            throw;
+        }
         finally
         {
             foreach (string f in Directory.EnumerateFiles(statsDir, $"{statsName}*"))
                 try { File.Delete(f); } catch {  }
+        }
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch
+        {
+            // Best-effort cleanup for canceled runs.
         }
     }
 }

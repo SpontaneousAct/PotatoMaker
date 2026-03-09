@@ -100,18 +100,27 @@ public class ProcessingPipeline
     private async Task RunSingleAsync(int videoBitrateKbps, string? videoFilter, CancellationToken ct)
     {
         _logger.LogInformation("--- Encoding ----------------------------------------");
+        string outputPath = Path.Combine(_outputDir, $"{_outputBase}_discord.mp4");
 
         var job = new EncodeJob(
             InputPath: _inputPath,
-            OutputPath: Path.Combine(_outputDir, $"{_outputBase}_discord.mp4"),
+            OutputPath: outputPath,
             TotalDuration: _info.Duration,
             VideoBitrateKbps: videoBitrateKbps,
             AudioBitrateKbps: _settings.AudioBitrateKbps,
             VideoFilter: videoFilter
         );
 
-        await VideoEncoder.EncodeAsync(job, _settings.Encoder, _logger, _progress, ct: ct);
-        PrintSummary([job.OutputPath]);
+        try
+        {
+            await VideoEncoder.EncodeAsync(job, _settings.Encoder, _logger, _progress, ct: ct);
+            PrintSummary([job.OutputPath]);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            CleanupOutputFiles([outputPath]);
+            throw;
+        }
     }
 
     private async Task RunSplitAsync(int videoBitrateKbps, string? videoFilter, int parts, double totalSecs, CancellationToken ct)
@@ -125,28 +134,36 @@ public class ProcessingPipeline
 
         var outputPaths = new List<string>();
 
-        for (int i = 0; i < parts; i++)
+        try
         {
-            string outputPath = Path.Combine(_outputDir, $"{_outputBase}_discord_part{i + 1}.mp4");
-            outputPaths.Add(outputPath);
+            for (int i = 0; i < parts; i++)
+            {
+                string outputPath = Path.Combine(_outputDir, $"{_outputBase}_discord_part{i + 1}.mp4");
+                outputPaths.Add(outputPath);
 
-            _logger.LogInformation("--- Part {Part}/{Total} ------------------------------------------", i + 1, parts);
+                _logger.LogInformation("--- Part {Part}/{Total} ------------------------------------------", i + 1, parts);
 
-            var job = new EncodeJob(
-                InputPath: _inputPath,
-                OutputPath: outputPath,
-                TotalDuration: _info.Duration,
-                VideoBitrateKbps: videoBitrateKbps,
-                AudioBitrateKbps: _settings.AudioBitrateKbps,
-                VideoFilter: videoFilter,
-                StartOffsetSecs: i * segSecs,
-                SegmentSecs: segSecs
-            );
+                var job = new EncodeJob(
+                    InputPath: _inputPath,
+                    OutputPath: outputPath,
+                    TotalDuration: _info.Duration,
+                    VideoBitrateKbps: videoBitrateKbps,
+                    AudioBitrateKbps: _settings.AudioBitrateKbps,
+                    VideoFilter: videoFilter,
+                    StartOffsetSecs: i * segSecs,
+                    SegmentSecs: segSecs
+                );
 
-            await VideoEncoder.EncodeAsync(job, _settings.Encoder, _logger, _progress, label: $"[{i + 1}/{parts}] ", ct: ct);
+                await VideoEncoder.EncodeAsync(job, _settings.Encoder, _logger, _progress, label: $"[{i + 1}/{parts}] ", ct: ct);
+            }
+
+            PrintSummary(outputPaths);
         }
-
-        PrintSummary(outputPaths);
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            CleanupOutputFiles(outputPaths);
+            throw;
+        }
     }
 
     private void PrintSummary(IEnumerable<string> outputPaths)
@@ -165,5 +182,21 @@ public class ProcessingPipeline
         }
 
         _logger.LogInformation("");
+    }
+
+    private void CleanupOutputFiles(IEnumerable<string> outputPaths)
+    {
+        foreach (string path in outputPaths.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+                // Best-effort cleanup: ignore deletion failures.
+            }
+        }
     }
 }

@@ -128,11 +128,12 @@
                                     VerticalAlignment="Top"/>
 
                     <Button Grid.Row="2"
-                            Content="Start Compression"
-                            Command="{Binding StartEncodeCommand}"
+                            Content="{Binding EncodeButtonText}"
+                            Command="{Binding EncodeButtonCommand}"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
-                            Classes="pm-primary"/>
+                            Classes.pm-primary="{Binding IsEncodeIdle}"
+                            Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
                 </Grid>
             </Grid>
         </Grid>
