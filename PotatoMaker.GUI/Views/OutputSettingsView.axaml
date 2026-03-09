@@ -18,8 +18,13 @@
             <TextBlock Text="Output"
                        Classes="pm-section-title"/>
 
-            <CheckBox Content="Use CPU encoder"
-                      IsChecked="{Binding UseCpuEncoder}"/>
+            <CheckBox Content="Use NVENC AV1 (GPU)"
+                      IsChecked="{Binding UseNvencEncoder}"
+                      IsEnabled="{Binding CanUseNvenc}"/>
+
+            <TextBlock Text="{Binding NvencSupportSummary}"
+                       Classes="pm-caption"
+                       TextWrapping="Wrap"/>
 
             <TextBlock Text="Folder"
                        Classes="pm-caption"/>

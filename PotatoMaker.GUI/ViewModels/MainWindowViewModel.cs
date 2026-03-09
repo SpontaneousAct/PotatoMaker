@@ -1,6 +1,7 @@
-﻿using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Input;
 using Avalonia;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging.Abstractions;
 using PotatoMaker.Core;
@@ -30,9 +31,11 @@ public partial class MainWindowViewModel : ViewModelBase
     private CancellationTokenSource? _probeCts;
     private int _probeVersion;
     private bool _isApplyingSettings;
+    private readonly IEncoderCapabilityService _encoderCapabilityService;
 
-    public MainWindowViewModel(AppSettings? initialSettings = null)
+    public MainWindowViewModel(AppSettings? initialSettings = null, IEncoderCapabilityService? encoderCapabilityService = null)
     {
+        _encoderCapabilityService = encoderCapabilityService ?? new EncoderCapabilityService();
         FileInput.VideoSummary = VideoSummary;
 
         FileInput.FileSelected += OnFileSelected;
@@ -43,6 +46,7 @@ public partial class MainWindowViewModel : ViewModelBase
         OutputSettings.PropertyChanged += OnOutputSettingsChanged;
 
         ApplyInitialSettings(initialSettings);
+        _ = InitializeEncoderSupportAsync();
     }
 
     [RelayCommand(CanExecute = nameof(CanStartEncode))]
@@ -185,15 +189,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void OnOutputSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(OutputSettingsViewModel.UseCpuEncoder) or nameof(OutputSettingsViewModel.CustomOutputFolder))
+        if (e.PropertyName is nameof(OutputSettingsViewModel.UseNvencEncoder) or nameof(OutputSettingsViewModel.CustomOutputFolder))
             SaveSettingsSafely();
     }
 
     private EncodeSettings BuildEncodeSettings() => new()
     {
-        Encoder = OutputSettings.UseCpuEncoder
-            ? EncoderChoice.SvtAv1
-            : EncoderChoice.Nvenc
+        Encoder = OutputSettings.UseNvencEncoder && OutputSettings.CanUseNvenc
+            ? EncoderChoice.Nvenc
+            : EncoderChoice.SvtAv1
     };
 
     private void ApplyInitialSettings(AppSettings? settings)
@@ -207,13 +211,44 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             OutputSettings.CustomOutputFolder = loaded.LastOutputFolder;
-            OutputSettings.UseCpuEncoder = loaded.UseCpuEncoder;
+            OutputSettings.UseNvencEncoder = ResolveUseNvencPreference(loaded);
             IsDarkMode = loaded.IsDarkMode;
         }
         finally
         {
             _isApplyingSettings = false;
         }
+    }
+
+    private static bool ResolveUseNvencPreference(AppSettings settings)
+    {
+        if (settings.UseNvencEncoder.HasValue)
+            return settings.UseNvencEncoder.Value;
+
+        return !settings.UseCpuEncoder;
+    }
+
+    private async Task InitializeEncoderSupportAsync()
+    {
+        bool supportsNvencAv1;
+
+        try
+        {
+            supportsNvencAv1 = await _encoderCapabilityService.IsAv1NvencSupportedAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            supportsNvencAv1 = false;
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            bool wasUsingNvenc = OutputSettings.UseNvencEncoder;
+            OutputSettings.SetNvencSupport(supportsNvencAv1);
+
+            if (wasUsingNvenc && !OutputSettings.UseNvencEncoder)
+                SaveSettingsSafely();
+        });
     }
 
     private async void SaveSettingsSafely()
@@ -233,7 +268,8 @@ public partial class MainWindowViewModel : ViewModelBase
         var settings = new AppSettings
         {
             IsDarkMode = IsDarkMode,
-            UseCpuEncoder = OutputSettings.UseCpuEncoder,
+            UseNvencEncoder = OutputSettings.UseNvencEncoder,
+            UseCpuEncoder = !OutputSettings.UseNvencEncoder,
             LastOutputFolder = OutputSettings.CustomOutputFolder
         };
 

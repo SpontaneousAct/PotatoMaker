@@ -8,7 +8,17 @@ namespace PotatoMaker.GUI.ViewModels;
 public partial class OutputSettingsViewModel : ViewModelBase
 {
     [ObservableProperty]
-    private bool _useCpuEncoder;
+    private bool _useNvencEncoder;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanUseNvenc))]
+    [NotifyPropertyChangedFor(nameof(NvencSupportSummary))]
+    private bool _isNvencSupportKnown;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanUseNvenc))]
+    [NotifyPropertyChangedFor(nameof(NvencSupportSummary))]
+    private bool _isNvencSupported;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(OutputFolderPath))]
@@ -38,6 +48,15 @@ public partial class OutputSettingsViewModel : ViewModelBase
             : "Output folder: source file folder";
 
     public bool HasSourceFolder => !string.IsNullOrWhiteSpace(SourceFolder);
+
+    public bool CanUseNvenc => IsNvencSupportKnown && IsNvencSupported;
+
+    public string NvencSupportSummary =>
+        !IsNvencSupportKnown
+            ? "Checking NVENC AV1 support..."
+            : IsNvencSupported
+                ? "NVENC AV1 is available on this system."
+                : "NVENC AV1 is not available on this system.";
 
     public bool CanResetOutputFolder =>
         !string.IsNullOrWhiteSpace(CustomOutputFolder) &&
@@ -87,6 +106,21 @@ public partial class OutputSettingsViewModel : ViewModelBase
         CustomOutputFolder = PathsEqual(normalizedFolder, SourceFolder)
             ? null
             : normalizedFolder;
+    }
+
+    public void SetNvencSupport(bool supported)
+    {
+        IsNvencSupported = supported;
+        IsNvencSupportKnown = true;
+
+        if (!supported)
+            UseNvencEncoder = false;
+    }
+
+    partial void OnUseNvencEncoderChanged(bool value)
+    {
+        if (value && IsNvencSupportKnown && !IsNvencSupported)
+            UseNvencEncoder = false;
     }
 
     private static string? NormalizeFolderPath(string? folder)
