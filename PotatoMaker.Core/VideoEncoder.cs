@@ -14,6 +14,8 @@ public static class VideoEncoder
         string                     label    = "",
         CancellationToken          ct       = default)
     {
+        FFmpegBinaries.EnsureConfigured();
+
         if (encoder == EncoderChoice.SvtAv1)
         {
             logger.LogInformation("  Encoder: libsvtav1 (CPU two-pass)");

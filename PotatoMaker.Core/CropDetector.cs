@@ -25,15 +25,16 @@ public static class CropDetector
         ILogger           logger,
         CancellationToken ct = default)
     {
+        string ffmpegPath = FFmpegBinaries.FfmpegExecutable();
         double seekSecs = totalDuration.TotalSeconds * StartOffsetPercent;
         string seekArg  = seekSecs > 1.0 ? $"-ss {seekSecs:F1} " : "";
 
         string arguments = $"{seekArg}-i \"{inputPath}\" -frames:v {SampleFrames} -vf cropdetect={CropLimit}:{CropRound}:{CropReset} -an -f null NUL";
-        logger.LogInformation("  ffmpeg {Arguments}", arguments);
+        logger.LogInformation("  {Ffmpeg} {Arguments}", Path.GetFileName(ffmpegPath), arguments);
 
         var psi = new ProcessStartInfo
         {
-            FileName              = "ffmpeg",
+            FileName              = ffmpegPath,
             Arguments             = arguments,
             RedirectStandardError = true,
             UseShellExecute       = false,

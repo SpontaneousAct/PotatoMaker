@@ -16,7 +16,10 @@ It includes both a command-line app and a desktop GUI, backed by a shared core p
 
 ## Requirements
 
-- FFmpeg on system `PATH` (not bundled): https://ffmpeg.org/download.html
+- FFmpeg binaries (`ffmpeg.exe`, `ffprobe.exe`) either:
+  - bundled next to app in `ffmpeg\`, or
+  - available on system `PATH`
+- Download: https://ffmpeg.org/download.html
 - .NET 10 SDK: https://dotnet.microsoft.com/download/dotnet/10.0
 - Optional NVIDIA GPU for AV1 NVENC (Ada Lovelace / RTX 40-series or newer)
 
@@ -85,6 +88,24 @@ PotatoMaker.Cli/bin/Release/net10.0/win-x64/publish/
 ```bash
 dotnet publish PotatoMaker.GUI/PotatoMaker.GUI.csproj -c Release -r win-x64
 ```
+
+### GUI Portable Package
+
+Create a portable folder + zip under `artifacts/` with bundled FFmpeg:
+
+```powershell
+# Option A: place ffmpeg.exe + ffprobe.exe in third_party\ffmpeg\win-x64\
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-portable.ps1
+
+# Option B: pass a custom FFmpeg directory
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-portable.ps1 -FfmpegDir "C:\tools\ffmpeg\bin"
+
+# Option C: disable single-file (if needed for troubleshooting)
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-portable.ps1 -SingleFile:$false
+```
+
+If `-FfmpegDir` is not provided, the script tries `third_party\ffmpeg\win-x64\` first, then auto-detects FFmpeg from `PATH`.
+The app itself prefers bundled binaries from `ffmpeg\` and falls back to `PATH`.
 
 ## Output Naming
 

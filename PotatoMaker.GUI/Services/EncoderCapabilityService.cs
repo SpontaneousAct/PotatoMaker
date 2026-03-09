@@ -31,11 +31,12 @@ public sealed class EncoderCapabilityService : IEncoderCapabilityService
     {
         try
         {
+            string ffmpegPath = PotatoMaker.Core.FFmpegBinaries.FfmpegExecutable();
             using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "ffmpeg",
+                    FileName = ffmpegPath,
                     // AV1 NVENC minimum dimensions vary by driver/GPU, so use a widely valid test size.
                     Arguments = "-hide_banner -loglevel error -f lavfi -i color=c=black:s=1920x1080:d=0.1 -frames:v 1 -c:v av1_nvenc -f null -",
                     RedirectStandardOutput = true,

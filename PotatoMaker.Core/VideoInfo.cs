@@ -19,6 +19,7 @@ public record VideoInfo(
         ct.ThrowIfCancellationRequested();
         string fullPath = Path.GetFullPath(path);
         InputMediaSupport.ThrowIfInvalidPath(fullPath);
+        FFmpegBinaries.EnsureConfigured();
 
         var analysis = await FFProbe.AnalyseAsync(fullPath);
         var video = analysis.PrimaryVideoStream;

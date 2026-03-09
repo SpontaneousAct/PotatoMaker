@@ -6,6 +6,8 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
+        string? ffmpegFolder = FFmpegBinaries.EnsureConfigured();
+
         using var loggerFactory = LoggerFactory.Create(builder =>
         {
             builder.SetMinimumLevel(LogLevel.Information);
@@ -14,6 +16,14 @@ class Program
 
         var logger   = loggerFactory.CreateLogger<ProcessingPipeline>();
         var progress = new ConsoleProgressHandler();
+
+        if (!string.IsNullOrWhiteSpace(ffmpegFolder))
+            logger.LogInformation("Using bundled FFmpeg binaries from: {Path}", ffmpegFolder);
+        else
+            logger.LogInformation("Using FFmpeg from PATH.");
+
+        string ffmpegVersionSummary = await FFmpegBinaries.GetVersionSummaryAsync();
+        logger.LogInformation("FFmpeg runtime: {Version}", ffmpegVersionSummary);
 
         using var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) =>

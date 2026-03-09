@@ -37,6 +37,7 @@ public class ProcessingPipeline
     public async Task RunAsync(StrategyAnalysis analysis, CancellationToken ct = default)
     {
         Directory.CreateDirectory(_outputDir);
+        string ffmpegVersionSummary = await FFmpegBinaries.GetVersionSummaryAsync(ct);
 
         double durationSecs = _info.Duration.TotalSeconds;
         long inputSizeBytes = new FileInfo(_inputPath).Length;
@@ -51,6 +52,7 @@ public class ProcessingPipeline
         _logger.LogInformation("  Duration  : {Duration}  ({Seconds:F1}s)", durationFmt, durationSecs);
         _logger.LogInformation("  Size      : {Size:F1} MB", inputSizeBytes / 1_048_576.0);
         _logger.LogInformation("  Resolution: {Width}x{Height}  ({Aspect})", origWidth, origHeight, CropDetector.AspectLabel(origWidth, origHeight));
+        _logger.LogInformation("  FFmpeg    : {Version}", ffmpegVersionSummary);
         _logger.LogInformation("");
 
         string pipelineInputPath = Path.GetFullPath(_inputPath);
