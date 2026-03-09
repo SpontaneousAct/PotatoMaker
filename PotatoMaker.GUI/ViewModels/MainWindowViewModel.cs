@@ -157,6 +157,7 @@ public partial class MainWindowViewModel : ViewModelBase
         CancelPendingProbe();
         OutputSettings.SetSourceFolder(null);
         VideoSummary.Clear();
+        ConversionLog.Clear();
     }
 
     private void CancelPendingProbe()

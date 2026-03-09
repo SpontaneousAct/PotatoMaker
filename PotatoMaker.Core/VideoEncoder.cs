@@ -92,6 +92,8 @@ public static class VideoEncoder
         try
         {
             // Pass 1
+            logger.LogInformation("  {Label}[Pass 1/2] analyzing...", label);
+
             await FFMpegArguments
                 .FromFileInput(job.InputPath, false, o =>
                 {
@@ -122,6 +124,8 @@ public static class VideoEncoder
             logger.LogInformation(PipelineEvents.Success, "  {Label}[Pass 1/2] done.", label);
 
             // Pass 2
+            logger.LogInformation("  {Label}[Pass 2/2] encoding...", label);
+
             await FFMpegArguments
                 .FromFileInput(job.InputPath, false, o =>
                 {
@@ -149,6 +153,8 @@ public static class VideoEncoder
                     progress?.Report(new EncodeProgress($"  {label}[Pass 2/2] Encoding ", (int)pct));
                 }, progressDuration)
                 .ProcessAsynchronously();
+
+            logger.LogInformation(PipelineEvents.Success, "  {Label}[Pass 2/2] done.", label);
         }
         finally
         {

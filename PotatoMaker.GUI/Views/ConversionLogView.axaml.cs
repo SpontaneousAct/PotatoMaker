@@ -1,14 +1,14 @@
 using System.Collections.Specialized;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using PotatoMaker.GUI.ViewModels;
 
 namespace PotatoMaker.GUI.Views;
 
 public partial class ConversionLogView : UserControl
 {
-    private const double ScrollTolerance = 10;
-    private bool _logAutoScroll = true;
+    private bool _scrollPending;
     private ScrollViewer? _logScroller;
     private ConversionLogViewModel? _subscribedVm;
 
@@ -24,16 +24,14 @@ public partial class ConversionLogView : UserControl
         base.OnLoaded(e);
 
         _logScroller = this.FindControl<ScrollViewer>("LogScroller");
-        _logScroller?.ScrollChanged += OnLogScrollChanged;
 
         _subscribedVm = Vm;
         _subscribedVm.LogLines.CollectionChanged += OnLogLinesChanged;
+        RequestScrollToBottom();
     }
 
     protected override void OnUnloaded(RoutedEventArgs e)
     {
-        if (_logScroller is not null)
-            _logScroller.ScrollChanged -= OnLogScrollChanged;
         _logScroller = null;
 
         if (_subscribedVm is not null)
@@ -43,15 +41,25 @@ public partial class ConversionLogView : UserControl
         base.OnUnloaded(e);
     }
 
-    private void OnLogScrollChanged(object? sender, ScrollChangedEventArgs e)
-    {
-        if (sender is not ScrollViewer sv) return;
-        _logAutoScroll = sv.Offset.Y + sv.Viewport.Height >= sv.Extent.Height - ScrollTolerance;
-    }
-
     private void OnLogLinesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (!_logAutoScroll) return;
-        _logScroller?.ScrollToEnd();
+        RequestScrollToBottom();
+    }
+
+    private void RequestScrollToBottom()
+    {
+        if (_scrollPending) return;
+        _scrollPending = true;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            _scrollPending = false;
+            _logScroller?.ScrollToEnd();
+
+            // Run once more after render to account for extent changes from wrapped text.
+            Dispatcher.UIThread.Post(
+                () => _logScroller?.ScrollToEnd(),
+                DispatcherPriority.Render);
+        }, DispatcherPriority.Background);
     }
 }
