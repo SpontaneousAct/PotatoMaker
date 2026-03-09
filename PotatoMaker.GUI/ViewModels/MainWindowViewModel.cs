@@ -19,6 +19,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public VideoSummaryViewModel VideoSummary { get; } = new();
     public OutputSettingsViewModel OutputSettings { get; } = new();
     public ConversionLogViewModel ConversionLog { get; } = new();
+    public HelpModalViewModel HelpModal { get; } = new();
 
     public string VersionText => $"v{GetType().Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
 

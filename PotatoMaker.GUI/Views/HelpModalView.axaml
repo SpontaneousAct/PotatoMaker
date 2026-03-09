@@ -1,0 +1,107 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PotatoMaker.GUI.ViewModels"
+             x:Class="PotatoMaker.GUI.Views.HelpModalView"
+             x:DataType="vm:HelpModalViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Grid#OverlayRoot">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.20"/>
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Grid#OverlayRoot.open">
+            <Setter Property="Opacity" Value="1"/>
+            <Setter Property="IsHitTestVisible" Value="True"/>
+        </Style>
+
+        <Style Selector="Border#HelpCard">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.20"/>
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border#HelpCard.open">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.pm-help-close">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid x:Name="OverlayRoot"
+          Classes.open="{Binding IsOpen}"
+          Background="Transparent"
+          PointerPressed="OnOverlayPointerPressed">
+        <Border Background="#5F000000"/>
+
+        <Border x:Name="HelpCard"
+                Classes="pm-card"
+                Classes.open="{Binding IsOpen}"
+                Width="460"
+                MaxWidth="460"
+                Padding="16"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto"
+                  RowSpacing="10">
+                <Grid Grid.Row="0"
+                      ColumnDefinitions="*,Auto"
+                      ColumnSpacing="8">
+                    <TextBlock Text="Quick Guide"
+                               Classes="pm-section-title"
+                               FontSize="16"
+                               VerticalAlignment="Center"/>
+
+                    <Button Grid.Column="1"
+                            Content="X"
+                            Classes="pm-help-close"
+                            Command="{Binding CloseCommand}"
+                            ToolTip.Tip="Close"/>
+                </Grid>
+
+                <TextBlock Grid.Row="1"
+                           Text="How to use PotatoMaker"
+                           Classes="pm-section-title"/>
+
+                <StackPanel Grid.Row="2"
+                            Spacing="6">
+                    <TextBlock Text="1. Drop a video file or click Browse."
+                               Classes="pm-muted"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="2. Check the summary and strategy preview."
+                               Classes="pm-muted"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="3. Pick output folder and encoder (GPU/CPU)."
+                               Classes="pm-muted"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="4. Click Start Compression and watch live logs."
+                               Classes="pm-muted"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="3"
+                           Text="Behind the scenes: PotatoMaker probes your file, builds an encoding plan, and runs FFmpeg AV1 compression with either NVENC (GPU) or SVT-AV1 (CPU)."
+                           Classes="pm-caption"
+                           TextWrapping="Wrap"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
