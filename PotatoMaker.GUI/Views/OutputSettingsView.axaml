@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="166"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="208"
              x:Class="PotatoMaker.GUI.Views.OutputSettingsView"
              x:DataType="vm:OutputSettingsViewModel">
 
@@ -12,7 +12,8 @@
     </Design.DataContext>
 
     <Border Classes="pm-card"
-            Padding="8">
+            Padding="8"
+            MinHeight="208">
         <StackPanel Spacing="6">
             <TextBlock Text="Output"
                        Classes="pm-section-title"/>
@@ -25,19 +26,20 @@
 
             <Border x:Name="OutputFolderHost"
                     Classes="pm-inset"
-                    MinHeight="38">
+                    MinHeight="56">
                 <StackPanel Spacing="2"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Stretch">
                     <ToolTip.Tip>
-                        <TextBlock Text="{Binding OutputFolderDisplay}"
+                        <TextBlock Text="{Binding OutputFolderDisplayWrapped}"
                                    TextWrapping="Wrap"
                                    MaxWidth="640"/>
                     </ToolTip.Tip>
-                    <TextBlock Text="{Binding OutputFolderDisplay}"
+                    <TextBlock Text="{Binding OutputFolderDisplayWrapped}"
                                FontWeight="SemiBold"
+                               TextWrapping="Wrap"
                                TextTrimming="CharacterEllipsis"
-                               TextWrapping="NoWrap"/>
+                               MaxLines="2"/>
                 </StackPanel>
             </Border>
 

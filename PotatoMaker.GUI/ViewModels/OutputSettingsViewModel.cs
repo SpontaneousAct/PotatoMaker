@@ -13,6 +13,7 @@ public partial class OutputSettingsViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(OutputFolderPath))]
     [NotifyPropertyChangedFor(nameof(OutputFolderDisplay))]
+    [NotifyPropertyChangedFor(nameof(OutputFolderDisplayWrapped))]
     [NotifyPropertyChangedFor(nameof(OutputFolderSummary))]
     [NotifyPropertyChangedFor(nameof(CanResetOutputFolder))]
     private string? _customOutputFolder;
@@ -20,6 +21,7 @@ public partial class OutputSettingsViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(OutputFolderPath))]
     [NotifyPropertyChangedFor(nameof(OutputFolderDisplay))]
+    [NotifyPropertyChangedFor(nameof(OutputFolderDisplayWrapped))]
     [NotifyPropertyChangedFor(nameof(OutputFolderSummary))]
     [NotifyPropertyChangedFor(nameof(HasSourceFolder))]
     private string? _sourceFolder;
@@ -28,6 +30,7 @@ public partial class OutputSettingsViewModel : ViewModelBase
         string.IsNullOrWhiteSpace(CustomOutputFolder) ? SourceFolder : CustomOutputFolder;
 
     public string OutputFolderDisplay => OutputFolderPath ?? "Source file folder";
+    public string OutputFolderDisplayWrapped => AddPathWrapHints(OutputFolderDisplay);
 
     public string OutputFolderSummary =>
         OutputFolderPath is { Length: > 0 } folder
@@ -103,4 +106,8 @@ public partial class OutputSettingsViewModel : ViewModelBase
                normalizedRight is not null &&
                string.Equals(normalizedLeft, normalizedRight, StringComparison.OrdinalIgnoreCase);
     }
+
+    private static string AddPathWrapHints(string path) =>
+        path.Replace("\\", "\\\u200B", StringComparison.Ordinal)
+            .Replace("/", "/\u200B", StringComparison.Ordinal);
 }

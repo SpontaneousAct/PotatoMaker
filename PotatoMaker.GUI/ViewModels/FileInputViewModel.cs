@@ -21,6 +21,7 @@ public partial class FileInputViewModel : ViewModelBase
 
     public bool HasFile => !string.IsNullOrEmpty(InputFilePath);
     public bool HasValidationMessage => !string.IsNullOrWhiteSpace(ValidationMessage);
+    public VideoSummaryViewModel? VideoSummary { get; set; }
 
     /// <summary>
     /// Set by the View to open the native file picker dialog.

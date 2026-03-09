@@ -32,6 +32,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel(AppSettings? initialSettings = null)
     {
+        FileInput.VideoSummary = VideoSummary;
+
         FileInput.FileSelected += OnFileSelected;
         FileInput.FileCleared += OnFileCleared;
         FileInput.PropertyChanged += OnEncodePrerequisiteChanged;
