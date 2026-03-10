@@ -6,6 +6,7 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using PotatoMaker.GUI.DependencyInjection;
 using PotatoMaker.GUI.Services;
+using PotatoMaker.GUI.ViewModels;
 using PotatoMaker.GUI.Views;
 
 namespace PotatoMaker.GUI;
@@ -35,7 +36,11 @@ public partial class App : Application
             var themeService = Services.GetRequiredService<IThemeService>();
             themeService.ApplyTheme(settingsCoordinator.Current.IsDarkMode);
 
-            desktop.MainWindow = Services.GetRequiredService<MainWindow>();
+            var mainWindow = Services.GetRequiredService<MainWindow>();
+            desktop.MainWindow = mainWindow;
+
+            if (mainWindow.DataContext is MainWindowViewModel viewModel)
+                viewModel.TryLoadStartupFiles(desktop.Args ?? []);
         }
 
         base.OnFrameworkInitializationCompleted();

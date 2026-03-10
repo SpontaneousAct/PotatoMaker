@@ -51,6 +51,22 @@ public partial class MainWindowViewModel : ViewModelBase
         _ = PersistThemePreferenceAsync();
     }
 
+    public bool TryLoadStartupFiles(IEnumerable<string> startupArgs)
+    {
+        ArgumentNullException.ThrowIfNull(startupArgs);
+
+        foreach (string startupArg in startupArgs)
+        {
+            if (string.IsNullOrWhiteSpace(startupArg))
+                continue;
+
+            if (Workspace.FileInput.SetFile(startupArg))
+                return true;
+        }
+
+        return false;
+    }
+
     private void ApplyInitialSettings()
     {
         bool initialIsDarkMode = _settingsCoordinator?.Current.IsDarkMode

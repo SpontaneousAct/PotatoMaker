@@ -39,6 +39,41 @@ public sealed class MainWindowViewModelTests
         Assert.False(persisted.IsDarkMode);
     }
 
+    [Fact]
+    public void LoadingStartupFiles_UsesFirstSupportedVideoPath()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var workspace = new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new NoOpFramePreviewService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            var viewModel = new MainWindowViewModel(
+                workspace,
+                new HelpModalViewModel(),
+                new RecordingThemeService(),
+                null);
+
+            bool loaded = viewModel.TryLoadStartupFiles(["", "--flag", inputPath]);
+
+            Assert.True(loaded);
+            Assert.Equal(Path.GetFullPath(inputPath), workspace.FileInput.InputFilePath);
+            Assert.Equal(Path.GetFileName(inputPath), workspace.FileInput.FileName);
+            Assert.Null(workspace.FileInput.ValidationMessage);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
     private sealed class RecordingThemeService : IThemeService
     {
         public List<bool> AppliedThemes { get; } = [];
