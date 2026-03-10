@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="230"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="260"
              x:Class="PotatoMaker.GUI.Views.VideoSummaryView"
              x:DataType="vm:VideoSummaryViewModel">
 
@@ -13,13 +13,57 @@
 
     <Border Classes="pm-card"
             Padding="8">
-        <Grid RowDefinitions="Auto,Auto,*"
-              RowSpacing="5">
+        <Grid RowDefinitions="Auto,Auto,Auto,*"
+              RowSpacing="6">
             <TextBlock Grid.Row="0"
-                       Text="Strategy Preview"
+                       Text="Source Summary"
                        Classes="pm-section-title"/>
 
-            <Grid Grid.Row="2"
+            <Border Grid.Row="1"
+                    Classes="pm-inset"
+                    Padding="6,5">
+                <Grid ColumnDefinitions="*,*,*,*"
+                      ColumnSpacing="6">
+                    <StackPanel Grid.Column="0" Spacing="1">
+                        <TextBlock Text="Size" Classes="pm-caption"/>
+                        <TextBlock Text="{Binding FileSize, TargetNullValue=--}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Spacing="1">
+                        <TextBlock Text="Duration" Classes="pm-caption"/>
+                        <TextBlock Text="{Binding Duration, TargetNullValue=--}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Spacing="1">
+                        <TextBlock Text="Resolution" Classes="pm-caption"/>
+                        <TextBlock Text="{Binding Resolution, TargetNullValue=--}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3" Spacing="1">
+                        <TextBlock Text="FPS" Classes="pm-caption"/>
+                        <TextBlock Text="{Binding FrameRate, TargetNullValue=--}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <StackPanel Grid.Row="2"
+                        Spacing="2">
+                <TextBlock Text="Strategy Preview"
+                           Classes="pm-section-title"/>
+                <TextBlock Text="{Binding StrategyStatus, TargetNullValue=Select a source file to preview the plan.}"
+                           Classes="pm-caption"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <Grid Grid.Row="3"
                   ColumnDefinitions="*,*"
                   RowDefinitions="Auto,Auto,Auto"
                   RowSpacing="5"

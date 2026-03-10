@@ -3,6 +3,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace PotatoMaker.GUI.ViewModels;
 
+/// <summary>
+/// Stores encode logs and progress for the UI.
+/// </summary>
 public partial class ConversionLogViewModel : ViewModelBase
 {
     [ObservableProperty] private bool _isProcessing;

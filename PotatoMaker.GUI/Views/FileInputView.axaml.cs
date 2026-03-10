@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -9,6 +8,9 @@ using PotatoMaker.GUI.ViewModels;
 
 namespace PotatoMaker.GUI.Views;
 
+/// <summary>
+/// Handles file picker and drag-drop interactions for source files.
+/// </summary>
 public partial class FileInputView : UserControl
 {
     public FileInputView()
@@ -29,10 +31,18 @@ public partial class FileInputView : UserControl
         Vm.FilePickerRequested = OpenFilePickerAsync;
     }
 
+    protected override void OnUnloaded(RoutedEventArgs e)
+    {
+        base.OnUnloaded(e);
+        if (Vm.FilePickerRequested == OpenFilePickerAsync)
+            Vm.FilePickerRequested = null;
+    }
+
     private async void OpenFilePickerAsync()
     {
         var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is null) return;
+        if (topLevel is null)
+            return;
 
         var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
@@ -40,18 +50,21 @@ public partial class FileInputView : UserControl
             AllowMultiple = false,
             FileTypeFilter =
             [
-                new FilePickerFileType("Supported video files") { Patterns = InputMediaSupport.FileDialogPatterns.ToArray() }
+                new FilePickerFileType("Supported video files")
+                {
+                    Patterns = InputMediaSupport.FileDialogPatterns.ToArray()
+                }
             ]
         });
 
-        var path = files.FirstOrDefault()?.TryGetLocalPath();
+        string? path = files.FirstOrDefault()?.TryGetLocalPath();
         if (path is not null)
             Vm.SetFile(path);
     }
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
-        var dropZone = this.FindControl<Border>("DropZone");
+        Border? dropZone = this.FindControl<Border>("DropZone");
 
         bool hasSupportedFile = TryGetSingleLocalFilePath(e.DataTransfer, out string? path) &&
             InputMediaSupport.IsSupportedPath(path);
@@ -71,13 +84,13 @@ public partial class FileInputView : UserControl
 
     private void OnDragLeave(object? sender, RoutedEventArgs e)
     {
-        var dropZone = this.FindControl<Border>("DropZone");
+        Border? dropZone = this.FindControl<Border>("DropZone");
         dropZone?.Classes.Remove("drag-over");
     }
 
     private void OnDrop(object? sender, DragEventArgs e)
     {
-        var dropZone = this.FindControl<Border>("DropZone");
+        Border? dropZone = this.FindControl<Border>("DropZone");
         dropZone?.Classes.Remove("drag-over");
 
         if (!TryGetSingleLocalFilePath(e.DataTransfer, out string? path) || path is null)

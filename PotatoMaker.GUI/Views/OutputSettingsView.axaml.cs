@@ -2,12 +2,12 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using PotatoMaker.GUI.ViewModels;
-using System;
-using System.IO;
-using System.Linq;
 
 namespace PotatoMaker.GUI.Views;
 
+/// <summary>
+/// Handles output-folder selection UI.
+/// </summary>
 public partial class OutputSettingsView : UserControl
 {
     public OutputSettingsView()
@@ -37,10 +37,11 @@ public partial class OutputSettingsView : UserControl
             return;
 
         var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is null) return;
+        if (topLevel is null)
+            return;
 
         IStorageFolder? startLocation = null;
-        var currentFolder = vm.OutputFolderPath;
+        string? currentFolder = vm.OutputFolderPath;
         if (!string.IsNullOrWhiteSpace(currentFolder) && Directory.Exists(currentFolder))
             startLocation = await topLevel.StorageProvider.TryGetFolderFromPathAsync(currentFolder);
 
@@ -51,15 +52,12 @@ public partial class OutputSettingsView : UserControl
             SuggestedStartLocation = startLocation
         });
 
-        var path = folders.FirstOrDefault()?.TryGetLocalPath();
+        string? path = folders.FirstOrDefault()?.TryGetLocalPath();
         if (path is not null)
             vm.SetCustomOutputFolder(path);
     }
 
-    private void OnDataContextChanged(object? sender, EventArgs e)
-    {
-        AttachPickerHandler();
-    }
+    private void OnDataContextChanged(object? sender, EventArgs e) => AttachPickerHandler();
 
     private void AttachPickerHandler()
     {

@@ -1,8 +1,14 @@
 namespace PotatoMaker.Core;
 
+/// <summary>
+/// Plans bitrate, scaling, and splitting decisions.
+/// </summary>
 public static class EncodePlanner
 {
-    public record EncodePlan(int VideoBitrateKbps, int Parts, string? ScaleFilter, string ResolutionLabel);
+    /// <summary>
+    /// Describes the chosen encode plan.
+    /// </summary>
+    public sealed record EncodePlan(int VideoBitrateKbps, int Parts, string? ScaleFilter, string ResolutionLabel);
 
     public static int ResolveSourceHeightForPlan(int originalHeight, string? cropFilter)
     {
@@ -43,16 +49,12 @@ public static class EncodePlanner
         }
 
         int parts = 1;
-
-        // In split mode we target the 1080p tier, since each part gets its own size budget.
         while (bitrate < settings.FullHdFloorKbps && parts < settings.MaxParts)
         {
             parts++;
             bitrate = CalculateVideoBitrate(durationSecs / parts, settings);
         }
 
-        // Keep the plan within the size budget even for very long clips.
-        // The "minimum bitrate" setting is a quality preference, not a hard size override.
         bitrate = Math.Max(1, bitrate);
 
         string splitLabel = origHeight <= 1080
@@ -65,19 +67,15 @@ public static class EncodePlanner
     public static string? BuildVideoFilter(string? crop, string? scale) =>
         (crop, scale) switch
         {
-            (null, null)   => null,
-            (null, var s)  => s,
-            (var c, null)  => c,
-            (var c, var s) => $"{c},{s}"
+            (null, null) => null,
+            (null, var scaleFilter) => scaleFilter,
+            (var cropFilter, null) => cropFilter,
+            (var cropFilter, var scaleFilter) => $"{cropFilter},{scaleFilter}"
         };
 
     private static int CalculateVideoBitrate(double durationSecs, EncodeSettings settings) =>
         (int)(settings.EffectiveTargetMb * 8192.0 / durationSecs) - settings.AudioBitrateKbps;
 
-    // -2 preserves aspect ratio for any AR (16:9, 21:9, 32:9, …)
-    // and ensures width is divisible by 2, required by AV1 encoders.
-    // min(ih,N) prevents upscaling sources that are already below the target height.
-    // The \\, is an FFmpeg filter-graph escape for the comma separator.
-    private static string ScaleFilter(int maxHeight) =>
-        $"scale=-2:min(ih\\,{maxHeight})";
+    // -2 preserves aspect ratio and keeps the width even for AV1 encoders.
+    private static string ScaleFilter(int maxHeight) => $"scale=-2:min(ih\\,{maxHeight})";
 }

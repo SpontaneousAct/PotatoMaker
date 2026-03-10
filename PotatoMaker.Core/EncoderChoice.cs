@@ -1,3 +1,10 @@
 namespace PotatoMaker.Core;
 
-public enum EncoderChoice { Nvenc, SvtAv1 }
+/// <summary>
+/// Identifies the encoder implementation to use.
+/// </summary>
+public enum EncoderChoice
+{
+    Nvenc,
+    SvtAv1
+}

@@ -4,15 +4,18 @@ using Microsoft.Extensions.Logging;
 
 namespace PotatoMaker.Core;
 
+/// <summary>
+/// Encodes video jobs with the configured FFmpeg encoder.
+/// </summary>
 public static class VideoEncoder
 {
     public static async Task EncodeAsync(
-        EncodeJob                  job,
-        EncoderChoice              encoder,
-        ILogger                    logger,
+        EncodeJob job,
+        EncoderChoice encoder,
+        ILogger logger,
         IProgress<EncodeProgress>? progress = null,
-        string                     label    = "",
-        CancellationToken          ct       = default)
+        string label = "",
+        CancellationToken ct = default)
     {
         FFmpegBinaries.EnsureConfigured();
 
@@ -20,7 +23,7 @@ public static class VideoEncoder
         {
             logger.LogInformation("  Encoder: libsvtav1 (CPU two-pass)");
             await EncodeSvtAv1TwoPassAsync(job, logger, progress, label, ct);
-            logger.LogInformation(PipelineEvents.Success, "  ✓ libsvtav1 encode complete.");
+            logger.LogInformation(PipelineEvents.Success, "  [ok] libsvtav1 encode complete.");
             return;
         }
 
@@ -29,23 +32,30 @@ public static class VideoEncoder
         try
         {
             await EncodeNvencAsync(job, logger, progress, label, ct);
-            logger.LogInformation(PipelineEvents.Success, "  ✓ NVENC AV1 encode complete.");
+            logger.LogInformation(PipelineEvents.Success, "  [ok] NVENC AV1 encode complete.");
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             logger.LogWarning("  av1_nvenc not available.");
             logger.LogWarning("    Reason: {Reason}", ex.Message.Split('\n')[0].Trim());
             logger.LogInformation("  Falling back to libsvtav1 two-pass (CPU)...");
             await EncodeSvtAv1TwoPassAsync(job, logger, progress, label, ct);
-            logger.LogInformation(PipelineEvents.Success, "  ✓ libsvtav1 encode complete.");
+            logger.LogInformation(PipelineEvents.Success, "  [ok] libsvtav1 encode complete.");
         }
     }
 
     private static async Task EncodeNvencAsync(
-        EncodeJob job, ILogger logger, IProgress<EncodeProgress>? progress, string label, CancellationToken ct)
+        EncodeJob job,
+        ILogger logger,
+        IProgress<EncodeProgress>? progress,
+        string label,
+        CancellationToken ct)
     {
-        var progressDuration = job.SegmentSecs.HasValue
+        TimeSpan progressDuration = job.SegmentSecs.HasValue
             ? TimeSpan.FromSeconds(job.SegmentSecs.Value)
             : job.TotalDuration;
 
@@ -54,7 +64,8 @@ public static class VideoEncoder
             await FFMpegArguments
                 .FromFileInput(job.InputPath, false, o =>
                 {
-                    if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
+                    if (job.StartOffsetSecs > 0)
+                        o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
                 })
                 .OutputToFile(job.OutputPath, overwrite: true, o =>
                 {
@@ -68,7 +79,7 @@ public static class VideoEncoder
                      .WithCustomArgument("-preset p5")
                      .WithFastStart();
 
-                    if (job.VideoFilter != null)
+                    if (job.VideoFilter is not null)
                         o.WithCustomArgument($"-vf {job.VideoFilter}");
                     if (job.SegmentSecs.HasValue)
                         o.WithDuration(TimeSpan.FromSeconds(job.SegmentSecs.Value));
@@ -88,26 +99,30 @@ public static class VideoEncoder
     }
 
     private static async Task EncodeSvtAv1TwoPassAsync(
-        EncodeJob job, ILogger logger, IProgress<EncodeProgress>? progress, string label, CancellationToken ct)
+        EncodeJob job,
+        ILogger logger,
+        IProgress<EncodeProgress>? progress,
+        string label,
+        CancellationToken ct)
     {
         string statsBase = Path.Combine(Path.GetTempPath(), $"pm_{Guid.NewGuid():N}");
-        string statsArg  = statsBase.Replace("\\", "/");
-        string statsDir  = Path.GetDirectoryName(statsBase) ?? Path.GetTempPath();
+        string statsArg = statsBase.Replace("\\", "/", StringComparison.Ordinal);
+        string statsDir = Path.GetDirectoryName(statsBase) ?? Path.GetTempPath();
         string statsName = Path.GetFileName(statsBase);
 
-        var progressDuration = job.SegmentSecs.HasValue
+        TimeSpan progressDuration = job.SegmentSecs.HasValue
             ? TimeSpan.FromSeconds(job.SegmentSecs.Value)
             : job.TotalDuration;
 
         try
         {
-            // Pass 1
             logger.LogInformation("  {Label}[Pass 1/2] analyzing...", label);
 
             await FFMpegArguments
                 .FromFileInput(job.InputPath, false, o =>
                 {
-                    if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
+                    if (job.StartOffsetSecs > 0)
+                        o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
                 })
                 .OutputToFile("NUL", overwrite: true, o =>
                 {
@@ -119,7 +134,7 @@ public static class VideoEncoder
                      .DisableChannel(Channel.Audio)
                      .ForceFormat("null");
 
-                    if (job.VideoFilter != null)
+                    if (job.VideoFilter is not null)
                         o.WithCustomArgument($"-vf {job.VideoFilter}");
                     if (job.SegmentSecs.HasValue)
                         o.WithDuration(TimeSpan.FromSeconds(job.SegmentSecs.Value));
@@ -132,14 +147,13 @@ public static class VideoEncoder
                 .ProcessAsynchronously();
 
             logger.LogInformation(PipelineEvents.Success, "  {Label}[Pass 1/2] done.", label);
-
-            // Pass 2
             logger.LogInformation("  {Label}[Pass 2/2] encoding...", label);
 
             await FFMpegArguments
                 .FromFileInput(job.InputPath, false, o =>
                 {
-                    if (job.StartOffsetSecs > 0) o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
+                    if (job.StartOffsetSecs > 0)
+                        o.Seek(TimeSpan.FromSeconds(job.StartOffsetSecs));
                 })
                 .OutputToFile(job.OutputPath, overwrite: true, o =>
                 {
@@ -152,7 +166,7 @@ public static class VideoEncoder
                      .WithAudioBitrate(job.AudioBitrateKbps)
                      .WithFastStart();
 
-                    if (job.VideoFilter != null)
+                    if (job.VideoFilter is not null)
                         o.WithCustomArgument($"-vf {job.VideoFilter}");
                     if (job.SegmentSecs.HasValue)
                         o.WithDuration(TimeSpan.FromSeconds(job.SegmentSecs.Value));
@@ -160,7 +174,7 @@ public static class VideoEncoder
                 .CancellableThrough(ct)
                 .NotifyOnProgress(pct =>
                 {
-                    progress?.Report(new EncodeProgress($"  {label}[Pass 2/2] Encoding ", (int)pct));
+                    progress?.Report(new EncodeProgress($"  {label}[Pass 2/2] Encoding", (int)pct));
                 }, progressDuration)
                 .ProcessAsynchronously();
 
@@ -173,8 +187,16 @@ public static class VideoEncoder
         }
         finally
         {
-            foreach (string f in Directory.EnumerateFiles(statsDir, $"{statsName}*"))
-                try { File.Delete(f); } catch {  }
+            foreach (string file in Directory.EnumerateFiles(statsDir, $"{statsName}*"))
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch
+                {
+                }
+            }
         }
     }
 
@@ -187,7 +209,6 @@ public static class VideoEncoder
         }
         catch
         {
-            // Best-effort cleanup for canceled runs.
         }
     }
 }

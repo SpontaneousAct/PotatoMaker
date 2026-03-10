@@ -1,7 +1,4 @@
-using System;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace PotatoMaker.GUI.Services;
 
@@ -13,6 +10,9 @@ public interface IEncoderCapabilityService
     Task<bool> IsAv1NvencSupportedAsync(CancellationToken ct = default);
 }
 
+/// <summary>
+/// Detects whether AV1 NVENC is available for FFmpeg.
+/// </summary>
 public sealed class EncoderCapabilityService : IEncoderCapabilityService
 {
     private readonly object _sync = new();
@@ -20,11 +20,16 @@ public sealed class EncoderCapabilityService : IEncoderCapabilityService
 
     public Task<bool> IsAv1NvencSupportedAsync(CancellationToken ct = default)
     {
+        Task<bool> probeTask;
         lock (_sync)
         {
             _cachedAv1NvencSupport ??= ProbeAv1NvencSupportAsync();
-            return _cachedAv1NvencSupport;
+            probeTask = _cachedAv1NvencSupport;
         }
+
+        return ct.CanBeCanceled
+            ? probeTask.WaitAsync(ct)
+            : probeTask;
     }
 
     private static async Task<bool> ProbeAv1NvencSupportAsync()
@@ -37,7 +42,6 @@ public sealed class EncoderCapabilityService : IEncoderCapabilityService
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = ffmpegPath,
-                    // AV1 NVENC minimum dimensions vary by driver/GPU, so use a widely valid test size.
                     Arguments = "-hide_banner -loglevel error -f lavfi -i color=c=black:s=1920x1080:d=0.1 -frames:v 1 -c:v av1_nvenc -f null -",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -49,8 +53,8 @@ public sealed class EncoderCapabilityService : IEncoderCapabilityService
             if (!process.Start())
                 return false;
 
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
+            Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
+            Task<string> stderrTask = process.StandardError.ReadToEndAsync();
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
             await process.WaitForExitAsync(timeoutCts.Token).ConfigureAwait(false);
             _ = await stdoutTask.ConfigureAwait(false);

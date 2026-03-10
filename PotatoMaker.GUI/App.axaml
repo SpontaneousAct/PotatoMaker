@@ -1,11 +1,26 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PotatoMaker.GUI.ViewModels"
+             xmlns:views="using:PotatoMaker.GUI.Views"
              x:Class="PotatoMaker.GUI.App"
-             xmlns:local="using:PotatoMaker.GUI"
              RequestedThemeVariant="Default">
 
     <Application.DataTemplates>
-        <local:ViewLocator/>
+        <DataTemplate DataType="vm:FileInputViewModel">
+            <views:FileInputView/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:VideoSummaryViewModel">
+            <views:VideoSummaryView/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:OutputSettingsViewModel">
+            <views:OutputSettingsView/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:ConversionLogViewModel">
+            <views:ConversionLogView/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:HelpModalViewModel">
+            <views:HelpModalView/>
+        </DataTemplate>
     </Application.DataTemplates>
 
     <Application.Resources>

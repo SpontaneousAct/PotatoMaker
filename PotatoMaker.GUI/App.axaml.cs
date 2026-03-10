@@ -3,52 +3,50 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
-using Avalonia.Styling;
+using Microsoft.Extensions.DependencyInjection;
+using PotatoMaker.GUI.DependencyInjection;
 using PotatoMaker.GUI.Services;
-using PotatoMaker.GUI.ViewModels;
 using PotatoMaker.GUI.Views;
-using System.Linq;
 
-namespace PotatoMaker.GUI
+namespace PotatoMaker.GUI;
+
+/// <summary>
+/// Configures the Avalonia desktop application.
+/// </summary>
+public partial class App : Application
 {
-    public partial class App : Application
+    public IServiceProvider Services { get; private set; } = null!;
+
+    public override void Initialize()
     {
-        public override void Initialize()
+        AvaloniaXamlLoader.Load(this);
+    }
+
+    public override void OnFrameworkInitializationCompleted()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            AvaloniaXamlLoader.Load(this);
+            DisableAvaloniaDataAnnotationValidation();
+            Services = new ServiceCollection()
+                .AddPotatoMakerGui()
+                .BuildServiceProvider();
+
+            var settingsCoordinator = Services.GetRequiredService<IAppSettingsCoordinator>();
+            var themeService = Services.GetRequiredService<IThemeService>();
+            themeService.ApplyTheme(settingsCoordinator.Current.IsDarkMode);
+
+            desktop.MainWindow = Services.GetRequiredService<MainWindow>();
         }
 
-        public override void OnFrameworkInitializationCompleted()
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void DisableAvaloniaDataAnnotationValidation()
+    {
+        var plugins = BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
+        foreach (var plugin in plugins)
         {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
-                // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
-                DisableAvaloniaDataAnnotationValidation();
-
-                var appSettings = SettingsService.Load();
-                RequestedThemeVariant = appSettings.IsDarkMode ? ThemeVariant.Dark : ThemeVariant.Light;
-
-                desktop.MainWindow = new MainWindow
-                {
-                    DataContext = new MainWindowViewModel(appSettings),
-                };
-            }
-
-            base.OnFrameworkInitializationCompleted();
-        }
-
-        private void DisableAvaloniaDataAnnotationValidation()
-        {
-            // Get an array of plugins to remove
-            var dataValidationPluginsToRemove =
-                BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
-
-            // remove each entry found
-            foreach (var plugin in dataValidationPluginsToRemove)
-            {
-                BindingPlugins.DataValidators.Remove(plugin);
-            }
+            BindingPlugins.DataValidators.Remove(plugin);
         }
     }
 }

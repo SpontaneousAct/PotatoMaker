@@ -4,6 +4,9 @@ using PotatoMaker.GUI.ViewModels;
 
 namespace PotatoMaker.GUI.Views;
 
+/// <summary>
+/// Hosts the help overlay.
+/// </summary>
 public partial class HelpModalView : UserControl
 {
     public HelpModalView()

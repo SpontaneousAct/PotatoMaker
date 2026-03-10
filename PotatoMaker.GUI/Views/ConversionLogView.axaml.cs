@@ -6,6 +6,9 @@ using PotatoMaker.GUI.ViewModels;
 
 namespace PotatoMaker.GUI.Views;
 
+/// <summary>
+/// Keeps the log view pinned to the latest output.
+/// </summary>
 public partial class ConversionLogView : UserControl
 {
     private bool _scrollPending;
@@ -41,14 +44,13 @@ public partial class ConversionLogView : UserControl
         base.OnUnloaded(e);
     }
 
-    private void OnLogLinesChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        RequestScrollToBottom();
-    }
+    private void OnLogLinesChanged(object? sender, NotifyCollectionChangedEventArgs e) => RequestScrollToBottom();
 
     private void RequestScrollToBottom()
     {
-        if (_scrollPending) return;
+        if (_scrollPending)
+            return;
+
         _scrollPending = true;
 
         Dispatcher.UIThread.Post(() =>
@@ -56,7 +58,6 @@ public partial class ConversionLogView : UserControl
             _scrollPending = false;
             _logScroller?.ScrollToEnd();
 
-            // Run once more after render to account for extent changes from wrapped text.
             Dispatcher.UIThread.Post(
                 () => _logScroller?.ScrollToEnd(),
                 DispatcherPriority.Render);

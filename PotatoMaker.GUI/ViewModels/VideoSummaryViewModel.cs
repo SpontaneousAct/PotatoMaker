@@ -1,12 +1,11 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using PotatoMaker.Core;
 
 namespace PotatoMaker.GUI.ViewModels;
 
+/// <summary>
+/// Shows source media details and the planned strategy.
+/// </summary>
 public partial class VideoSummaryViewModel : ViewModelBase
 {
     [ObservableProperty] private string? _fileSize;
@@ -24,25 +23,14 @@ public partial class VideoSummaryViewModel : ViewModelBase
     [ObservableProperty] private bool _hasStrategy;
 
     /// <summary>
-    /// The last successful probe result. Available after <see cref="ProbeAsync"/> completes.
+    /// Gets the last successful probe result.
     /// </summary>
     public VideoInfo? Info { get; private set; }
 
+    /// <summary>
+    /// Gets the last successful strategy result.
+    /// </summary>
     public StrategyAnalysis? StrategyAnalysis { get; private set; }
-
-    public async Task ProbeAsync(string path, CancellationToken ct = default)
-    {
-        try
-        {
-            var info = await VideoInfo.ProbeAsync(path, ct);
-            SetProbeResult(path, info);
-        }
-        catch (Exception)
-        {
-            Clear();
-            throw; // let the caller handle logging
-        }
-    }
 
     public void SetProbeResult(string path, VideoInfo info)
     {
@@ -51,19 +39,11 @@ public partial class VideoSummaryViewModel : ViewModelBase
             : "N/A";
 
         Info = info;
-
         Duration = info.Duration.TotalHours >= 1
             ? info.Duration.ToString(@"h\:mm\:ss")
             : info.Duration.ToString(@"m\:ss");
-
-        Resolution = info.Width > 0
-            ? $"{info.Width}x{info.Height}"
-            : "N/A";
-
-        FrameRate = info.FrameRate > 0
-            ? $"{info.FrameRate:0.##} fps"
-            : "N/A";
-
+        Resolution = info.Width > 0 ? $"{info.Width}x{info.Height}" : "N/A";
+        FrameRate = info.FrameRate > 0 ? $"{info.FrameRate:0.##} fps" : "N/A";
         HasData = true;
     }
 
@@ -71,7 +51,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
     {
         StrategyAnalysis = null;
         HasStrategy = false;
-        StrategyStatus = "Analyzing crop + strategy...";
+        StrategyStatus = "Analyzing crop and strategy...";
         StrategyResolution = null;
         StrategyBitrate = null;
         StrategyParts = null;

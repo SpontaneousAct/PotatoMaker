@@ -3,6 +3,9 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace PotatoMaker.GUI.ViewModels;
 
+/// <summary>
+/// Controls the help overlay state.
+/// </summary>
 public partial class HelpModalViewModel : ViewModelBase
 {
     [ObservableProperty]

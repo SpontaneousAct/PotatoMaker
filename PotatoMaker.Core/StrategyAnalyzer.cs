@@ -2,15 +2,20 @@ using Microsoft.Extensions.Logging;
 
 namespace PotatoMaker.Core;
 
+/// <summary>
+/// Result of crop detection and encode planning for one input file.
+/// </summary>
 public sealed record StrategyAnalysis(
     string InputPath,
     string? CropFilter,
-    EncodePlanner.EncodePlan Plan,
-    int SourceHeightForPlan)
+    EncodePlanner.EncodePlan Plan)
 {
     public string? VideoFilter => EncodePlanner.BuildVideoFilter(CropFilter, Plan.ScaleFilter);
 }
 
+/// <summary>
+/// Builds a strategy preview for a source video.
+/// </summary>
 public static class StrategyAnalyzer
 {
     public static async Task<StrategyAnalysis> AnalyzeAsync(
@@ -30,6 +35,6 @@ public static class StrategyAnalyzer
         int sourceHeightForPlan = EncodePlanner.ResolveSourceHeightForPlan(info.Height, cropFilter);
         var plan = EncodePlanner.PlanStrategy(info.Duration.TotalSeconds, sourceHeightForPlan, settings);
 
-        return new StrategyAnalysis(fullPath, cropFilter, plan, sourceHeightForPlan);
+        return new StrategyAnalysis(fullPath, cropFilter, plan);
     }
 }

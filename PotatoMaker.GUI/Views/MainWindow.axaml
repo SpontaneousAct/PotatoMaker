@@ -104,12 +104,12 @@
                       RowDefinitions="Auto,*"
                       RowSpacing="8">
                     <ContentControl Grid.Row="0"
-                                    Content="{Binding FileInput}"
+                                    Content="{Binding Workspace.FileInput}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Top"/>
 
                     <ContentControl Grid.Row="1"
-                                    Content="{Binding ConversionLog}"
+                                    Content="{Binding Workspace.ConversionLog}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch"/>
                 </Grid>
@@ -118,22 +118,22 @@
                       RowDefinitions="*,Auto,Auto"
                       RowSpacing="8">
                     <ContentControl Grid.Row="0"
-                                    Content="{Binding VideoSummary}"
+                                    Content="{Binding Workspace.VideoSummary}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch"/>
 
                     <ContentControl Grid.Row="1"
-                                    Content="{Binding OutputSettings}"
+                                    Content="{Binding Workspace.OutputSettings}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Top"/>
 
                     <Button Grid.Row="2"
-                            Content="{Binding EncodeButtonText}"
-                            Command="{Binding EncodeButtonCommand}"
+                            Content="{Binding Workspace.EncodeButtonText}"
+                            Command="{Binding Workspace.EncodeButtonCommand}"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
-                            Classes.pm-primary="{Binding IsEncodeIdle}"
-                            Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
+                            Classes.pm-primary="{Binding Workspace.IsEncodeIdle}"
+                            Classes.pm-cancel="{Binding Workspace.IsEncodeInProgress}"/>
                 </Grid>
             </Grid>
         </Grid>

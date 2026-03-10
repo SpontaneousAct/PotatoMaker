@@ -14,9 +14,9 @@
     <Border x:Name="DropZone"
             Classes="pm-card pm-dropzone"
             Padding="8"
-            MinHeight="132"
+            MinHeight="110"
             DragDrop.AllowDrop="True">
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto"
               RowSpacing="4">
             <TextBlock Grid.Row="0"
                        Text="Source Video"
@@ -69,46 +69,7 @@
                            TextTrimming="CharacterEllipsis"/>
             </Grid>
 
-            <Border Grid.Row="3"
-                    Classes="pm-inset"
-                    Padding="6,5">
-                <Grid ColumnDefinitions="*,*,*,*"
-                      ColumnSpacing="6">
-                    <StackPanel Grid.Column="0"
-                                Spacing="1">
-                        <TextBlock Text="Size" Classes="pm-caption"/>
-                        <TextBlock Text="{Binding VideoSummary.FileSize, TargetNullValue=--}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1"
-                                Spacing="1">
-                        <TextBlock Text="Duration" Classes="pm-caption"/>
-                        <TextBlock Text="{Binding VideoSummary.Duration, TargetNullValue=--}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="2"
-                                Spacing="1">
-                        <TextBlock Text="Resolution" Classes="pm-caption"/>
-                        <TextBlock Text="{Binding VideoSummary.Resolution, TargetNullValue=--}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="3"
-                                Spacing="1">
-                        <TextBlock Text="FPS" Classes="pm-caption"/>
-                        <TextBlock Text="{Binding VideoSummary.FrameRate, TargetNullValue=--}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <TextBlock Grid.Row="4"
+            <TextBlock Grid.Row="3"
                        Text="{Binding ValidationMessage}"
                        IsVisible="{Binding HasValidationMessage}"
                        Foreground="{DynamicResource PmErrorForeground}"

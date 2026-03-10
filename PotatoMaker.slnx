@@ -2,4 +2,5 @@
   <Project Path="PotatoMaker.Core/PotatoMaker.Core.csproj" />
   <Project Path="PotatoMaker.Cli/PotatoMaker.Cli.csproj" />
   <Project Path="PotatoMaker.GUI/PotatoMaker.GUI.csproj" Id="9de7e018-e418-4e6d-99f6-3e5fff7d13a1" />
+  <Project Path="PotatoMaker.Tests/PotatoMaker.Tests.csproj" />
 </Solution>
