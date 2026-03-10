@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <VlcWindowsX64Enabled>true</VlcWindowsX64Enabled>
+    <VlcWindowsX86Enabled>false</VlcWindowsX86Enabled>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +33,32 @@
     <PackageReference Include="LibVLCSharp.Avalonia" Version="3.9.5" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.4" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
-    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23" GeneratePathProperty="true" />
   </ItemGroup>
+
+  <Target Name="CopyLibVlcRuntimeAfterPublish" AfterTargets="Publish">
+    <PropertyGroup>
+      <_LibVlcArchitecture Condition="'$(RuntimeIdentifier)' == 'win-x64' or '$(PlatformTarget)' == 'x64'">x64</_LibVlcArchitecture>
+      <_LibVlcArchitecture Condition="'$(RuntimeIdentifier)' == 'win-x86' or '$(PlatformTarget)' == 'x86'">x86</_LibVlcArchitecture>
+      <_LibVlcArchitecture Condition="'$(_LibVlcArchitecture)' == '' and '$(Platform)' == 'AnyCPU'">x64</_LibVlcArchitecture>
+      <_LibVlcTargetFolder Condition="'$(_LibVlcArchitecture)' == 'x64'">win-x64</_LibVlcTargetFolder>
+      <_LibVlcTargetFolder Condition="'$(_LibVlcArchitecture)' == 'x86'">win-x86</_LibVlcTargetFolder>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(_LibVlcArchitecture)' != ''">
+      <_LibVlcRuntimeFiles Include="$(PkgVideoLAN_LibVLC_Windows)\build\$(_LibVlcArchitecture)\libvlc.dll" />
+      <_LibVlcRuntimeFiles Include="$(PkgVideoLAN_LibVLC_Windows)\build\$(_LibVlcArchitecture)\libvlccore.dll" />
+      <_LibVlcRuntimeFiles Include="$(PkgVideoLAN_LibVLC_Windows)\build\$(_LibVlcArchitecture)\hrtfs\**\*" />
+      <_LibVlcRuntimeFiles Include="$(PkgVideoLAN_LibVLC_Windows)\build\$(_LibVlcArchitecture)\lua\**\*" />
+      <_LibVlcRuntimeFiles Include="$(PkgVideoLAN_LibVLC_Windows)\build\$(_LibVlcArchitecture)\plugins\**\*" />
+    </ItemGroup>
+
+    <MakeDir Directories="$(PublishDir)libvlc\$(_LibVlcTargetFolder)" Condition="'@(_LibVlcRuntimeFiles)' != ''" />
+
+    <Copy
+      SourceFiles="@(_LibVlcRuntimeFiles)"
+      DestinationFiles="@(_LibVlcRuntimeFiles->'$(PublishDir)libvlc\$(_LibVlcTargetFolder)\%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true"
+      Condition="'@(_LibVlcRuntimeFiles)' != ''" />
+  </Target>
 </Project>

@@ -454,7 +454,9 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            _libVlc = new LibVLC("--quiet");
+            _libVlc = LibVlcRuntime.PackagedPluginsDirectory is { } pluginsDirectory
+                ? new LibVLC($"--plugin-path={pluginsDirectory}", "--quiet")
+                : new LibVLC("--quiet");
             MediaPlayer = new MediaPlayer(_libVlc);
             MediaPlayer.Playing += OnMediaPlayerPlaying;
             MediaPlayer.EndReached += OnMediaPlayerEndReached;

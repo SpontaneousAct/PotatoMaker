@@ -2,7 +2,7 @@ param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [string]$Framework = "net10.0",
-    [bool]$SingleFile = $true,
+    [bool]$SingleFile = $false,
     [string]$FfmpegDir = "",
     [switch]$SkipFfmpeg
 )
@@ -16,7 +16,7 @@ $repoRoot = Split-Path -Parent $scriptRoot
 $guiProject = Join-Path $repoRoot "PotatoMaker.GUI\PotatoMaker.GUI.csproj"
 $publishDir = Join-Path $repoRoot "PotatoMaker.GUI\bin\$Configuration\$Framework\$Runtime\publish"
 $artifactsDir = Join-Path $repoRoot "artifacts"
-$packageName = "PotatoMaker-GUI-$Runtime-portable"
+$packageName = "PotatoMaker"
 $packageDir = Join-Path $artifactsDir $packageName
 $zipPath = Join-Path $artifactsDir "$packageName.zip"
 
@@ -56,7 +56,23 @@ if (Test-Path $publishDir) {
     Remove-Item $publishDir -Recurse -Force
 }
 
-& dotnet publish $guiProject -c $Configuration -r $Runtime --self-contained true /p:PublishSingleFile=$SingleFile /p:PublishReadyToRun=true /p:IncludeNativeLibrariesForSelfExtract=true /p:EnableCompressionInSingleFile=true
+& dotnet restore $guiProject -r $Runtime
+$publishArgs = @(
+    "publish",
+    $guiProject,
+    "-c", $Configuration,
+    "-r", $Runtime,
+    "--self-contained", "true",
+    "/p:PublishSingleFile=$SingleFile",
+    "/p:PublishReadyToRun=true"
+)
+
+if ($SingleFile) {
+    $publishArgs += "/p:IncludeNativeLibrariesForSelfExtract=true"
+    $publishArgs += "/p:EnableCompressionInSingleFile=true"
+}
+
+& dotnet @publishArgs
 
 if (-not (Test-Path $publishDir)) {
     throw "Publish output not found: $publishDir"
@@ -69,6 +85,23 @@ if (Test-Path $packageDir) {
 
 New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
 Copy-Item -Path (Join-Path $publishDir "*") -Destination $packageDir -Recurse -Force
+
+Get-ChildItem -Path $packageDir -Recurse -File -Include *.pdb,*.lib -ErrorAction SilentlyContinue |
+    Remove-Item -Force
+
+$unusedLibVlcDir = if ($Runtime -eq "win-x64") {
+    Join-Path $packageDir "libvlc\win-x86"
+}
+elseif ($Runtime -eq "win-x86") {
+    Join-Path $packageDir "libvlc\win-x64"
+}
+else {
+    $null
+}
+
+if ($null -ne $unusedLibVlcDir -and (Test-Path $unusedLibVlcDir)) {
+    Remove-Item $unusedLibVlcDir -Recurse -Force
+}
 
 if (-not $SkipFfmpeg) {
     if ([string]::IsNullOrWhiteSpace($FfmpegDir)) {
