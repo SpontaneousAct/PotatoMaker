@@ -14,7 +14,7 @@
 
     <Border Classes="pm-card"
             Padding="8">
-        <Grid RowDefinitions="Auto,*,Auto,Auto,Auto"
+        <Grid RowDefinitions="Auto,*,Auto,Auto"
               RowSpacing="6">
             <Grid Grid.Row="0"
                   ColumnDefinitions="*,Auto,Auto,Auto"
@@ -58,6 +58,7 @@
 
             <Border Grid.Row="1"
                     Classes="pm-video-surface"
+                    CornerRadius="0"
                     MinHeight="220">
                 <Grid>
                     <vlc:VideoView MediaPlayer="{Binding VideoPlayer.MediaPlayer}"
@@ -86,31 +87,82 @@
 
             <StackPanel Grid.Row="2"
                         Spacing="3">
-                <Canvas x:Name="TimelineMarkerCanvas"
-                        Height="12"
-                        ClipToBounds="True"
-                        IsVisible="{Binding ClipRange.HasDuration}">
-                    <Border x:Name="SelectionRangeBar"
+                <Canvas x:Name="PlaybackTimelineCanvas"
+                        Height="46"
+                        ClipToBounds="False"
+                        Background="Transparent"
+                        Cursor="Hand"
+                        IsEnabled="{Binding VideoPlayer.CanSeek}">
+                    <Border x:Name="TimelineTrackBackground"
+                            Height="4"
+                            CornerRadius="2"
+                            Background="{DynamicResource PmCardBorderBrush}"
+                            Canvas.Top="26"/>
+                    <Border x:Name="TrimRangeBar"
+                            Height="10"
+                            CornerRadius="5"
+                            Background="{DynamicResource PmPrimaryBackground}"
+                            Opacity="0.26"
+                            Canvas.Top="23"/>
+                    <Border x:Name="TimelineProgressBar"
                             Height="4"
                             CornerRadius="2"
                             Background="{DynamicResource PmPrimaryBackground}"
-                            Opacity="0.35"
-                            Canvas.Top="4"/>
-                    <Border x:Name="StartMarker"
-                            Width="2"
-                            Height="12"
-                            Background="{DynamicResource PmPrimaryBackground}"/>
-                    <Border x:Name="EndMarker"
-                            Width="2"
-                            Height="12"
-                            Background="{DynamicResource PmCancelBackground}"/>
+                            Canvas.Top="26"/>
+                    <Border x:Name="TrimStartStem"
+                            Width="3"
+                            Height="14"
+                            CornerRadius="1.5"
+                            Background="{DynamicResource PmPrimaryBackground}"
+                            Canvas.Top="14"/>
+                    <Border x:Name="TrimEndStem"
+                            Width="3"
+                            Height="14"
+                            CornerRadius="1.5"
+                            Background="{DynamicResource PmCancelBackground}"
+                            Canvas.Top="14"/>
+                    <Border x:Name="TrimStartHandle"
+                            Width="20"
+                            Height="20"
+                            CornerRadius="10"
+                            Background="{DynamicResource PmPrimaryBackground}"
+                            BorderBrush="{DynamicResource PmCardBackground}"
+                            BorderThickness="2"
+                            Cursor="Hand"
+                            Canvas.Top="0">
+                        <TextBlock Text="S"
+                                   Foreground="White"
+                                   FontWeight="Bold"
+                                   FontSize="10"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <Border x:Name="TrimEndHandle"
+                            Width="20"
+                            Height="20"
+                            CornerRadius="10"
+                            Background="{DynamicResource PmCancelBackground}"
+                            BorderBrush="{DynamicResource PmCardBackground}"
+                            BorderThickness="2"
+                            Cursor="Hand"
+                            Canvas.Top="0">
+                        <TextBlock Text="E"
+                                   Foreground="White"
+                                   FontWeight="Bold"
+                                   FontSize="10"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <Border x:Name="TimelineThumb"
+                            Width="18"
+                            Height="18"
+                            CornerRadius="9"
+                            Background="{DynamicResource PmPrimaryBackground}"
+                            BorderBrush="{DynamicResource PmCardBackground}"
+                            BorderThickness="2"
+                            Cursor="Hand"
+                            Canvas.Top="19"/>
                 </Canvas>
-
-                <Slider x:Name="TimelineSlider"
-                        Minimum="0"
-                        Maximum="{Binding VideoPlayer.DurationSeconds}"
-                        Value="{Binding VideoPlayer.TimelineSeconds}"
-                        IsEnabled="{Binding VideoPlayer.CanSeek}"/>
 
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <TextBlock Grid.Column="0"
@@ -124,16 +176,17 @@
             </StackPanel>
 
             <Grid Grid.Row="3"
-                  ColumnDefinitions="Auto,Auto,Auto,Auto,*"
+                  ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,120,*"
                   ColumnSpacing="6">
                 <Button Grid.Column="0"
                         Content="{Binding VideoPlayer.TogglePlaybackText}"
                         Command="{Binding VideoPlayer.TogglePlaybackCommand}"
+                        MinWidth="92"
                         Classes.pm-primary="{Binding VideoPlayer.CanControlPlayback}"/>
 
                 <Button Grid.Column="1"
-                        Content="Stop"
-                        Command="{Binding VideoPlayer.StopPlaybackCommand}"/>
+                        Content="Reset"
+                        Command="{Binding ResetPreviewCommand}"/>
 
                 <Button Grid.Column="2"
                         Content="Set Start"
@@ -143,52 +196,20 @@
                         Content="Set End"
                         Command="{Binding VideoPlayer.SetTrimEndCommand}"/>
 
-                <TextBlock Grid.Column="4"
-                           Text="{Binding ClipRange.RangeSummary}"
-                           Classes="pm-caption"
-                           TextWrapping="Wrap"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Right"/>
+                <Button Grid.Column="4"
+                        Content="{Binding VideoPlayer.ToggleMuteText}"
+                        Command="{Binding VideoPlayer.ToggleMuteCommand}"
+                        IsEnabled="{Binding VideoPlayer.CanAdjustVolume}"
+                        MinWidth="72"/>
+
+                <Slider Grid.Column="5"
+                        Minimum="0"
+                        Maximum="100"
+                        Value="{Binding VideoPlayer.VolumePercent}"
+                        IsEnabled="{Binding VideoPlayer.CanAdjustVolume}"
+                        VerticalAlignment="Center"/>
+
             </Grid>
-
-            <Border Grid.Row="4"
-                    Classes="pm-inset"
-                    Padding="8,6">
-                <StackPanel Spacing="4"
-                            IsEnabled="{Binding ClipRange.HasDuration}">
-                    <StackPanel Spacing="2">
-                        <Grid ColumnDefinitions="*,Auto"
-                              ColumnSpacing="8">
-                            <TextBlock Grid.Column="0"
-                                       Text="Start point"
-                                       Classes="pm-caption"/>
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding ClipRange.StartDisplay}"
-                                       FontWeight="SemiBold"/>
-                        </Grid>
-
-                        <Slider Minimum="0"
-                                Maximum="{Binding ClipRange.MaximumSeconds}"
-                                Value="{Binding ClipRange.StartSeconds}"/>
-                    </StackPanel>
-
-                    <StackPanel Spacing="2">
-                        <Grid ColumnDefinitions="*,Auto"
-                              ColumnSpacing="8">
-                            <TextBlock Grid.Column="0"
-                                       Text="End point"
-                                       Classes="pm-caption"/>
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding ClipRange.EndDisplay}"
-                                       FontWeight="SemiBold"/>
-                        </Grid>
-
-                        <Slider Minimum="0"
-                                Maximum="{Binding ClipRange.MaximumSeconds}"
-                                Value="{Binding ClipRange.EndSeconds}"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
         </Grid>
     </Border>
 </UserControl>

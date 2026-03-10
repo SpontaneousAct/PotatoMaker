@@ -119,10 +119,39 @@ public partial class ClipRangeViewModel : ViewModelBase
             return;
 
         double seconds = Clamp(position.TotalSeconds, 0, MaximumSeconds);
+        double start = _startSeconds;
+        double end = _endSeconds;
+
         if (boundary == ClipBoundary.Start)
-            SetRange(seconds, _endSeconds);
+        {
+            if (seconds > end)
+            {
+                double shift = seconds - start;
+                start += shift;
+                end += shift;
+                (start, end) = ClampShiftedRange(start, end);
+            }
+            else
+            {
+                start = seconds;
+            }
+        }
         else
-            SetRange(_startSeconds, seconds);
+        {
+            if (seconds < start)
+            {
+                double shift = seconds - end;
+                start += shift;
+                end += shift;
+                (start, end) = ClampShiftedRange(start, end);
+            }
+            else
+            {
+                end = seconds;
+            }
+        }
+
+        SetRange(start, end);
     }
 
     private void SetRange(double startSeconds, double endSeconds)
@@ -177,6 +206,26 @@ public partial class ClipRangeViewModel : ViewModelBase
         }
 
         return (normalizedStart, normalizedEnd);
+    }
+
+    private (double Start, double End) ClampShiftedRange(double startSeconds, double endSeconds)
+    {
+        double max = Math.Max(0, MaximumSeconds);
+        double width = Math.Max(0, endSeconds - startSeconds);
+
+        if (startSeconds < 0)
+        {
+            startSeconds = 0;
+            endSeconds = Math.Min(max, width);
+        }
+
+        if (endSeconds > max)
+        {
+            endSeconds = max;
+            startSeconds = Math.Max(0, endSeconds - width);
+        }
+
+        return (startSeconds, endSeconds);
     }
 
     private void NotifyDerivedProperties()

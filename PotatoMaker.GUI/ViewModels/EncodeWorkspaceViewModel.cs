@@ -67,8 +67,11 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         FileInput.FileSelected += OnFileSelected;
         FileInput.FileCleared += OnFileCleared;
         FileInput.PropertyChanged += OnEncodePrerequisiteChanged;
+        FileInput.PropertyChanged += OnResetStateChanged;
         ClipRange.SelectionChanged += OnClipRangeSelectionChanged;
+        ClipRange.PropertyChanged += OnResetStateChanged;
         VideoPlayer.TrimBoundaryRequested += OnTrimBoundaryRequested;
+        VideoPlayer.PropertyChanged += OnResetStateChanged;
         VideoSummary.PropertyChanged += OnEncodePrerequisiteChanged;
         ConversionLog.PropertyChanged += OnEncodePrerequisiteChanged;
         OutputSettings.PropertyChanged += OnOutputSettingsChanged;
@@ -170,6 +173,17 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private bool CanCancelEncode() =>
         ConversionLog.IsProcessing && _encodeCts is not null && !_encodeCts.IsCancellationRequested;
 
+    [RelayCommand(CanExecute = nameof(CanResetPreview))]
+    private void ResetPreview()
+    {
+        VideoPlayer.ResetPlayback();
+
+        if (ClipRange.CanResetSelection)
+            ClipRange.ResetSelectionCommand.Execute(null);
+    }
+
+    private bool CanResetPreview() => FileInput.HasFile && (VideoPlayer.CanResetPlayback || ClipRange.CanResetSelection);
+
     private async void OnFileSelected(string path)
     {
         await LoadSelectedFileAsync(path);
@@ -197,6 +211,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             ClipRange.SetSourceDuration(info.Duration);
             VideoPlayer.LoadSource(path, info.Duration, ClipRange.Selection);
             VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
+            ResetPreviewCommand.NotifyCanExecuteChanged();
 
             await RefreshStrategyPreviewAsync(path, info, previewCts, previewVersion);
         }
@@ -236,6 +251,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         VideoPlayer.Clear();
         VideoSummary.Clear();
         ConversionLog.Clear();
+        ResetPreviewCommand.NotifyCanExecuteChanged();
         NotifyEncodeStateChanged();
     }
 
@@ -243,6 +259,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     {
         string? path = FileInput.InputFilePath;
         VideoInfo? info = VideoSummary.Info;
+        ResetPreviewCommand.NotifyCanExecuteChanged();
         if (path is null || info is null)
             return;
 
@@ -272,6 +289,27 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private void OnTrimBoundaryRequested(ClipBoundary boundary)
     {
         ClipRange.SetBoundary(boundary, VideoPlayer.CurrentPosition);
+    }
+
+    private void OnResetStateChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (sender is FileInputViewModel && e.PropertyName == nameof(FileInputViewModel.HasFile))
+        {
+            ResetPreviewCommand.NotifyCanExecuteChanged();
+            return;
+        }
+
+        if (sender is ClipRangeViewModel && e.PropertyName is nameof(ClipRangeViewModel.CanResetSelection) or nameof(ClipRangeViewModel.HasDuration))
+        {
+            ResetPreviewCommand.NotifyCanExecuteChanged();
+            return;
+        }
+
+        if (sender is VideoPlayerViewModel && e.PropertyName is nameof(VideoPlayerViewModel.CanResetPlayback)
+            or nameof(VideoPlayerViewModel.CanControlPlayback))
+        {
+            ResetPreviewCommand.NotifyCanExecuteChanged();
+        }
     }
 
     private void CancelPendingPreview()
@@ -414,6 +452,9 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         _encodeCts?.Cancel();
         _encodeCts?.Dispose();
         _encodeCts = null;
+        FileInput.PropertyChanged -= OnResetStateChanged;
+        ClipRange.PropertyChanged -= OnResetStateChanged;
+        VideoPlayer.PropertyChanged -= OnResetStateChanged;
         VideoPlayer.Dispose();
     }
 }

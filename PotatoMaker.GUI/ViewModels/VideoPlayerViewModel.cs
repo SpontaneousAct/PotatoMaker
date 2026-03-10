@@ -16,11 +16,16 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private MediaPlayer? _mediaPlayer;
     private double _durationSeconds;
     private double _timelineSeconds;
+    private double _volumePercent = 100;
+    private double _lastAudibleVolumePercent = 100;
     private bool _isPlayerAvailable;
     private bool _hasMedia;
     private bool _isPlaying;
+    private bool _isMuted;
     private bool _isSeekInteractionActive;
     private bool _isUpdatingFromPlayer;
+    private bool _isPrimingInitialFrame;
+    private bool _muteBeforeInitialFramePrime;
     private string _statusMessage;
     private string? _playerErrorMessage;
     private string? _sourcePath;
@@ -73,6 +78,27 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public double VolumePercent
+    {
+        get => _volumePercent;
+        set
+        {
+            double normalized = Clamp(value, 0, 100);
+            if (!SetProperty(ref _volumePercent, normalized))
+                return;
+
+            if (normalized > 0.01d)
+                _lastAudibleVolumePercent = normalized;
+
+            bool shouldMute = normalized <= 0.01d;
+            if (_isMuted != shouldMute)
+                SetMutedCore(shouldMute, applyAudio: false);
+
+            ApplyAudioSettings();
+            OnPropertyChanged(nameof(VolumeDisplay));
+        }
+    }
+
     public double TimelineSeconds
     {
         get => _timelineSeconds;
@@ -83,6 +109,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
                 return;
 
             OnPropertyChanged(nameof(CurrentTimeDisplay));
+            OnPropertyChanged(nameof(CanResetPlayback));
+            StopPlaybackCommand.NotifyCanExecuteChanged();
 
             if (!_isUpdatingFromPlayer && !_isSeekInteractionActive)
                 SeekTo(TimeSpan.FromSeconds(normalized));
@@ -99,8 +127,11 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(IsVideoSurfaceVisible));
                 OnPropertyChanged(nameof(CanControlPlayback));
                 OnPropertyChanged(nameof(CanSeek));
+                OnPropertyChanged(nameof(CanResetPlayback));
+                OnPropertyChanged(nameof(CanAdjustVolume));
                 TogglePlaybackCommand.NotifyCanExecuteChanged();
                 StopPlaybackCommand.NotifyCanExecuteChanged();
+                ToggleMuteCommand.NotifyCanExecuteChanged();
                 SetTrimStartCommand.NotifyCanExecuteChanged();
                 SetTrimEndCommand.NotifyCanExecuteChanged();
             }
@@ -117,8 +148,11 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(IsVideoSurfaceVisible));
                 OnPropertyChanged(nameof(CanControlPlayback));
                 OnPropertyChanged(nameof(CanSeek));
+                OnPropertyChanged(nameof(CanResetPlayback));
+                OnPropertyChanged(nameof(CanAdjustVolume));
                 TogglePlaybackCommand.NotifyCanExecuteChanged();
                 StopPlaybackCommand.NotifyCanExecuteChanged();
+                ToggleMuteCommand.NotifyCanExecuteChanged();
                 SetTrimStartCommand.NotifyCanExecuteChanged();
                 SetTrimEndCommand.NotifyCanExecuteChanged();
             }
@@ -131,7 +165,11 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         private set
         {
             if (SetProperty(ref _isPlaying, value))
+            {
                 OnPropertyChanged(nameof(TogglePlaybackText));
+                OnPropertyChanged(nameof(CanResetPlayback));
+                StopPlaybackCommand.NotifyCanExecuteChanged();
+            }
         }
     }
 
@@ -139,15 +177,29 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     public bool CanSeek => CanControlPlayback && DurationSeconds > 0;
 
+    public bool CanResetPlayback => CanControlPlayback && (IsPlaying || TimelineSeconds > 0.01d);
+
+    public bool CanAdjustVolume => CanControlPlayback;
+
     public bool IsVideoSurfaceVisible => CanControlPlayback;
 
     public string TogglePlaybackText => IsPlaying ? "Pause" : "Play";
+
+    public string ToggleMuteText => IsMuted ? "Unmute" : "Mute";
 
     public string CurrentTimeDisplay => FormatTime(TimeSpan.FromSeconds(TimelineSeconds));
 
     public TimeSpan CurrentPosition => TimeSpan.FromSeconds(TimelineSeconds);
 
     public string DurationDisplay => FormatTime(TimeSpan.FromSeconds(DurationSeconds));
+
+    public bool IsMuted
+    {
+        get => _isMuted;
+        private set => SetMutedCore(value);
+    }
+
+    public string VolumeDisplay => $"{Math.Round(VolumePercent):0}%";
 
     public string SelectedRangeDisplay => HasMedia
         ? $"{FormatTime(_selectionStart)} - {FormatTime(_selectionEnd)}"
@@ -193,18 +245,45 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     private bool CanTogglePlayback() => CanControlPlayback;
 
+    [RelayCommand(CanExecute = nameof(CanToggleMute))]
+    private void ToggleMute()
+    {
+        if (IsMuted)
+        {
+            if (VolumePercent <= 0.01d)
+                VolumePercent = _lastAudibleVolumePercent;
+
+            IsMuted = false;
+        }
+        else
+        {
+            if (VolumePercent > 0.01d)
+                _lastAudibleVolumePercent = VolumePercent;
+
+            IsMuted = true;
+        }
+    }
+
+    private bool CanToggleMute() => CanAdjustVolume;
+
     [RelayCommand(CanExecute = nameof(CanStopPlayback))]
     private void StopPlayback()
+    {
+        ResetPlayback();
+    }
+
+    public void ResetPlayback()
     {
         if (MediaPlayer is null)
             return;
 
-        MediaPlayer.Stop();
-        IsPlaying = false;
+        MediaPlayer.SetPause(true);
+        SeekTo(TimeSpan.Zero);
+        UpdatePlaybackState();
         SetTimelineFromPlayer(TimeSpan.Zero);
     }
 
-    private bool CanStopPlayback() => CanControlPlayback;
+    private bool CanStopPlayback() => CanResetPlayback;
 
     [RelayCommand(CanExecute = nameof(CanSetTrimBoundary))]
     private void SetTrimStart() => TrimBoundaryRequested?.Invoke(ClipBoundary.Start);
@@ -240,6 +319,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             PlayerErrorMessage = null;
             StatusMessage = $"Ready to play {Path.GetFileName(_sourcePath)}";
             SetTimelineFromPlayer(TimeSpan.Zero);
+            PrimeInitialFrame();
             OnPropertyChanged(nameof(LoadedFileName));
         }
         catch (Exception ex)
@@ -258,6 +338,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         ReleaseMedia();
         _sourcePath = null;
+        _isPrimingInitialFrame = false;
         HasMedia = false;
         IsPlaying = false;
         DurationSeconds = 0;
@@ -288,6 +369,14 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     public void BeginSeekInteraction() => _isSeekInteractionActive = true;
 
+    public void SeekDuringInteraction(TimeSpan position)
+    {
+        if (!CanSeek)
+            return;
+
+        SeekTo(position);
+    }
+
     public void EndSeekInteraction()
     {
         if (!_isSeekInteractionActive)
@@ -303,6 +392,12 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         _positionTimer.Tick -= OnPositionTimerTick;
         var mediaPlayer = _mediaPlayer;
         _mediaPlayer = null;
+
+        if (mediaPlayer is not null)
+        {
+            mediaPlayer.Playing -= OnMediaPlayerPlaying;
+            mediaPlayer.EndReached -= OnMediaPlayerEndReached;
+        }
 
         try
         {
@@ -343,6 +438,9 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         {
             _libVlc = new LibVLC("--quiet");
             MediaPlayer = new MediaPlayer(_libVlc);
+            MediaPlayer.Playing += OnMediaPlayerPlaying;
+            MediaPlayer.EndReached += OnMediaPlayerEndReached;
+            ApplyAudioSettings();
             IsPlayerAvailable = true;
             PlayerErrorMessage = null;
             StatusMessage = "Select a video to preview it.";
@@ -376,6 +474,109 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private void UpdatePlaybackState()
     {
         IsPlaying = MediaPlayer?.IsPlaying ?? false;
+    }
+
+    private void SetMutedCore(bool value, bool applyAudio = true)
+    {
+        if (!SetProperty(ref _isMuted, value, nameof(IsMuted)))
+            return;
+
+        OnPropertyChanged(nameof(ToggleMuteText));
+
+        if (applyAudio)
+            ApplyAudioSettings();
+    }
+
+    private void ApplyAudioSettings()
+    {
+        if (MediaPlayer is null)
+            return;
+
+        try
+        {
+            MediaPlayer.Volume = (int)Math.Round(VolumePercent);
+            MediaPlayer.Mute = IsMuted;
+        }
+        catch
+        {
+        }
+    }
+
+    private void PrimeInitialFrame()
+    {
+        if (MediaPlayer is null || !HasMedia)
+            return;
+
+        try
+        {
+            _isPrimingInitialFrame = true;
+            _muteBeforeInitialFramePrime = MediaPlayer.Mute;
+            MediaPlayer.Mute = true;
+            MediaPlayer.Play();
+        }
+        catch
+        {
+            _isPrimingInitialFrame = false;
+
+            if (MediaPlayer is not null)
+                MediaPlayer.Mute = _muteBeforeInitialFramePrime;
+        }
+    }
+
+    private void OnMediaPlayerPlaying(object? sender, EventArgs e)
+    {
+        if (!_isPrimingInitialFrame)
+            return;
+
+        Dispatcher.UIThread.Post(CompleteInitialFramePrime);
+    }
+
+    private void OnMediaPlayerEndReached(object? sender, EventArgs e)
+    {
+        Dispatcher.UIThread.Post(ResetAfterPlaybackEnded);
+    }
+
+    private void CompleteInitialFramePrime()
+    {
+        if (!_isPrimingInitialFrame || MediaPlayer is null)
+            return;
+
+        _isPrimingInitialFrame = false;
+
+        try
+        {
+            MediaPlayer.SetPause(true);
+
+            long currentTime = MediaPlayer.Time;
+            if (currentTime >= 0)
+                SetTimelineFromPlayer(TimeSpan.FromMilliseconds(currentTime));
+        }
+        finally
+        {
+            MediaPlayer.Mute = _muteBeforeInitialFramePrime;
+            UpdatePlaybackState();
+        }
+    }
+
+    private void ResetAfterPlaybackEnded()
+    {
+        if (MediaPlayer is null || !HasMedia)
+            return;
+
+        _isSeekInteractionActive = false;
+        _isPrimingInitialFrame = false;
+
+        try
+        {
+            MediaPlayer.Stop();
+        }
+        catch
+        {
+        }
+
+        SetTimelineFromPlayer(TimeSpan.Zero);
+        UpdatePlaybackState();
+        PrimeInitialFrame();
     }
 
     private void SetTimelineFromPlayer(TimeSpan value)

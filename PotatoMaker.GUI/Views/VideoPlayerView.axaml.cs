@@ -11,20 +11,50 @@ namespace PotatoMaker.GUI.Views;
 /// </summary>
 public partial class VideoPlayerView : UserControl
 {
+    private const double TrackInset = 14;
+
     private EncodeWorkspaceViewModel? _workspace;
+    private readonly Canvas _timelineCanvas;
+    private readonly Border _trackBackground;
+    private readonly Border _timelineProgressBar;
+    private readonly Border _trimRangeBar;
+    private readonly Border _trimStartStem;
+    private readonly Border _trimEndStem;
+    private readonly Border _trimStartHandle;
+    private readonly Border _trimEndHandle;
+    private readonly Border _timelineThumb;
+    private DragTarget _activeDragTarget;
 
     public VideoPlayerView()
     {
         InitializeComponent();
 
-        var timelineSlider = this.FindControl<Slider>("TimelineSlider")!;
-        var markerCanvas = this.FindControl<Canvas>("TimelineMarkerCanvas")!;
-        timelineSlider.AddHandler(PointerPressedEvent, OnTimelineSeekStarted);
-        timelineSlider.AddHandler(PointerReleasedEvent, OnTimelineSeekFinished);
-        timelineSlider.AddHandler(PointerCaptureLostEvent, OnTimelineSeekCaptureLost);
-        markerCanvas.PropertyChanged += OnMarkerCanvasPropertyChanged;
+        _timelineCanvas = this.FindControl<Canvas>("PlaybackTimelineCanvas")!;
+        _trackBackground = this.FindControl<Border>("TimelineTrackBackground")!;
+        _timelineProgressBar = this.FindControl<Border>("TimelineProgressBar")!;
+        _trimRangeBar = this.FindControl<Border>("TrimRangeBar")!;
+        _trimStartStem = this.FindControl<Border>("TrimStartStem")!;
+        _trimEndStem = this.FindControl<Border>("TrimEndStem")!;
+        _trimStartHandle = this.FindControl<Border>("TrimStartHandle")!;
+        _trimEndHandle = this.FindControl<Border>("TrimEndHandle")!;
+        _timelineThumb = this.FindControl<Border>("TimelineThumb")!;
 
-        UpdateTimelineMarkers();
+        _timelineCanvas.PointerPressed += OnTimelineCanvasPressed;
+        _timelineCanvas.PointerMoved += OnTimelineCanvasPointerMoved;
+        _timelineCanvas.PointerReleased += OnTimelinePointerReleased;
+        _timelineCanvas.PointerCaptureLost += OnTimelinePointerCaptureLost;
+        _timelineCanvas.PropertyChanged += OnTimelineCanvasPropertyChanged;
+        _timelineThumb.PointerPressed += OnTimelineThumbPressed;
+        _timelineThumb.PointerReleased += OnTimelinePointerReleased;
+        _timelineThumb.PointerCaptureLost += OnTimelinePointerCaptureLost;
+        _trimStartHandle.PointerPressed += OnTrimStartPressed;
+        _trimStartHandle.PointerReleased += OnTimelinePointerReleased;
+        _trimStartHandle.PointerCaptureLost += OnTimelinePointerCaptureLost;
+        _trimEndHandle.PointerPressed += OnTrimEndPressed;
+        _trimEndHandle.PointerReleased += OnTimelinePointerReleased;
+        _trimEndHandle.PointerCaptureLost += OnTimelinePointerCaptureLost;
+
+        UpdateTimelineVisuals();
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -32,15 +62,83 @@ public partial class VideoPlayerView : UserControl
         Unsubscribe(_workspace);
         _workspace = DataContext as EncodeWorkspaceViewModel;
         Subscribe(_workspace);
-        UpdateTimelineMarkers();
+        UpdateTimelineVisuals();
         base.OnDataContextChanged(e);
     }
 
-    private void OnTimelineSeekStarted(object? sender, PointerPressedEventArgs e) => _workspace?.VideoPlayer.BeginSeekInteraction();
+    private void OnTimelineCanvasPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_workspace?.VideoPlayer.CanSeek != true)
+            return;
 
-    private void OnTimelineSeekFinished(object? sender, PointerEventArgs e) => _workspace?.VideoPlayer.EndSeekInteraction();
+        _activeDragTarget = DragTarget.Playback;
+        _workspace.VideoPlayer.BeginSeekInteraction();
+        e.Pointer.Capture(_timelineCanvas);
+        SeekPlaybackToPointer(e.GetPosition(_timelineCanvas).X);
+        e.Handled = true;
+    }
 
-    private void OnTimelineSeekCaptureLost(object? sender, PointerCaptureLostEventArgs e) => _workspace?.VideoPlayer.EndSeekInteraction();
+    private void OnTimelineThumbPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_workspace?.VideoPlayer.CanSeek != true)
+            return;
+
+        _activeDragTarget = DragTarget.Playback;
+        _workspace.VideoPlayer.BeginSeekInteraction();
+        e.Pointer.Capture(_timelineThumb);
+        SeekPlaybackToPointer(e.GetPosition(_timelineCanvas).X);
+        e.Handled = true;
+    }
+
+    private void OnTrimStartPressed(object? sender, PointerPressedEventArgs e)
+    {
+        BeginTrimDrag(e, DragTarget.TrimStart, _trimStartHandle);
+    }
+
+    private void OnTrimEndPressed(object? sender, PointerPressedEventArgs e)
+    {
+        BeginTrimDrag(e, DragTarget.TrimEnd, _trimEndHandle);
+    }
+
+    private void BeginTrimDrag(PointerPressedEventArgs e, DragTarget target, IInputElement captureTarget)
+    {
+        if (_workspace?.ClipRange.HasDuration != true)
+            return;
+
+        _activeDragTarget = target;
+        e.Pointer.Capture(captureTarget);
+        UpdateTrimBoundaryFromPointer(e.GetPosition(_timelineCanvas).X);
+        e.Handled = true;
+    }
+
+    private void OnTimelineCanvasPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_activeDragTarget == DragTarget.None)
+            return;
+
+        double pointerX = e.GetPosition(_timelineCanvas).X;
+        if (_activeDragTarget == DragTarget.Playback)
+        {
+            SeekPlaybackToPointer(pointerX);
+        }
+        else
+        {
+            UpdateTrimBoundaryFromPointer(pointerX);
+        }
+
+        e.Handled = true;
+    }
+
+    private void OnTimelinePointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        EndActiveDrag(e.Pointer);
+        e.Handled = true;
+    }
+
+    private void OnTimelinePointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        EndActiveDrag(e.Pointer);
+    }
 
     private void Subscribe(EncodeWorkspaceViewModel? workspace)
     {
@@ -66,47 +164,120 @@ public partial class VideoPlayerView : UserControl
             or nameof(ClipRangeViewModel.EndSeconds)
             or nameof(ClipRangeViewModel.MaximumSeconds)
             or nameof(ClipRangeViewModel.HasDuration)
-            or nameof(VideoPlayerViewModel.DurationSeconds))
+            or nameof(VideoPlayerViewModel.DurationSeconds)
+            or nameof(VideoPlayerViewModel.TimelineSeconds)
+            or nameof(VideoPlayerViewModel.CanSeek))
         {
-            UpdateTimelineMarkers();
+            UpdateTimelineVisuals();
         }
     }
 
-    private void OnMarkerCanvasPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    private void OnTimelineCanvasPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == BoundsProperty)
-            UpdateTimelineMarkers();
+            UpdateTimelineVisuals();
     }
 
-    private void UpdateTimelineMarkers()
+    private void UpdateTimelineVisuals()
     {
-        var markerCanvas = this.FindControl<Canvas>("TimelineMarkerCanvas");
-        var selectionRangeBar = this.FindControl<Border>("SelectionRangeBar");
-        var startMarker = this.FindControl<Border>("StartMarker");
-        var endMarker = this.FindControl<Border>("EndMarker");
-        if (markerCanvas is null || selectionRangeBar is null || startMarker is null || endMarker is null)
+        double width = _timelineCanvas.Bounds.Width;
+        double duration = _workspace?.VideoPlayer.DurationSeconds ?? 0;
+        bool canRenderTimeline = width > 0;
+        bool hasDuration = duration > 0;
+        bool hasTrimRange = _workspace?.ClipRange.HasDuration == true && (_workspace?.ClipRange.MaximumSeconds ?? 0) > 0;
+
+        _timelineCanvas.IsEnabled = _workspace?.VideoPlayer.CanSeek == true;
+        if (!canRenderTimeline)
             return;
 
-        double width = markerCanvas.Bounds.Width;
-        double duration = _workspace?.ClipRange.MaximumSeconds ?? 0;
-        bool canShowMarkers = _workspace?.ClipRange.HasDuration == true && width > 0 && duration > 0;
+        double trackLeft = TrackInset;
+        double trackWidth = Math.Max(1, width - (TrackInset * 2));
+        double trackRight = trackLeft + trackWidth;
 
-        markerCanvas.IsVisible = canShowMarkers;
-        if (!canShowMarkers)
+        Canvas.SetLeft(_trackBackground, trackLeft);
+        _trackBackground.Width = trackWidth;
+
+        double currentSeconds = _workspace?.VideoPlayer.TimelineSeconds ?? 0;
+        double currentX = hasDuration
+            ? trackLeft + (trackWidth * Clamp(currentSeconds / duration, 0, 1))
+            : trackLeft;
+
+        Canvas.SetLeft(_timelineProgressBar, trackLeft);
+        _timelineProgressBar.Width = Math.Max(0, currentX - trackLeft);
+        Canvas.SetLeft(_timelineThumb, Clamp(currentX - (_timelineThumb.Width / 2), trackLeft - (_timelineThumb.Width / 2), trackRight - (_timelineThumb.Width / 2)));
+        _timelineThumb.IsVisible = hasDuration;
+
+        _trimRangeBar.IsVisible = hasTrimRange;
+        _trimStartStem.IsVisible = hasTrimRange;
+        _trimEndStem.IsVisible = hasTrimRange;
+        _trimStartHandle.IsVisible = hasTrimRange;
+        _trimEndHandle.IsVisible = hasTrimRange;
+
+        if (!hasTrimRange)
             return;
 
-        double startSeconds = _workspace!.ClipRange.StartSeconds;
-        double endSeconds = _workspace.ClipRange.EndSeconds;
-        double startX = width * Clamp(startSeconds / duration, 0, 1);
-        double endX = width * Clamp(endSeconds / duration, 0, 1);
-
+        double trimDuration = _workspace!.ClipRange.MaximumSeconds;
+        double startX = trackLeft + (trackWidth * Clamp(_workspace.ClipRange.StartSeconds / trimDuration, 0, 1));
+        double endX = trackLeft + (trackWidth * Clamp(_workspace.ClipRange.EndSeconds / trimDuration, 0, 1));
         double rangeLeft = Math.Min(startX, endX);
-        double rangeWidth = Math.Max(2, Math.Abs(endX - startX));
+        double rangeWidth = Math.Max(4, Math.Abs(endX - startX));
 
-        Canvas.SetLeft(startMarker, Clamp(startX - (startMarker.Width / 2), 0, Math.Max(0, width - startMarker.Width)));
-        Canvas.SetLeft(endMarker, Clamp(endX - (endMarker.Width / 2), 0, Math.Max(0, width - endMarker.Width)));
-        Canvas.SetLeft(selectionRangeBar, Clamp(rangeLeft, 0, width));
-        selectionRangeBar.Width = Math.Min(rangeWidth, Math.Max(2, width - rangeLeft));
+        Canvas.SetLeft(_trimRangeBar, Clamp(rangeLeft, trackLeft, trackRight));
+        _trimRangeBar.Width = Math.Min(rangeWidth, Math.Max(4, trackRight - rangeLeft));
+        Canvas.SetLeft(_trimStartStem, Clamp(startX - (_trimStartStem.Width / 2), 0, Math.Max(0, width - _trimStartStem.Width)));
+        Canvas.SetLeft(_trimEndStem, Clamp(endX - (_trimEndStem.Width / 2), 0, Math.Max(0, width - _trimEndStem.Width)));
+        Canvas.SetLeft(_trimStartHandle, Clamp(startX - (_trimStartHandle.Width / 2), 0, Math.Max(0, width - _trimStartHandle.Width)));
+        Canvas.SetLeft(_trimEndHandle, Clamp(endX - (_trimEndHandle.Width / 2), 0, Math.Max(0, width - _trimEndHandle.Width)));
+    }
+
+    private void SeekPlaybackToPointer(double pointerX)
+    {
+        if (_workspace?.VideoPlayer.CanSeek != true)
+            return;
+
+        double duration = _workspace.VideoPlayer.DurationSeconds;
+        if (duration <= 0)
+            return;
+
+        double seconds = duration * NormalizePointer(pointerX);
+        _workspace.VideoPlayer.SeekDuringInteraction(TimeSpan.FromSeconds(seconds));
+    }
+
+    private void UpdateTrimBoundaryFromPointer(double pointerX)
+    {
+        if (_workspace?.ClipRange.HasDuration != true)
+            return;
+
+        double duration = _workspace.ClipRange.MaximumSeconds;
+        if (duration <= 0)
+            return;
+
+        ClipBoundary boundary = _activeDragTarget switch
+        {
+            DragTarget.TrimStart => ClipBoundary.Start,
+            DragTarget.TrimEnd => ClipBoundary.End,
+            _ => throw new InvalidOperationException("Trim boundary requested without an active trim drag.")
+        };
+
+        double seconds = duration * NormalizePointer(pointerX);
+        _workspace.ClipRange.SetBoundary(boundary, TimeSpan.FromSeconds(seconds));
+    }
+
+    private double NormalizePointer(double pointerX)
+    {
+        double width = _timelineCanvas.Bounds.Width;
+        double trackWidth = Math.Max(1, width - (TrackInset * 2));
+        return Clamp((pointerX - TrackInset) / trackWidth, 0, 1);
+    }
+
+    private void EndActiveDrag(IPointer pointer)
+    {
+        pointer.Capture(null);
+
+        if (_activeDragTarget == DragTarget.Playback)
+            _workspace?.VideoPlayer.EndSeekInteraction();
+
+        _activeDragTarget = DragTarget.None;
     }
 
     private static double Clamp(double value, double min, double max)
@@ -115,5 +286,13 @@ public partial class VideoPlayerView : UserControl
             return min;
 
         return value > max ? max : value;
+    }
+
+    private enum DragTarget
+    {
+        None,
+        Playback,
+        TrimStart,
+        TrimEnd
     }
 }
