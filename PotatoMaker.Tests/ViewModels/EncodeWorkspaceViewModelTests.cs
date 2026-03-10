@@ -103,11 +103,16 @@ public sealed class EncodeWorkspaceViewModelTests
             workspace.ClipRange.EndSeconds = 27;
             await analysisService.WaitForStrategyCountAsync(2);
 
+            workspace.OutputSettings.UseNvencEncoder = false;
+            workspace.OutputSettings.SetCpuEncodePreset(9);
+
             workspace.EncodeButtonCommand.Execute(null);
             EncodeRequest request = await encodingService.WaitForRequestAsync();
 
             Assert.Equal(TimeSpan.FromSeconds(12), request.ClipRange?.Start);
             Assert.Equal(TimeSpan.FromSeconds(27), request.ClipRange?.End);
+            Assert.Equal(EncoderChoice.SvtAv1, request.Settings.Encoder);
+            Assert.Equal(9, request.Settings.SvtAv1Preset);
         }
         finally
         {
@@ -167,6 +172,8 @@ public sealed class EncodeWorkspaceViewModelTests
             {
                 IsDarkMode = false,
                 UseNvencEncoder = true,
+                PreviewVolumePercent = 100,
+                SvtAv1Preset = 6,
                 LastOutputFolder = null
             });
             var workspace = new EncodeWorkspaceViewModel(
@@ -186,6 +193,82 @@ public sealed class EncodeWorkspaceViewModelTests
         {
             Directory.Delete(outputFolder, recursive: true);
         }
+    }
+
+    [Fact]
+    public void InitialSettings_ApplyVolumeAndCpuPreset()
+    {
+        const double initialVolume = 37;
+        const int initialPreset = 10;
+        var player = new VideoPlayerViewModel(initializePlayer: false);
+        var workspace = new EncodeWorkspaceViewModel(
+            new RecordingAnalysisService(),
+            new NoOpEncodingService(),
+            player,
+            new StaticEncoderCapabilityService(),
+            new RecordingSettingsCoordinator(new AppSettings
+            {
+                IsDarkMode = false,
+                UseNvencEncoder = false,
+                PreviewVolumePercent = initialVolume,
+                SvtAv1Preset = initialPreset,
+                LastOutputFolder = "C:\\encoded"
+            }),
+            initializeEncoderSupport: false);
+
+        Assert.Equal(initialVolume, workspace.VideoPlayer.VolumePercent);
+        Assert.Equal(initialPreset, workspace.OutputSettings.CpuEncodePreset);
+        Assert.False(workspace.OutputSettings.UseNvencEncoder);
+        Assert.Equal("C:\\encoded", workspace.OutputSettings.CustomOutputFolder);
+    }
+
+    [Fact]
+    public async Task ChangingVolume_PersistsThroughCoordinator()
+    {
+        var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
+        {
+            IsDarkMode = false,
+            UseNvencEncoder = true,
+            PreviewVolumePercent = 100,
+            SvtAv1Preset = 6
+        });
+        var workspace = new EncodeWorkspaceViewModel(
+            new RecordingAnalysisService(),
+            new NoOpEncodingService(),
+            new VideoPlayerViewModel(initializePlayer: false),
+            new StaticEncoderCapabilityService(),
+            settingsCoordinator,
+            initializeEncoderSupport: false);
+
+        workspace.VideoPlayer.VolumePercent = 44;
+
+        AppSettings persisted = await settingsCoordinator.WaitForUpdateAsync();
+
+        Assert.Equal(44, persisted.PreviewVolumePercent);
+    }
+
+    [Fact]
+    public async Task ChangingCpuPreset_PersistsThroughCoordinator()
+    {
+        var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
+        {
+            IsDarkMode = false,
+            UseNvencEncoder = true,
+            PreviewVolumePercent = 100,
+            SvtAv1Preset = 6
+        });
+        var workspace = new EncodeWorkspaceViewModel(
+            new RecordingAnalysisService(),
+            new NoOpEncodingService(),
+            new StaticEncoderCapabilityService(),
+            settingsCoordinator,
+            initializeEncoderSupport: false);
+
+        workspace.OutputSettings.SetCpuEncodePreset(11);
+
+        AppSettings persisted = await settingsCoordinator.WaitForUpdateAsync();
+
+        Assert.Equal(11, persisted.SvtAv1Preset);
     }
 
     private sealed class RecordingAnalysisService : IVideoAnalysisService

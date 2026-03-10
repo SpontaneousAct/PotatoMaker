@@ -132,7 +132,7 @@ public class ProcessingPipeline
 
         try
         {
-            await VideoEncoder.EncodeAsync(job, _settings.Encoder, _logger, _progress, ct: ct);
+            await VideoEncoder.EncodeAsync(job, _settings.Encoder, _settings.SvtAv1Preset, _logger, _progress, ct: ct);
             PrintSummary([job.OutputPath]);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -174,7 +174,7 @@ public class ProcessingPipeline
                     SegmentSecs: segSecs
                 );
 
-                await VideoEncoder.EncodeAsync(job, _settings.Encoder, _logger, _progress, label: $"[{i + 1}/{parts}] ", ct: ct);
+                await VideoEncoder.EncodeAsync(job, _settings.Encoder, _settings.SvtAv1Preset, _logger, _progress, label: $"[{i + 1}/{parts}] ", ct: ct);
             }
 
             PrintSummary(outputPaths);

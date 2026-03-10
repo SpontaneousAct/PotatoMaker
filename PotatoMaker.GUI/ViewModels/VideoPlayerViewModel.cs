@@ -22,6 +22,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private bool _hasMedia;
     private bool _isPlaying;
     private bool _isMuted;
+    private bool _suppressVideoSurface;
     private bool _isSeekInteractionActive;
     private bool _isUpdatingFromPlayer;
     private bool _isPrimingInitialFrame;
@@ -125,6 +126,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             if (SetProperty(ref _isPlayerAvailable, value))
             {
                 OnPropertyChanged(nameof(IsVideoSurfaceVisible));
+                OnPropertyChanged(nameof(IsVideoStatusVisible));
                 OnPropertyChanged(nameof(CanControlPlayback));
                 OnPropertyChanged(nameof(CanSeek));
                 OnPropertyChanged(nameof(CanResetPlayback));
@@ -146,6 +148,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             if (SetProperty(ref _hasMedia, value))
             {
                 OnPropertyChanged(nameof(IsVideoSurfaceVisible));
+                OnPropertyChanged(nameof(IsVideoStatusVisible));
                 OnPropertyChanged(nameof(CanControlPlayback));
                 OnPropertyChanged(nameof(CanSeek));
                 OnPropertyChanged(nameof(CanResetPlayback));
@@ -181,7 +184,22 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     public bool CanAdjustVolume => CanControlPlayback;
 
-    public bool IsVideoSurfaceVisible => CanControlPlayback;
+    public bool IsVideoSurfaceVisible => CanControlPlayback && !SuppressVideoSurface;
+
+    public bool IsVideoStatusVisible => !CanControlPlayback;
+
+    public bool SuppressVideoSurface
+    {
+        get => _suppressVideoSurface;
+        set
+        {
+            if (!SetProperty(ref _suppressVideoSurface, value))
+                return;
+
+            OnPropertyChanged(nameof(IsVideoSurfaceVisible));
+            OnPropertyChanged(nameof(IsVideoStatusVisible));
+        }
+    }
 
     public string TogglePlaybackText => IsPlaying ? "Pause" : "Play";
 

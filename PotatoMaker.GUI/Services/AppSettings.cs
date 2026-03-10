@@ -1,3 +1,5 @@
+using PotatoMaker.Core;
+
 namespace PotatoMaker.GUI.Services;
 
 /// <summary>
@@ -8,6 +10,10 @@ public sealed record AppSettings
     public bool IsDarkMode { get; init; }
 
     public bool UseNvencEncoder { get; init; } = true;
+
+    public double PreviewVolumePercent { get; init; } = 100;
+
+    public int SvtAv1Preset { get; init; } = EncodeSettings.DefaultSvtAv1Preset;
 
     public string? LastOutputFolder { get; init; }
 }

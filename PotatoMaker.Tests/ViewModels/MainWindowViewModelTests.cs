@@ -1,6 +1,7 @@
 using Xunit;
 using PotatoMaker.GUI.Services;
 using PotatoMaker.GUI.ViewModels;
+using Avalonia.Input;
 
 namespace PotatoMaker.Tests.ViewModels;
 
@@ -14,7 +15,9 @@ public sealed class MainWindowViewModelTests
             new AppSettings
             {
                 IsDarkMode = true,
-                UseNvencEncoder = true
+                UseNvencEncoder = true,
+                PreviewVolumePercent = 100,
+                SvtAv1Preset = 6
             });
         var workspace = new EncodeWorkspaceViewModel(
             new NoOpAnalysisService(),
@@ -72,6 +75,130 @@ public sealed class MainWindowViewModelTests
         }
     }
 
+    [Fact]
+    public async Task SpaceShortcut_IsIgnoredWhenPlaybackCommandIsUnavailable()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var player = new VideoPlayerViewModel(initializePlayer: false);
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                player,
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+            var viewModel = new MainWindowViewModel(
+                workspace,
+                new HelpModalViewModel(),
+                new RecordingThemeService(),
+                null);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            bool handled = viewModel.TryHandleGlobalShortcut(Key.Space, KeyModifiers.None);
+
+            Assert.False(handled);
+            Assert.Equal("Play", workspace.VideoPlayer.TogglePlaybackText);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task TrimShortcuts_SetStartAndEndAtCurrentPosition()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var player = new VideoPlayerViewModel(initializePlayer: false);
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                player,
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+            var viewModel = new MainWindowViewModel(
+                workspace,
+                new HelpModalViewModel(),
+                new RecordingThemeService(),
+                null);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            player.TimelineSeconds = 14;
+            Assert.True(viewModel.TryHandleGlobalShortcut(Key.A, KeyModifiers.None));
+            await analysisService.WaitForStrategyCountAsync(2);
+
+            player.TimelineSeconds = 39;
+            Assert.True(viewModel.TryHandleGlobalShortcut(Key.D, KeyModifiers.None));
+            await analysisService.WaitForStrategyCountAsync(3);
+
+            Assert.Equal(TimeSpan.FromSeconds(14), workspace.ClipRange.Start);
+            Assert.Equal(TimeSpan.FromSeconds(39), workspace.ClipRange.End);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public void Shortcuts_WithModifiers_AreIgnored()
+    {
+        var viewModel = new MainWindowViewModel(
+            new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false),
+            new HelpModalViewModel(),
+            new RecordingThemeService(),
+            null);
+
+        Assert.False(viewModel.TryHandleGlobalShortcut(Key.Space, KeyModifiers.Control));
+    }
+
+    [Fact]
+    public void OpeningHelpModal_SuppressesVideoSurface()
+    {
+        var workspace = new EncodeWorkspaceViewModel(
+            new NoOpAnalysisService(),
+            new NoOpEncodingService(),
+            new StaticEncoderCapabilityService(),
+            null,
+            initializeEncoderSupport: false);
+        var helpModal = new HelpModalViewModel();
+        var viewModel = new MainWindowViewModel(
+            workspace,
+            helpModal,
+            new RecordingThemeService(),
+            null);
+
+        Assert.False(workspace.VideoPlayer.SuppressVideoSurface);
+
+        helpModal.IsOpen = true;
+        Assert.True(workspace.VideoPlayer.SuppressVideoSurface);
+
+        helpModal.IsOpen = false;
+        Assert.False(workspace.VideoPlayer.SuppressVideoSurface);
+
+        viewModel.Dispose();
+    }
+
     private sealed class RecordingThemeService : IThemeService
     {
         public List<bool> AppliedThemes { get; } = [];
@@ -120,6 +247,50 @@ public sealed class MainWindowViewModelTests
                 inputPath,
                 null,
                 new PotatoMaker.Core.EncodePlanner.EncodePlan(1000, 1, null, "original")));
+    }
+
+    private sealed class RecordingAnalysisService : IVideoAnalysisService
+    {
+        private readonly List<PotatoMaker.Core.StrategyAnalysis> _strategies = [];
+
+        public Task<PotatoMaker.Core.VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default) =>
+            Task.FromResult(new PotatoMaker.Core.VideoInfo(TimeSpan.FromSeconds(95), 1920, 1080, 59.94));
+
+        public Task<PotatoMaker.Core.StrategyAnalysis> AnalyzeStrategyAsync(
+            string inputPath,
+            PotatoMaker.Core.VideoInfo info,
+            PotatoMaker.Core.EncodeSettings settings,
+            PotatoMaker.Core.VideoClipRange? clipRange = null,
+            CancellationToken ct = default)
+        {
+            var strategy = new PotatoMaker.Core.StrategyAnalysis(
+                Path.GetFullPath(inputPath),
+                "crop=1920:800:0:140",
+                new PotatoMaker.Core.EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)"));
+
+            lock (_strategies)
+            {
+                _strategies.Add(strategy);
+            }
+
+            return Task.FromResult(strategy);
+        }
+
+        public async Task<PotatoMaker.Core.StrategyAnalysis> WaitForStrategyCountAsync(int expectedCount)
+        {
+            for (int attempt = 0; attempt < 200; attempt++)
+            {
+                lock (_strategies)
+                {
+                    if (_strategies.Count >= expectedCount)
+                        return _strategies[expectedCount - 1];
+                }
+
+                await Task.Delay(10);
+            }
+
+            throw new TimeoutException($"Timed out waiting for {expectedCount} strategy calls.");
+        }
     }
 
     private sealed class NoOpEncodingService : IVideoEncodingService

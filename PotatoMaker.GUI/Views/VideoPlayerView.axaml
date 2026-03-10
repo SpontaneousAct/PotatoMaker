@@ -66,7 +66,7 @@
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Stretch"/>
 
-                    <StackPanel IsVisible="{Binding !VideoPlayer.IsVideoSurfaceVisible}"
+                    <StackPanel IsVisible="{Binding VideoPlayer.IsVideoStatusVisible}"
                                 Spacing="6"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
@@ -176,38 +176,50 @@
             </StackPanel>
 
             <Grid Grid.Row="3"
-                  ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,120,*"
-                  ColumnSpacing="6">
+                  ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,96,*"
+                  ColumnSpacing="4">
                 <Button Grid.Column="0"
                         Content="{Binding VideoPlayer.TogglePlaybackText}"
                         Command="{Binding VideoPlayer.TogglePlaybackCommand}"
-                        MinWidth="92"
+                        MinWidth="84"
+                        MinHeight="28"
+                        Padding="9,4"
                         Classes.pm-primary="{Binding VideoPlayer.CanControlPlayback}"/>
 
                 <Button Grid.Column="1"
                         Content="Reset"
-                        Command="{Binding ResetPreviewCommand}"/>
+                        Command="{Binding ResetPreviewCommand}"
+                        MinHeight="28"
+                        Padding="9,4"/>
 
                 <Button Grid.Column="2"
                         Content="Set Start"
-                        Command="{Binding VideoPlayer.SetTrimStartCommand}"/>
+                        Command="{Binding VideoPlayer.SetTrimStartCommand}"
+                        MinHeight="28"
+                        Padding="9,4"/>
 
                 <Button Grid.Column="3"
                         Content="Set End"
-                        Command="{Binding VideoPlayer.SetTrimEndCommand}"/>
+                        Command="{Binding VideoPlayer.SetTrimEndCommand}"
+                        MinHeight="28"
+                        Padding="9,4"/>
 
                 <Button Grid.Column="4"
                         Content="{Binding VideoPlayer.ToggleMuteText}"
                         Command="{Binding VideoPlayer.ToggleMuteCommand}"
                         IsEnabled="{Binding VideoPlayer.CanAdjustVolume}"
-                        MinWidth="72"/>
+                        MinWidth="64"
+                        MinHeight="28"
+                        Padding="9,4"/>
 
                 <Slider Grid.Column="5"
                         Minimum="0"
                         Maximum="100"
                         Value="{Binding VideoPlayer.VolumePercent}"
                         IsEnabled="{Binding VideoPlayer.CanAdjustVolume}"
-                        VerticalAlignment="Center"/>
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Stretch"
+                        MinWidth="72"/>
 
             </Grid>
         </Grid>

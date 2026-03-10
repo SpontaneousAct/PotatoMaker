@@ -77,28 +77,27 @@
                             ToolTip.Tip="Close"/>
                 </Grid>
 
-                <TextBlock Grid.Row="1"
-                           Text="How to use PotatoMaker"
-                           Classes="pm-section-title"/>
-
-                <StackPanel Grid.Row="2"
+                   <StackPanel Grid.Row="2"
                             Spacing="6">
-                    <TextBlock Text="1. Drop a video file or click Browse."
+                    <TextBlock Text="1. Drop in a video or click Browse."
                                Classes="pm-muted"
                                TextWrapping="Wrap"/>
-                    <TextBlock Text="2. Check the summary and strategy preview."
+                    <TextBlock Text="2. Preview the clip, then use Space to play or pause."
                                Classes="pm-muted"
                                TextWrapping="Wrap"/>
-                    <TextBlock Text="3. Pick output folder and encoder (GPU/CPU)."
+                    <TextBlock Text="3. Press A to mark the start and D to mark the end of the part you want."
                                Classes="pm-muted"
                                TextWrapping="Wrap"/>
-                    <TextBlock Text="4. Click Start Compression and watch live logs."
+                    <TextBlock Text="4. Check the summary, choose where to save, and pick GPU or CPU mode."
+                               Classes="pm-muted"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="5. Click Start Compression and watch the live progress log."
                                Classes="pm-muted"
                                TextWrapping="Wrap"/>
                 </StackPanel>
 
                 <TextBlock Grid.Row="3"
-                           Text="Behind the scenes: PotatoMaker probes your file, builds an encoding plan, and runs FFmpeg AV1 compression with either NVENC (GPU) or SVT-AV1 (CPU)."
+                           Text="PotatoMaker tries to make a Discord-friendly file automatically. If your NVIDIA AV1 GPU encoder is available it uses that first; otherwise it falls back to CPU encoding."
                            Classes="pm-caption"
                            TextWrapping="Wrap"/>
             </Grid>

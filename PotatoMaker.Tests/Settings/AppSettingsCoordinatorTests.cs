@@ -15,16 +15,22 @@ public sealed class AppSettingsCoordinatorTests
             {
                 IsDarkMode = false,
                 UseNvencEncoder = true,
+                PreviewVolumePercent = 100,
+                SvtAv1Preset = 6,
                 LastOutputFolder = null
             });
 
         await coordinator.UpdateAsync(settings => settings with
         {
             IsDarkMode = true,
+            PreviewVolumePercent = 42,
+            SvtAv1Preset = 8,
             LastOutputFolder = "C:\\out"
         });
 
         Assert.True(coordinator.Current.IsDarkMode);
+        Assert.Equal(42, coordinator.Current.PreviewVolumePercent);
+        Assert.Equal(8, coordinator.Current.SvtAv1Preset);
         Assert.Equal("C:\\out", coordinator.Current.LastOutputFolder);
         Assert.Single(persistence.SavedSettings);
         Assert.Equal(coordinator.Current, persistence.SavedSettings[0]);

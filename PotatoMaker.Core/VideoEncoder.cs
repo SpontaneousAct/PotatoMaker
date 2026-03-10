@@ -12,17 +12,19 @@ public static class VideoEncoder
     public static async Task EncodeAsync(
         EncodeJob job,
         EncoderChoice encoder,
+        int svtAv1Preset,
         ILogger logger,
         IProgress<EncodeProgress>? progress = null,
         string label = "",
         CancellationToken ct = default)
     {
         FFmpegBinaries.EnsureConfigured();
+        int normalizedSvtAv1Preset = EncodeSettings.NormalizeSvtAv1Preset(svtAv1Preset);
 
         if (encoder == EncoderChoice.SvtAv1)
         {
-            logger.LogInformation("  Encoder: libsvtav1 (CPU two-pass)");
-            await EncodeSvtAv1TwoPassAsync(job, logger, progress, label, ct);
+            logger.LogInformation("  Encoder: libsvtav1 (CPU two-pass, preset {Preset})", normalizedSvtAv1Preset);
+            await EncodeSvtAv1TwoPassAsync(job, normalizedSvtAv1Preset, logger, progress, label, ct);
             logger.LogInformation(PipelineEvents.Success, "  [ok] libsvtav1 encode complete.");
             return;
         }
@@ -43,7 +45,7 @@ public static class VideoEncoder
             logger.LogWarning("  av1_nvenc not available.");
             logger.LogWarning("    Reason: {Reason}", ex.Message.Split('\n')[0].Trim());
             logger.LogInformation("  Falling back to libsvtav1 two-pass (CPU)...");
-            await EncodeSvtAv1TwoPassAsync(job, logger, progress, label, ct);
+            await EncodeSvtAv1TwoPassAsync(job, normalizedSvtAv1Preset, logger, progress, label, ct);
             logger.LogInformation(PipelineEvents.Success, "  [ok] libsvtav1 encode complete.");
         }
     }
@@ -100,6 +102,7 @@ public static class VideoEncoder
 
     private static async Task EncodeSvtAv1TwoPassAsync(
         EncodeJob job,
+        int svtAv1Preset,
         ILogger logger,
         IProgress<EncodeProgress>? progress,
         string label,
@@ -128,7 +131,7 @@ public static class VideoEncoder
                 {
                     o.WithVideoCodec("libsvtav1")
                      .WithVideoBitrate(job.VideoBitrateKbps)
-                     .WithCustomArgument("-preset 6")
+                     .WithCustomArgument($"-preset {svtAv1Preset}")
                      .WithCustomArgument("-pass 1")
                      .WithCustomArgument($"-passlogfile {statsArg}")
                      .DisableChannel(Channel.Audio)
@@ -159,7 +162,7 @@ public static class VideoEncoder
                 {
                     o.WithVideoCodec("libsvtav1")
                      .WithVideoBitrate(job.VideoBitrateKbps)
-                     .WithCustomArgument("-preset 6")
+                     .WithCustomArgument($"-preset {svtAv1Preset}")
                      .WithCustomArgument("-pass 2")
                      .WithCustomArgument($"-passlogfile {statsArg}")
                      .WithAudioCodec("aac")

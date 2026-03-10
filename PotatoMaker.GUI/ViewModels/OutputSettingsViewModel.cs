@@ -1,15 +1,40 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PotatoMaker.Core;
 
 namespace PotatoMaker.GUI.ViewModels;
+
+public sealed class CpuEncodePresetOption
+{
+    public CpuEncodePresetOption(int value, string label)
+    {
+        Value = value;
+        Label = label;
+    }
+
+    public int Value { get; }
+
+    public string Label { get; }
+
+    public override string ToString() => Label;
+}
 
 /// <summary>
 /// Stores output folder and encoder preferences.
 /// </summary>
 public partial class OutputSettingsViewModel : ViewModelBase
 {
+    public OutputSettingsViewModel()
+    {
+        SelectedCpuEncodePreset = CpuEncodePresetOptions.First(option => option.Value == EncodeSettings.DefaultSvtAv1Preset);
+    }
+
     [ObservableProperty]
     private bool _useNvencEncoder;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CpuEncodePreset))]
+    private CpuEncodePresetOption? _selectedCpuEncodePreset;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanUseNvenc))]
@@ -49,6 +74,10 @@ public partial class OutputSettingsViewModel : ViewModelBase
             : IsNvencSupported
                 ? "NVENC AV1 is available on this system."
                 : "NVENC AV1 is not available on this system.";
+
+    public IReadOnlyList<CpuEncodePresetOption> CpuEncodePresetOptions { get; } = CreateCpuEncodePresetOptions();
+
+    public int CpuEncodePreset => SelectedCpuEncodePreset?.Value ?? EncodeSettings.DefaultSvtAv1Preset;
 
     public bool CanResetOutputFolder =>
         !string.IsNullOrWhiteSpace(CustomOutputFolder) &&
@@ -103,6 +132,12 @@ public partial class OutputSettingsViewModel : ViewModelBase
             UseNvencEncoder = false;
     }
 
+    public void SetCpuEncodePreset(int preset)
+    {
+        int normalizedPreset = EncodeSettings.NormalizeSvtAv1Preset(preset);
+        SelectedCpuEncodePreset = CpuEncodePresetOptions.First(option => option.Value == normalizedPreset);
+    }
+
     private static string? NormalizeFolderPath(string? folder)
     {
         if (string.IsNullOrWhiteSpace(folder))
@@ -124,4 +159,22 @@ public partial class OutputSettingsViewModel : ViewModelBase
     private static string AddPathWrapHints(string path) =>
         path.Replace("\\", "\\\u200B", StringComparison.Ordinal)
             .Replace("/", "/\u200B", StringComparison.Ordinal);
+
+    private static IReadOnlyList<CpuEncodePresetOption> CreateCpuEncodePresetOptions() =>
+        Enumerable
+            .Range(EncodeSettings.MinSvtAv1Preset, EncodeSettings.MaxSvtAv1Preset - EncodeSettings.MinSvtAv1Preset + 1)
+            .Select(CreateCpuEncodePresetOption)
+            .ToArray();
+
+    private static CpuEncodePresetOption CreateCpuEncodePresetOption(int preset)
+    {
+        string description = preset switch
+        {
+            EncodeSettings.DefaultSvtAv1Preset => "Balanced (default)",
+            < EncodeSettings.DefaultSvtAv1Preset => "Slower, more efficient",
+            _ => "Faster, less efficient"
+        };
+
+        return new CpuEncodePresetOption(preset, $"{preset} - {description}");
+    }
 }

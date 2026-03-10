@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using PotatoMaker.GUI.Services;
+using System.ComponentModel;
+using Avalonia.Input;
 
 namespace PotatoMaker.GUI.ViewModels;
 
@@ -28,8 +30,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         VersionText = $"v{GetType().Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
         _themeService = themeService;
         _settingsCoordinator = settingsCoordinator;
+        HelpModal.PropertyChanged += OnHelpModalPropertyChanged;
 
         ApplyInitialSettings();
+        SyncOverlayState();
     }
 
     public EncodeWorkspaceViewModel Workspace { get; }
@@ -67,6 +71,27 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         return false;
     }
 
+    public bool TryHandleGlobalShortcut(Key key, KeyModifiers modifiers)
+    {
+        if (!IsGlobalShortcut(key, modifiers))
+            return false;
+
+        return key switch
+        {
+            Key.Space when Workspace.VideoPlayer.TogglePlaybackCommand.CanExecute(null) =>
+                ExecuteShortcut(Workspace.VideoPlayer.TogglePlaybackCommand),
+            Key.A when Workspace.VideoPlayer.SetTrimStartCommand.CanExecute(null) =>
+                ExecuteShortcut(Workspace.VideoPlayer.SetTrimStartCommand),
+            Key.D when Workspace.VideoPlayer.SetTrimEndCommand.CanExecute(null) =>
+                ExecuteShortcut(Workspace.VideoPlayer.SetTrimEndCommand),
+            _ => false
+        };
+    }
+
+    public static bool IsGlobalShortcut(Key key, KeyModifiers modifiers) =>
+        modifiers == KeyModifiers.None &&
+        key is Key.Space or Key.A or Key.D;
+
     private void ApplyInitialSettings()
     {
         bool initialIsDarkMode = _settingsCoordinator?.Current.IsDarkMode
@@ -98,5 +123,26 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
-    public void Dispose() => Workspace.Dispose();
+    private void OnHelpModalPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(HelpModalViewModel.IsOpen))
+            SyncOverlayState();
+    }
+
+    private void SyncOverlayState()
+    {
+        Workspace.VideoPlayer.SuppressVideoSurface = HelpModal.IsOpen;
+    }
+
+    private static bool ExecuteShortcut(System.Windows.Input.ICommand command)
+    {
+        command.Execute(null);
+        return true;
+    }
+
+    public void Dispose()
+    {
+        HelpModal.PropertyChanged -= OnHelpModalPropertyChanged;
+        Workspace.Dispose();
+    }
 }

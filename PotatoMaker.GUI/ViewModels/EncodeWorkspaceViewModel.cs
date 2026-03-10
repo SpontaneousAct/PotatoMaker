@@ -72,6 +72,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         ClipRange.PropertyChanged += OnResetStateChanged;
         VideoPlayer.TrimBoundaryRequested += OnTrimBoundaryRequested;
         VideoPlayer.PropertyChanged += OnResetStateChanged;
+        VideoPlayer.PropertyChanged += OnVideoPlayerSettingChanged;
         VideoSummary.PropertyChanged += OnEncodePrerequisiteChanged;
         ConversionLog.PropertyChanged += OnEncodePrerequisiteChanged;
         OutputSettings.PropertyChanged += OnOutputSettingsChanged;
@@ -360,10 +361,17 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private void OnOutputSettingsChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(OutputSettingsViewModel.UseNvencEncoder)
-            or nameof(OutputSettingsViewModel.CustomOutputFolder))
+            or nameof(OutputSettingsViewModel.CustomOutputFolder)
+            or nameof(OutputSettingsViewModel.SelectedCpuEncodePreset))
         {
             PersistWorkspaceSettingsSafely();
         }
+    }
+
+    private void OnVideoPlayerSettingChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(VideoPlayerViewModel.VolumePercent))
+            PersistWorkspaceSettingsSafely();
     }
 
     private void ApplyInitialSettings()
@@ -375,6 +383,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         {
             OutputSettings.CustomOutputFolder = settings.LastOutputFolder;
             OutputSettings.UseNvencEncoder = settings.UseNvencEncoder;
+            OutputSettings.SetCpuEncodePreset(settings.SvtAv1Preset);
+            VideoPlayer.VolumePercent = settings.PreviewVolumePercent;
         }
         finally
         {
@@ -386,7 +396,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     {
         Encoder = OutputSettings.UseNvencEncoder && OutputSettings.CanUseNvenc
             ? EncoderChoice.Nvenc
-            : EncoderChoice.SvtAv1
+            : EncoderChoice.SvtAv1,
+        SvtAv1Preset = OutputSettings.CpuEncodePreset
     };
 
     private async Task InitializeEncoderSupportAsync()
@@ -427,6 +438,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             await _settingsCoordinator!.UpdateAsync(settings => settings with
             {
                 UseNvencEncoder = OutputSettings.UseNvencEncoder,
+                PreviewVolumePercent = VideoPlayer.VolumePercent,
+                SvtAv1Preset = OutputSettings.CpuEncodePreset,
                 LastOutputFolder = OutputSettings.CustomOutputFolder
             }).ConfigureAwait(false);
         }

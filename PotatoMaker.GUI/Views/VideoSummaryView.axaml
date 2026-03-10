@@ -11,131 +11,140 @@
         <vm:VideoSummaryViewModel/>
     </Design.DataContext>
 
+    <UserControl.Styles>
+        <Style Selector="TextBlock.pm-summary-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-summary-caption">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Opacity" Value="0.82"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-summary-value">
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+    </UserControl.Styles>
+
     <Border Classes="pm-card"
-            Padding="8">
+            Padding="7">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,*"
-              RowSpacing="6">
+              RowSpacing="4">
             <TextBlock Grid.Row="0"
                        Text="Source Summary"
-                       Classes="pm-section-title"/>
+                       Classes="pm-summary-title"/>
 
             <Border Grid.Row="1"
                     Classes="pm-inset"
-                    Padding="6,5">
+                    Padding="5,4">
                 <Grid ColumnDefinitions="*,*,*,*"
-                      ColumnSpacing="6">
-                    <StackPanel Grid.Column="0" Spacing="1">
-                        <TextBlock Text="Size" Classes="pm-caption"/>
+                      ColumnSpacing="5">
+                    <StackPanel Grid.Column="0" Spacing="0">
+                        <TextBlock Text="Size" Classes="pm-summary-caption"/>
                         <TextBlock Text="{Binding FileSize, TargetNullValue=--}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
+                                   Classes="pm-summary-value"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Spacing="1">
-                        <TextBlock Text="Duration" Classes="pm-caption"/>
+                    <StackPanel Grid.Column="1" Spacing="0">
+                        <TextBlock Text="Duration" Classes="pm-summary-caption"/>
                         <TextBlock Text="{Binding Duration, TargetNullValue=--}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
+                                   Classes="pm-summary-value"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2" Spacing="1">
-                        <TextBlock Text="Resolution" Classes="pm-caption"/>
+                    <StackPanel Grid.Column="2" Spacing="0">
+                        <TextBlock Text="Resolution" Classes="pm-summary-caption"/>
                         <TextBlock Text="{Binding Resolution, TargetNullValue=--}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
+                                   Classes="pm-summary-value"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="3" Spacing="1">
-                        <TextBlock Text="FPS" Classes="pm-caption"/>
+                    <StackPanel Grid.Column="3" Spacing="0">
+                        <TextBlock Text="FPS" Classes="pm-summary-caption"/>
                         <TextBlock Text="{Binding FrameRate, TargetNullValue=--}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
+                                   Classes="pm-summary-value"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
             <StackPanel Grid.Row="2"
-                        Spacing="2">
+                        Spacing="1">
                 <TextBlock Text="Selected Clip"
-                           Classes="pm-section-title"/>
+                           Classes="pm-summary-title"/>
 
                 <Grid ColumnDefinitions="*,*"
-                      ColumnSpacing="5">
+                      ColumnSpacing="4">
                     <StackPanel Grid.Column="0"
-                                Spacing="1">
-                        <TextBlock Text="Range" Classes="pm-caption"/>
+                                Spacing="0">
+                        <TextBlock Text="Range" Classes="pm-summary-caption"/>
                         <TextBlock Text="{Binding SelectedRange, TargetNullValue=Full source file}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
+                                   Classes="pm-summary-value"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1"
-                                Spacing="1">
-                        <TextBlock Text="Length" Classes="pm-caption"/>
+                                Spacing="0">
+                        <TextBlock Text="Length" Classes="pm-summary-caption"/>
                         <TextBlock Text="{Binding SelectedDuration, TargetNullValue=--}"
-                                   FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis"/>
+                                   Classes="pm-summary-value"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
 
             <StackPanel Grid.Row="3"
-                        Spacing="2">
+                        Spacing="1">
                 <TextBlock Text="Strategy Preview"
-                           Classes="pm-section-title"/>
+                           Classes="pm-summary-title"/>
                 <TextBlock Text="{Binding StrategyStatus, TargetNullValue=Select a source file to preview the plan.}"
-                           Classes="pm-caption"
+                           Classes="pm-summary-caption"
                            TextWrapping="Wrap"/>
             </StackPanel>
 
             <Grid Grid.Row="4"
                   ColumnDefinitions="*,*"
                   RowDefinitions="Auto,Auto,Auto"
-                  RowSpacing="5"
-                  ColumnSpacing="5">
+                  RowSpacing="4"
+                  ColumnSpacing="4">
                 <StackPanel Grid.Row="0"
                             Grid.Column="0"
-                            Spacing="1">
-                    <TextBlock Text="Resolution" Classes="pm-caption"/>
+                            Spacing="0">
+                    <TextBlock Text="Resolution" Classes="pm-summary-caption"/>
                     <TextBlock Text="{Binding StrategyResolution, TargetNullValue=--}"
-                               FontWeight="SemiBold"
-                               TextTrimming="CharacterEllipsis"/>
+                               Classes="pm-summary-value"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="0"
                             Grid.Column="1"
-                            Spacing="1">
-                    <TextBlock Text="Bitrate" Classes="pm-caption"/>
+                            Spacing="0">
+                    <TextBlock Text="Bitrate" Classes="pm-summary-caption"/>
                     <TextBlock Text="{Binding StrategyBitrate, TargetNullValue=--}"
-                               FontWeight="SemiBold"
-                               TextTrimming="CharacterEllipsis"/>
+                               Classes="pm-summary-value"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="1"
                             Grid.Column="0"
-                            Spacing="1">
-                    <TextBlock Text="Parts" Classes="pm-caption"/>
+                            Spacing="0">
+                    <TextBlock Text="Parts" Classes="pm-summary-caption"/>
                     <TextBlock Text="{Binding StrategyParts, TargetNullValue=--}"
-                               FontWeight="SemiBold"
-                               TextTrimming="CharacterEllipsis"/>
+                               Classes="pm-summary-value"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="1"
                             Grid.Column="1"
-                            Spacing="1">
-                    <TextBlock Text="Crop" Classes="pm-caption"/>
+                            Spacing="0">
+                    <TextBlock Text="Crop" Classes="pm-summary-caption"/>
                     <TextBlock Text="{Binding StrategyCrop, TargetNullValue=--}"
-                               FontWeight="SemiBold"
-                               TextTrimming="CharacterEllipsis"/>
+                               Classes="pm-summary-value"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="2"
                             Grid.ColumnSpan="2"
-                            Spacing="1">
-                    <TextBlock Text="FFmpeg filter" Classes="pm-caption"/>
+                            Spacing="0">
+                    <TextBlock Text="FFmpeg filter" Classes="pm-summary-caption"/>
                     <TextBlock Text="{Binding StrategyFilter, TargetNullValue=--}"
-                               FontWeight="SemiBold"
-                               TextTrimming="CharacterEllipsis"/>
+                               Classes="pm-summary-value"/>
                 </StackPanel>
             </Grid>
         </Grid>
