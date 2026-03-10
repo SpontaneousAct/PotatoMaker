@@ -19,6 +19,7 @@ public sealed class MainWindowViewModelTests
         var workspace = new EncodeWorkspaceViewModel(
             new NoOpAnalysisService(),
             new NoOpEncodingService(),
+            new NoOpFramePreviewService(),
             new StaticEncoderCapabilityService(),
             settingsCoordinator,
             initializeEncoderSupport: false);
@@ -80,6 +81,7 @@ public sealed class MainWindowViewModelTests
             string inputPath,
             PotatoMaker.Core.VideoInfo info,
             PotatoMaker.Core.EncodeSettings settings,
+            PotatoMaker.Core.VideoClipRange? clipRange = null,
             CancellationToken ct = default) =>
             Task.FromResult(new PotatoMaker.Core.StrategyAnalysis(
                 inputPath,
@@ -94,6 +96,15 @@ public sealed class MainWindowViewModelTests
             Microsoft.Extensions.Logging.ILogger<PotatoMaker.Core.ProcessingPipeline> logger,
             IProgress<PotatoMaker.Core.EncodeProgress>? progress = null,
             CancellationToken ct = default) => Task.CompletedTask;
+    }
+
+    private sealed class NoOpFramePreviewService : IVideoFramePreviewService
+    {
+        public Task<VideoFramePreviewResult> GenerateAsync(
+            string inputPath,
+            TimeSpan position,
+            CancellationToken ct = default) =>
+            Task.FromResult(new VideoFramePreviewResult(null, "Preview disabled in test"));
     }
 
     private sealed class StaticEncoderCapabilityService : IEncoderCapabilityService

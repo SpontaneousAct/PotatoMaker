@@ -11,7 +11,8 @@ public sealed record EncodeRequest(
     string OutputDirectory,
     VideoInfo Info,
     StrategyAnalysis Strategy,
-    EncodeSettings Settings);
+    EncodeSettings Settings,
+    VideoClipRange? ClipRange = null);
 
 /// <summary>
 /// Runs encodes for the GUI.
@@ -42,7 +43,8 @@ public sealed class VideoEncodingService : IVideoEncodingService
             request.Settings,
             logger,
             progress,
-            request.OutputDirectory);
+            request.OutputDirectory,
+            request.ClipRange);
 
         return pipeline.RunAsync(request.Strategy, ct);
     }

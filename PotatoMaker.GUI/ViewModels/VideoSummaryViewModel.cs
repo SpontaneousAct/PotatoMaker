@@ -13,6 +13,8 @@ public partial class VideoSummaryViewModel : ViewModelBase
     [ObservableProperty] private string? _resolution;
     [ObservableProperty] private string? _frameRate;
     [ObservableProperty] private bool _hasData;
+    [ObservableProperty] private string? _selectedRange;
+    [ObservableProperty] private string? _selectedDuration;
 
     [ObservableProperty] private string? _strategyStatus;
     [ObservableProperty] private string? _strategyResolution;
@@ -45,6 +47,13 @@ public partial class VideoSummaryViewModel : ViewModelBase
         Resolution = info.Width > 0 ? $"{info.Width}x{info.Height}" : "N/A";
         FrameRate = info.FrameRate > 0 ? $"{info.FrameRate:0.##} fps" : "N/A";
         HasData = true;
+    }
+
+    public void SetSelectedRange(VideoClipRange clipRange, TimeSpan totalDuration)
+    {
+        VideoClipRange normalized = clipRange.Normalize(totalDuration);
+        SelectedRange = $"{FormatTime(normalized.Start)} - {FormatTime(normalized.End)}";
+        SelectedDuration = FormatTime(normalized.Duration);
     }
 
     public void SetStrategyPending()
@@ -95,6 +104,8 @@ public partial class VideoSummaryViewModel : ViewModelBase
         Resolution = null;
         FrameRate = null;
         HasData = false;
+        SelectedRange = null;
+        SelectedDuration = null;
         ClearStrategy();
     }
 
@@ -105,4 +116,9 @@ public partial class VideoSummaryViewModel : ViewModelBase
         >= 1024 => $"{bytes / 1024.0:F0} KB",
         _ => $"{bytes} B"
     };
+
+    private static string FormatTime(TimeSpan value) =>
+        value.TotalHours >= 1
+            ? value.ToString(@"h\:mm\:ss\.f")
+            : value.ToString(@"m\:ss\.f");
 }

@@ -14,6 +14,7 @@ public interface IVideoAnalysisService
         string inputPath,
         VideoInfo info,
         EncodeSettings settings,
+        VideoClipRange? clipRange = null,
         CancellationToken ct = default);
 }
 
@@ -29,6 +30,7 @@ public sealed class VideoAnalysisService : IVideoAnalysisService
         string inputPath,
         VideoInfo info,
         EncodeSettings settings,
+        VideoClipRange? clipRange = null,
         CancellationToken ct = default) =>
-        StrategyAnalyzer.AnalyzeAsync(inputPath, info, settings, NullLogger.Instance, ct);
+        StrategyAnalyzer.AnalyzeAsync(inputPath, info, settings, NullLogger.Instance, clipRange, ct);
 }

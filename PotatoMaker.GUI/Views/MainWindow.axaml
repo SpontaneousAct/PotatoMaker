@@ -3,18 +3,16 @@
         xmlns:vm="using:PotatoMaker.GUI.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="860" d:DesignHeight="560"
+        mc:Ignorable="d" d:DesignWidth="960" d:DesignHeight="720"
         x:Class="PotatoMaker.GUI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/potato.ico"
         Title="PotatoMaker"
-        Width="860"
-        Height="560"
+        Width="960"
+        Height="720"
         MinWidth="860"
-        MaxWidth="860"
-        MinHeight="560"
-        MaxHeight="560"
-        CanResize="False">
+        MinHeight="640"
+        CanResize="True">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -101,7 +99,7 @@
                   ColumnDefinitions="1.65*,*"
                   ColumnSpacing="8">
                 <Grid Grid.Column="0"
-                      RowDefinitions="Auto,*"
+                      RowDefinitions="Auto,Auto,*"
                       RowSpacing="8">
                     <ContentControl Grid.Row="0"
                                     Content="{Binding Workspace.FileInput}"
@@ -109,6 +107,11 @@
                                     VerticalAlignment="Top"/>
 
                     <ContentControl Grid.Row="1"
+                                    Content="{Binding Workspace.ClipRange}"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Top"/>
+
+                    <ContentControl Grid.Row="2"
                                     Content="{Binding Workspace.ConversionLog}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch"/>

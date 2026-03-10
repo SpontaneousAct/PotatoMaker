@@ -72,7 +72,7 @@ class Program
             logger.LogInformation(PipelineEvents.Success, "Probe complete.");
 
             logger.LogInformation("Analyzing crop + strategy...");
-            var analysis = await StrategyAnalyzer.AnalyzeAsync(inputPath, info, settings, logger, cts.Token);
+            var analysis = await StrategyAnalyzer.AnalyzeAsync(inputPath, info, settings, logger, ct: cts.Token);
             logger.LogInformation(PipelineEvents.Success, "Strategy ready.");
 
             var pipeline = new ProcessingPipeline(inputPath, info, settings, logger, progress);

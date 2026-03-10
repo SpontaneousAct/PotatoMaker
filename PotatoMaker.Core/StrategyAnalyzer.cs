@@ -23,17 +23,28 @@ public static class StrategyAnalyzer
         VideoInfo info,
         EncodeSettings settings,
         ILogger logger,
+        VideoClipRange? clipRange = null,
         CancellationToken ct = default)
     {
         string fullPath = Path.GetFullPath(inputPath);
         InputMediaSupport.ThrowIfInvalidPath(fullPath);
 
+        VideoClipRange effectiveRange = (clipRange ?? VideoClipRange.Full(info.Duration)).Normalize(info.Duration);
+        TimeSpan effectiveDuration = effectiveRange.Duration;
+
         string? cropFilter = settings.SkipCropDetect
             ? null
-            : await CropDetector.DetectAsync(fullPath, info.Duration, info.Width, info.Height, logger, ct);
+            : await CropDetector.DetectAsync(
+                fullPath,
+                effectiveDuration,
+                info.Width,
+                info.Height,
+                logger,
+                effectiveRange.Start,
+                ct);
 
         int sourceHeightForPlan = EncodePlanner.ResolveSourceHeightForPlan(info.Height, cropFilter);
-        var plan = EncodePlanner.PlanStrategy(info.Duration.TotalSeconds, sourceHeightForPlan, settings);
+        var plan = EncodePlanner.PlanStrategy(effectiveDuration.TotalSeconds, sourceHeightForPlan, settings);
 
         return new StrategyAnalysis(fullPath, cropFilter, plan);
     }

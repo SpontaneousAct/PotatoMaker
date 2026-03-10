@@ -15,10 +15,12 @@ public class ProcessingPipeline
     private readonly VideoInfo _info;
     private readonly ILogger<ProcessingPipeline> _logger;
     private readonly IProgress<EncodeProgress>? _progress;
+    private readonly VideoClipRange? _clipRange;
 
     public ProcessingPipeline(
         string inputPath, VideoInfo info, EncodeSettings settings,
-        ILogger<ProcessingPipeline> logger, IProgress<EncodeProgress>? progress = null, string? outputDirectory = null)
+        ILogger<ProcessingPipeline> logger, IProgress<EncodeProgress>? progress = null, string? outputDirectory = null,
+        VideoClipRange? clipRange = null)
     {
         string fullInputPath = Path.GetFullPath(inputPath);
         InputMediaSupport.ThrowIfInvalidPath(fullInputPath);
@@ -32,6 +34,10 @@ public class ProcessingPipeline
         _settings = settings;
         _logger = logger;
         _progress = progress;
+        VideoClipRange? normalizedClipRange = clipRange?.Normalize(info.Duration);
+        _clipRange = normalizedClipRange is { } range && !range.CoversFullDuration(info.Duration)
+            ? range
+            : null;
     }
 
     public async Task RunAsync(StrategyAnalysis analysis, CancellationToken ct = default)
@@ -39,17 +45,26 @@ public class ProcessingPipeline
         Directory.CreateDirectory(_outputDir);
         string ffmpegVersionSummary = await FFmpegBinaries.GetVersionSummaryAsync(ct);
 
-        double durationSecs = _info.Duration.TotalSeconds;
+        VideoClipRange effectiveRange = _clipRange ?? VideoClipRange.Full(_info.Duration);
+        TimeSpan selectedDuration = effectiveRange.Duration;
+        double durationSecs = selectedDuration.TotalSeconds;
         long inputSizeBytes = new FileInfo(_inputPath).Length;
         int origWidth = _info.Width;
         int origHeight = _info.Height;
 
-        string durationFmt = _info.Duration.TotalHours >= 1
-            ? _info.Duration.ToString(@"h\:mm\:ss\.f")
-            : _info.Duration.ToString(@"m\:ss\.f");
+        string durationFmt = selectedDuration.TotalHours >= 1
+            ? selectedDuration.ToString(@"h\:mm\:ss\.f")
+            : selectedDuration.ToString(@"m\:ss\.f");
 
         _logger.LogInformation("  Input     : {FileName}", Path.GetFileName(_inputPath));
         _logger.LogInformation("  Duration  : {Duration}  ({Seconds:F1}s)", durationFmt, durationSecs);
+        if (_clipRange is not null)
+        {
+            _logger.LogInformation(
+                "  Selection : {Start} -> {End}",
+                FormatTime(effectiveRange.Start),
+                FormatTime(effectiveRange.End));
+        }
         _logger.LogInformation("  Size      : {Size:F1} MB", inputSizeBytes / 1_048_576.0);
         _logger.LogInformation("  Resolution: {Width}x{Height}  ({Aspect})", origWidth, origHeight, CropDetector.AspectLabel(origWidth, origHeight));
         _logger.LogInformation("  FFmpeg    : {Version}", ffmpegVersionSummary);
@@ -91,15 +106,15 @@ public class ProcessingPipeline
 
         if (encodePlan.Parts == 1)
         {
-            await RunSingleAsync(encodePlan.VideoBitrateKbps, videoFilter, ct);
+            await RunSingleAsync(encodePlan.VideoBitrateKbps, videoFilter, effectiveRange, ct);
         }
         else
         {
-            await RunSplitAsync(encodePlan.VideoBitrateKbps, videoFilter, encodePlan.Parts, durationSecs, ct);
+            await RunSplitAsync(encodePlan.VideoBitrateKbps, videoFilter, encodePlan.Parts, effectiveRange, ct);
         }
     }
 
-    private async Task RunSingleAsync(int videoBitrateKbps, string? videoFilter, CancellationToken ct)
+    private async Task RunSingleAsync(int videoBitrateKbps, string? videoFilter, VideoClipRange effectiveRange, CancellationToken ct)
     {
         _logger.LogInformation("--- Encoding ----------------------------------------");
         string outputPath = Path.Combine(_outputDir, $"{_outputBase}_discord.mp4");
@@ -107,10 +122,12 @@ public class ProcessingPipeline
         var job = new EncodeJob(
             InputPath: _inputPath,
             OutputPath: outputPath,
-            TotalDuration: _info.Duration,
+            TotalDuration: effectiveRange.Duration,
             VideoBitrateKbps: videoBitrateKbps,
             AudioBitrateKbps: _settings.AudioBitrateKbps,
-            VideoFilter: videoFilter
+            VideoFilter: videoFilter,
+            StartOffsetSecs: effectiveRange.Start.TotalSeconds,
+            SegmentSecs: _clipRange is null ? null : effectiveRange.Duration.TotalSeconds
         );
 
         try
@@ -125,8 +142,9 @@ public class ProcessingPipeline
         }
     }
 
-    private async Task RunSplitAsync(int videoBitrateKbps, string? videoFilter, int parts, double totalSecs, CancellationToken ct)
+    private async Task RunSplitAsync(int videoBitrateKbps, string? videoFilter, int parts, VideoClipRange effectiveRange, CancellationToken ct)
     {
+        double totalSecs = effectiveRange.Duration.TotalSeconds;
         double segSecs = totalSecs / parts;
 
         _logger.LogInformation("--- Split Plan --------------------------------------");
@@ -148,11 +166,11 @@ public class ProcessingPipeline
                 var job = new EncodeJob(
                     InputPath: _inputPath,
                     OutputPath: outputPath,
-                    TotalDuration: _info.Duration,
+                    TotalDuration: TimeSpan.FromSeconds(segSecs),
                     VideoBitrateKbps: videoBitrateKbps,
                     AudioBitrateKbps: _settings.AudioBitrateKbps,
                     VideoFilter: videoFilter,
-                    StartOffsetSecs: i * segSecs,
+                    StartOffsetSecs: effectiveRange.Start.TotalSeconds + (i * segSecs),
                     SegmentSecs: segSecs
                 );
 
@@ -167,6 +185,11 @@ public class ProcessingPipeline
             throw;
         }
     }
+
+    private static string FormatTime(TimeSpan value) =>
+        value.TotalHours >= 1
+            ? value.ToString(@"h\:mm\:ss\.f")
+            : value.ToString(@"m\:ss\.f");
 
     private void PrintSummary(IEnumerable<string> outputPaths)
     {

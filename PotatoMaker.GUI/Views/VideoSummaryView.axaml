@@ -13,7 +13,7 @@
 
     <Border Classes="pm-card"
             Padding="8">
-        <Grid RowDefinitions="Auto,Auto,Auto,*"
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*"
               RowSpacing="6">
             <TextBlock Grid.Row="0"
                        Text="Source Summary"
@@ -56,6 +56,31 @@
 
             <StackPanel Grid.Row="2"
                         Spacing="2">
+                <TextBlock Text="Selected Clip"
+                           Classes="pm-section-title"/>
+
+                <Grid ColumnDefinitions="*,*"
+                      ColumnSpacing="5">
+                    <StackPanel Grid.Column="0"
+                                Spacing="1">
+                        <TextBlock Text="Range" Classes="pm-caption"/>
+                        <TextBlock Text="{Binding SelectedRange, TargetNullValue=Full source file}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Spacing="1">
+                        <TextBlock Text="Length" Classes="pm-caption"/>
+                        <TextBlock Text="{Binding SelectedDuration, TargetNullValue=--}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+
+            <StackPanel Grid.Row="3"
+                        Spacing="2">
                 <TextBlock Text="Strategy Preview"
                            Classes="pm-section-title"/>
                 <TextBlock Text="{Binding StrategyStatus, TargetNullValue=Select a source file to preview the plan.}"
@@ -63,7 +88,7 @@
                            TextWrapping="Wrap"/>
             </StackPanel>
 
-            <Grid Grid.Row="3"
+            <Grid Grid.Row="4"
                   ColumnDefinitions="*,*"
                   RowDefinitions="Auto,Auto,Auto"
                   RowSpacing="5"

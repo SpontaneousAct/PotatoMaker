@@ -12,6 +12,9 @@
         <DataTemplate DataType="vm:VideoSummaryViewModel">
             <views:VideoSummaryView/>
         </DataTemplate>
+        <DataTemplate DataType="vm:ClipRangeViewModel">
+            <views:ClipRangeView/>
+        </DataTemplate>
         <DataTemplate DataType="vm:OutputSettingsViewModel">
             <views:OutputSettingsView/>
         </DataTemplate>

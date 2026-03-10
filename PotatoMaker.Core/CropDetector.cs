@@ -21,10 +21,11 @@ public static class CropDetector
         int srcWidth,
         int srcHeight,
         ILogger logger,
+        TimeSpan startOffset,
         CancellationToken ct = default)
     {
         string ffmpegPath = FFmpegBinaries.FfmpegExecutable();
-        double seekSecs = totalDuration.TotalSeconds * StartOffsetPercent;
+        double seekSecs = startOffset.TotalSeconds + (totalDuration.TotalSeconds * StartOffsetPercent);
         string seekArg = seekSecs > 1.0 ? $"-ss {seekSecs:F1} " : string.Empty;
 
         string arguments = $"{seekArg}-i \"{inputPath}\" -frames:v {SampleFrames} -vf cropdetect={CropLimit}:{CropRound}:{CropReset} -an -f null NUL";
