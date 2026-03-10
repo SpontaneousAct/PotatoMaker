@@ -10,7 +10,10 @@ namespace PotatoMaker.GUI.ViewModels;
 /// </summary>
 public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 {
+    private static readonly TimeSpan SeekThrottleInterval = TimeSpan.FromMilliseconds(75);
     private readonly DispatcherTimer _positionTimer;
+    private readonly DispatcherTimer _seekTimer;
+    private readonly SeekRequestThrottler _seekRequestThrottler = new(SeekThrottleInterval);
     private LibVLC? _libVlc;
     private Media? _media;
     private MediaPlayer? _mediaPlayer;
@@ -27,6 +30,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private bool _isUpdatingFromPlayer;
     private bool _isPrimingInitialFrame;
     private bool _muteBeforeInitialFramePrime;
+    private bool _resumePlaybackAfterSeek;
     private string _statusMessage;
     private string? _playerErrorMessage;
     private string? _sourcePath;
@@ -48,6 +52,9 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         };
         _positionTimer.Tick += OnPositionTimerTick;
         _positionTimer.Start();
+
+        _seekTimer = new DispatcherTimer();
+        _seekTimer.Tick += OnSeekTimerTick;
 
         _statusMessage = initializePlayer
             ? "Select a video to preview it."
@@ -295,10 +302,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         if (MediaPlayer is null)
             return;
 
-        MediaPlayer.SetPause(true);
-        SeekTo(TimeSpan.Zero);
-        UpdatePlaybackState();
-        SetTimelineFromPlayer(TimeSpan.Zero);
+        ResetToFirstFrame();
     }
 
     private bool CanStopPlayback() => CanResetPlayback;
@@ -315,6 +319,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     {
         ArgumentNullException.ThrowIfNull(path);
 
+        CancelPendingSeekInteraction();
         _sourcePath = Path.GetFullPath(path);
         DurationSeconds = duration.TotalSeconds;
         SetSelection(selection);
@@ -351,6 +356,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     public void Clear()
     {
+        CancelPendingSeekInteraction();
+
         if (MediaPlayer is not null)
             MediaPlayer.Stop();
 
@@ -385,14 +392,51 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         SetTrimEndCommand.NotifyCanExecuteChanged();
     }
 
-    public void BeginSeekInteraction() => _isSeekInteractionActive = true;
+    public void BeginSeekInteraction()
+    {
+        if (!CanSeek || _isSeekInteractionActive)
+            return;
+
+        _isSeekInteractionActive = true;
+        _resumePlaybackAfterSeek = IsPlaying;
+        _seekTimer.Stop();
+        _seekRequestThrottler.Reset();
+
+        if (MediaPlayer is null)
+            return;
+
+        try
+        {
+            MediaPlayer.SetPause(true);
+        }
+        catch
+        {
+        }
+
+        if (_isPrimingInitialFrame)
+        {
+            _isPrimingInitialFrame = false;
+
+            try
+            {
+                MediaPlayer.Mute = IsMuted;
+            }
+            catch
+            {
+            }
+        }
+
+        UpdatePlaybackState();
+    }
 
     public void SeekDuringInteraction(TimeSpan position)
     {
         if (!CanSeek)
             return;
 
-        SeekTo(position);
+        TimeSpan clampedPosition = ClampPosition(position);
+        SetTimelineFromPlayer(clampedPosition);
+        QueueSeekDuringInteraction(clampedPosition);
     }
 
     public void EndSeekInteraction()
@@ -401,13 +445,31 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             return;
 
         _isSeekInteractionActive = false;
+        _seekTimer.Stop();
+        _seekRequestThrottler.Reset();
         SeekTo(TimeSpan.FromSeconds(TimelineSeconds));
+
+        if (_resumePlaybackAfterSeek && MediaPlayer is not null)
+        {
+            try
+            {
+                MediaPlayer.Play();
+            }
+            catch
+            {
+            }
+        }
+
+        _resumePlaybackAfterSeek = false;
+        UpdatePlaybackState();
     }
 
     public void Dispose()
     {
         _positionTimer.Stop();
         _positionTimer.Tick -= OnPositionTimerTick;
+        _seekTimer.Stop();
+        _seekTimer.Tick -= OnSeekTimerTick;
         var mediaPlayer = _mediaPlayer;
         _mediaPlayer = null;
 
@@ -489,6 +551,14 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         long currentTime = MediaPlayer.Time;
         if (currentTime >= 0)
             SetTimelineFromPlayer(TimeSpan.FromMilliseconds(currentTime));
+    }
+
+    private void OnSeekTimerTick(object? sender, EventArgs e)
+    {
+        _seekTimer.Stop();
+
+        if (_seekRequestThrottler.Flush(DateTimeOffset.UtcNow) is { } pendingSeek)
+            SeekToPlayerCore(pendingSeek);
     }
 
     private void UpdatePlaybackState()
@@ -583,20 +653,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         if (MediaPlayer is null || !HasMedia)
             return;
 
-        _isSeekInteractionActive = false;
-        _isPrimingInitialFrame = false;
-
-        try
-        {
-            MediaPlayer.Stop();
-        }
-        catch
-        {
-        }
-
-        SetTimelineFromPlayer(TimeSpan.Zero);
-        UpdatePlaybackState();
-        PrimeInitialFrame();
+        ResetToFirstFrame();
     }
 
     private void SetTimelineFromPlayer(TimeSpan value)
@@ -617,9 +674,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         if (MediaPlayer is null || !CanSeek)
             return;
 
-        long time = (long)Clamp(position.TotalMilliseconds, 0, DurationSeconds * 1000d);
-        MediaPlayer.Time = time;
-        SetTimelineFromPlayer(TimeSpan.FromMilliseconds(time));
+        SeekToPlayerCore(ClampPosition(position));
     }
 
     private void ReleaseMedia()
@@ -637,6 +692,69 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             return min;
 
         return value > max ? max : value;
+    }
+
+    private void QueueSeekDuringInteraction(TimeSpan position)
+    {
+        if (MediaPlayer is null)
+            return;
+
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        if (_seekRequestThrottler.TryQueue(position, now, out TimeSpan immediateSeek))
+        {
+            SeekToPlayerCore(immediateSeek);
+            return;
+        }
+
+        TimeSpan delay = _seekRequestThrottler.GetRemainingDelay(now);
+        _seekTimer.Interval = delay > TimeSpan.Zero ? delay : TimeSpan.FromMilliseconds(1);
+        if (!_seekTimer.IsEnabled)
+            _seekTimer.Start();
+    }
+
+    private void CancelPendingSeekInteraction()
+    {
+        _isSeekInteractionActive = false;
+        _resumePlaybackAfterSeek = false;
+        _seekTimer.Stop();
+        _seekRequestThrottler.Reset();
+    }
+
+    private void ResetToFirstFrame()
+    {
+        if (MediaPlayer is null || !HasMedia)
+            return;
+
+        CancelPendingSeekInteraction();
+        _isPrimingInitialFrame = false;
+
+        try
+        {
+            MediaPlayer.Stop();
+        }
+        catch
+        {
+        }
+
+        SetTimelineFromPlayer(TimeSpan.Zero);
+        UpdatePlaybackState();
+        PrimeInitialFrame();
+    }
+
+    private TimeSpan ClampPosition(TimeSpan position)
+    {
+        double maxSeconds = Math.Max(DurationSeconds, 0);
+        return TimeSpan.FromSeconds(Clamp(position.TotalSeconds, 0, maxSeconds));
+    }
+
+    private void SeekToPlayerCore(TimeSpan position)
+    {
+        if (MediaPlayer is null || !CanSeek)
+            return;
+
+        long time = (long)Clamp(position.TotalMilliseconds, 0, DurationSeconds * 1000d);
+        MediaPlayer.Time = time;
+        SetTimelineFromPlayer(TimeSpan.FromMilliseconds(time));
     }
 
     private static string FormatTime(TimeSpan value) =>
