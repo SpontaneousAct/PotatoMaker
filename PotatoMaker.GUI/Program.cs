@@ -1,4 +1,5 @@
 using Avalonia;
+using LibVLCSharp.Shared;
 using PotatoMaker.Core;
 using System;
 
@@ -13,6 +14,7 @@ namespace PotatoMaker.GUI
         public static void Main(string[] args)
         {
             FFmpegBinaries.EnsureConfigured();
+            LibVLCSharp.Shared.Core.Initialize();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
 

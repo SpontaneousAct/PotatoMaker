@@ -12,9 +12,6 @@
         <DataTemplate DataType="vm:VideoSummaryViewModel">
             <views:VideoSummaryView/>
         </DataTemplate>
-        <DataTemplate DataType="vm:ClipRangeViewModel">
-            <views:ClipRangeView/>
-        </DataTemplate>
         <DataTemplate DataType="vm:OutputSettingsViewModel">
             <views:OutputSettingsView/>
         </DataTemplate>
@@ -63,6 +60,8 @@
                     <SolidColorBrush x:Key="PmStatBorderBrush">#FFD6DEE9</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBackground">#FFF4F7FB</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FFD6DEE8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmVideoSurfaceBackground">#FF0B0E14</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmVideoSurfaceBorderBrush">#FF2B3340</SolidColorBrush>
                     <SolidColorBrush x:Key="PmErrorForeground">#FFBC3030</SolidColorBrush>
                 </ResourceDictionary>
 
@@ -100,6 +99,8 @@
                     <SolidColorBrush x:Key="PmStatBorderBrush">#FF273143</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBackground">#FF0F141C</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FF273143</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmVideoSurfaceBackground">#FF05070B</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmVideoSurfaceBorderBrush">#FF2A3342</SolidColorBrush>
                     <SolidColorBrush x:Key="PmErrorForeground">#FFFF8E8E</SolidColorBrush>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
@@ -132,6 +133,14 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="8,6"/>
+        </Style>
+
+        <Style Selector="Border.pm-video-surface">
+            <Setter Property="Background" Value="{DynamicResource PmVideoSurfaceBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmVideoSurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="ClipToBounds" Value="True"/>
         </Style>
 
         <Style Selector="TextBlock.pm-heading">

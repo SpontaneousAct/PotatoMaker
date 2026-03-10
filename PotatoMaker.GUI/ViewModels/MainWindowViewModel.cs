@@ -6,7 +6,7 @@ namespace PotatoMaker.GUI.ViewModels;
 /// <summary>
 /// Hosts shell-level UI state for the main window.
 /// </summary>
-public partial class MainWindowViewModel : ViewModelBase
+public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly IThemeService _themeService;
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
@@ -97,4 +97,6 @@ public partial class MainWindowViewModel : ViewModelBase
             // Ignore persistence failures and keep the in-memory selection.
         }
     }
+
+    public void Dispose() => Workspace.Dispose();
 }

@@ -23,10 +23,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IThemeService, AvaloniaThemeService>();
         services.AddSingleton<IVideoAnalysisService, VideoAnalysisService>();
         services.AddSingleton<IVideoEncodingService, VideoEncodingService>();
-        services.AddSingleton<IVideoFramePreviewService, VideoFramePreviewService>();
         services.AddSingleton<IEncoderCapabilityService, EncoderCapabilityService>();
 
         services.AddTransient<HelpModalViewModel>();
+        services.AddTransient(_ => new VideoPlayerViewModel(initializePlayer: true));
         services.AddTransient<EncodeWorkspaceViewModel>();
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<MainWindow>();

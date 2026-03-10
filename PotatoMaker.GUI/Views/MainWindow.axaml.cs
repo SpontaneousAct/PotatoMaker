@@ -18,4 +18,12 @@ public partial class MainWindow : Window
     {
         DataContext = viewModel;
     }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        IDisposable? disposable = DataContext as IDisposable;
+        DataContext = null;
+        disposable?.Dispose();
+        base.OnClosed(e);
+    }
 }

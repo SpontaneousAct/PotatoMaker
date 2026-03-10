@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Windows.Input;
-using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PotatoMaker.Core;
@@ -11,30 +10,23 @@ namespace PotatoMaker.GUI.ViewModels;
 /// <summary>
 /// Coordinates file analysis and encoding for the main screen.
 /// </summary>
-public partial class EncodeWorkspaceViewModel : ViewModelBase
+public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 {
     private readonly IVideoAnalysisService _analysisService;
     private readonly IVideoEncodingService _encodingService;
-    private readonly IVideoFramePreviewService _framePreviewService;
     private readonly IEncoderCapabilityService _encoderCapabilityService;
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
     private readonly bool _initializeEncoderSupport;
     private CancellationTokenSource? _encodeCts;
     private CancellationTokenSource? _previewCts;
-    private CancellationTokenSource? _startFramePreviewCts;
-    private CancellationTokenSource? _endFramePreviewCts;
     private int _previewVersion;
-    private int _startFramePreviewVersion;
-    private int _endFramePreviewVersion;
     private bool _isApplyingSettings;
-
-    private static readonly TimeSpan FramePreviewDebounce = TimeSpan.FromMilliseconds(200);
 
     public EncodeWorkspaceViewModel()
         : this(
             new VideoAnalysisService(),
             new VideoEncodingService(),
-            new VideoFramePreviewService(),
+            new VideoPlayerViewModel(initializePlayer: false),
             new EncoderCapabilityService(),
             null,
             initializeEncoderSupport: true)
@@ -44,14 +36,30 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
     public EncodeWorkspaceViewModel(
         IVideoAnalysisService analysisService,
         IVideoEncodingService encodingService,
-        IVideoFramePreviewService framePreviewService,
+        IEncoderCapabilityService encoderCapabilityService,
+        IAppSettingsCoordinator? settingsCoordinator,
+        bool initializeEncoderSupport = true)
+        : this(
+            analysisService,
+            encodingService,
+            new VideoPlayerViewModel(initializePlayer: false),
+            encoderCapabilityService,
+            settingsCoordinator,
+            initializeEncoderSupport)
+    {
+    }
+
+    public EncodeWorkspaceViewModel(
+        IVideoAnalysisService analysisService,
+        IVideoEncodingService encodingService,
+        VideoPlayerViewModel videoPlayer,
         IEncoderCapabilityService encoderCapabilityService,
         IAppSettingsCoordinator? settingsCoordinator,
         bool initializeEncoderSupport = true)
     {
         _analysisService = analysisService;
         _encodingService = encodingService;
-        _framePreviewService = framePreviewService;
+        VideoPlayer = videoPlayer;
         _encoderCapabilityService = encoderCapabilityService;
         _settingsCoordinator = settingsCoordinator;
         _initializeEncoderSupport = initializeEncoderSupport;
@@ -60,7 +68,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
         FileInput.FileCleared += OnFileCleared;
         FileInput.PropertyChanged += OnEncodePrerequisiteChanged;
         ClipRange.SelectionChanged += OnClipRangeSelectionChanged;
-        ClipRange.PreviewCommitRequested += OnClipPreviewCommitRequested;
+        VideoPlayer.TrimBoundaryRequested += OnTrimBoundaryRequested;
         VideoSummary.PropertyChanged += OnEncodePrerequisiteChanged;
         ConversionLog.PropertyChanged += OnEncodePrerequisiteChanged;
         OutputSettings.PropertyChanged += OnOutputSettingsChanged;
@@ -73,6 +81,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
     public FileInputViewModel FileInput { get; } = new();
 
     public VideoSummaryViewModel VideoSummary { get; } = new();
+
+    public VideoPlayerViewModel VideoPlayer { get; }
 
     public ClipRangeViewModel ClipRange { get; } = new();
 
@@ -177,6 +187,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
             OutputSettings.SetSourceFolder(Path.GetDirectoryName(Path.GetFullPath(path)));
 
             VideoSummary.Clear();
+            VideoPlayer.Clear();
             ClipRange.Clear();
             VideoInfo info = await _analysisService.ProbeAsync(path, previewCts.Token);
             if (ShouldIgnorePreviewResult(previewCts, previewVersion, path))
@@ -184,8 +195,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
 
             VideoSummary.SetProbeResult(path, info);
             ClipRange.SetSourceDuration(info.Duration);
+            VideoPlayer.LoadSource(path, info.Duration, ClipRange.Selection);
             VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
-            RefreshFramePreviews(ClipPreviewTarget.Start | ClipPreviewTarget.End, immediate: true);
 
             await RefreshStrategyPreviewAsync(path, info, previewCts, previewVersion);
         }
@@ -220,22 +231,22 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
     private void OnFileCleared()
     {
         CancelPendingPreview();
-        CancelFramePreviewRequests();
         OutputSettings.SetSourceFolder(null);
         ClipRange.Clear();
+        VideoPlayer.Clear();
         VideoSummary.Clear();
         ConversionLog.Clear();
         NotifyEncodeStateChanged();
     }
 
-    private async void OnClipRangeSelectionChanged(ClipPreviewTarget changedTargets)
+    private async void OnClipRangeSelectionChanged()
     {
         string? path = FileInput.InputFilePath;
         VideoInfo? info = VideoSummary.Info;
         if (path is null || info is null)
             return;
 
-        RefreshFramePreviews(changedTargets, immediate: false);
+        VideoPlayer.SetSelection(ClipRange.Selection);
 
         CancelPendingPreview();
         var previewCts = new CancellationTokenSource();
@@ -258,9 +269,9 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
         }
     }
 
-    private void OnClipPreviewCommitRequested(ClipPreviewTarget target)
+    private void OnTrimBoundaryRequested(ClipBoundary boundary)
     {
-        RefreshFramePreviews(target, immediate: true);
+        ClipRange.SetBoundary(boundary, VideoPlayer.CurrentPosition);
     }
 
     private void CancelPendingPreview()
@@ -268,27 +279,6 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
         _previewCts?.Cancel();
         _previewCts?.Dispose();
         _previewCts = null;
-    }
-
-    private void CancelFramePreviewRequests()
-    {
-        CancelFramePreviewRequest(ClipPreviewTarget.Start);
-        CancelFramePreviewRequest(ClipPreviewTarget.End);
-    }
-
-    private void CancelFramePreviewRequest(ClipPreviewTarget target)
-    {
-        CancellationTokenSource? cts = target == ClipPreviewTarget.Start
-            ? _startFramePreviewCts
-            : _endFramePreviewCts;
-
-        cts?.Cancel();
-        cts?.Dispose();
-
-        if (target == ClipPreviewTarget.Start)
-            _startFramePreviewCts = null;
-        else if (target == ClipPreviewTarget.End)
-            _endFramePreviewCts = null;
     }
 
     private bool ShouldIgnorePreviewResult(CancellationTokenSource previewCts, int previewVersion, string path) =>
@@ -316,115 +306,6 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
             return;
 
         VideoSummary.SetStrategyResult(strategy);
-    }
-
-    private void RefreshFramePreviews(ClipPreviewTarget targets, bool immediate)
-    {
-        if ((targets & ClipPreviewTarget.Start) != 0)
-            QueueFramePreviewRefresh(ClipPreviewTarget.Start, immediate);
-
-        if ((targets & ClipPreviewTarget.End) != 0)
-            QueueFramePreviewRefresh(ClipPreviewTarget.End, immediate);
-    }
-
-    private void QueueFramePreviewRefresh(ClipPreviewTarget target, bool immediate)
-    {
-        string? path = FileInput.InputFilePath;
-        if (path is null || !ClipRange.HasDuration)
-        {
-            ClipRange.SetPreview(target, null, "Load a video to see a preview frame.");
-            return;
-        }
-
-        CancelFramePreviewRequest(target);
-
-        var cts = new CancellationTokenSource();
-        int version;
-        if (target == ClipPreviewTarget.Start)
-        {
-            _startFramePreviewCts = cts;
-            version = Interlocked.Increment(ref _startFramePreviewVersion);
-        }
-        else
-        {
-            _endFramePreviewCts = cts;
-            version = Interlocked.Increment(ref _endFramePreviewVersion);
-        }
-
-        ClipRange.SetPreviewLoading(target, true);
-        _ = RunFramePreviewRefreshAsync(
-            path,
-            target,
-            ClipRange.ResolvePreviewPosition(target),
-            cts,
-            version,
-            immediate);
-    }
-
-    private async Task RunFramePreviewRefreshAsync(
-        string path,
-        ClipPreviewTarget target,
-        TimeSpan position,
-        CancellationTokenSource cts,
-        int version,
-        bool immediate)
-    {
-        try
-        {
-            if (!immediate)
-                await Task.Delay(FramePreviewDebounce, cts.Token);
-
-            VideoFramePreviewResult result = await _framePreviewService.GenerateAsync(path, position, cts.Token);
-
-            if (ShouldIgnoreFramePreviewResult(target, cts, version, path))
-            {
-                result.Bitmap?.Dispose();
-                return;
-            }
-
-            ClipRange.SetPreview(target, result.Bitmap, result.ErrorMessage);
-        }
-        catch (OperationCanceledException) when (cts.IsCancellationRequested)
-        {
-        }
-        catch (Exception ex)
-        {
-            if (ShouldIgnoreFramePreviewResult(target, cts, version, path))
-                return;
-
-            ClipRange.SetPreview(target, null, ex.Message);
-        }
-        finally
-        {
-            if (target == ClipPreviewTarget.Start)
-            {
-                if (ReferenceEquals(_startFramePreviewCts, cts))
-                    _startFramePreviewCts = null;
-            }
-            else if (ReferenceEquals(_endFramePreviewCts, cts))
-            {
-                _endFramePreviewCts = null;
-            }
-
-            cts.Dispose();
-        }
-    }
-
-    private bool ShouldIgnoreFramePreviewResult(
-        ClipPreviewTarget target,
-        CancellationTokenSource cts,
-        int version,
-        string path)
-    {
-        if (cts.IsCancellationRequested ||
-            !string.Equals(FileInput.InputFilePath, path, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return target == ClipPreviewTarget.Start
-            ? version != _startFramePreviewVersion
-            : version != _endFramePreviewVersion;
     }
 
     private void OnEncodePrerequisiteChanged(object? sender, PropertyChangedEventArgs e)
@@ -525,5 +406,14 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsEncodeIdle));
         OnPropertyChanged(nameof(EncodeButtonText));
         OnPropertyChanged(nameof(EncodeButtonCommand));
+    }
+
+    public void Dispose()
+    {
+        CancelPendingPreview();
+        _encodeCts?.Cancel();
+        _encodeCts?.Dispose();
+        _encodeCts = null;
+        VideoPlayer.Dispose();
     }
 }

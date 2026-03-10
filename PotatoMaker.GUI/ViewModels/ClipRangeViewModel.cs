@@ -1,5 +1,4 @@
 using CommunityToolkit.Mvvm.Input;
-using Avalonia.Media.Imaging;
 using PotatoMaker.Core;
 
 namespace PotatoMaker.GUI.ViewModels;
@@ -16,16 +15,8 @@ public partial class ClipRangeViewModel : ViewModelBase
     private double _endSeconds;
     private bool _hasDuration;
     private bool _suppressSelectionChanged;
-    private Bitmap? _startPreviewImage;
-    private Bitmap? _endPreviewImage;
-    private bool _isStartPreviewLoading;
-    private bool _isEndPreviewLoading;
-    private string? _startPreviewMessage;
-    private string? _endPreviewMessage;
 
-    public event Action<ClipPreviewTarget>? SelectionChanged;
-
-    public event Action<ClipPreviewTarget>? PreviewCommitRequested;
+    public event Action? SelectionChanged;
 
     public double MaximumSeconds
     {
@@ -75,56 +66,6 @@ public partial class ClipRangeViewModel : ViewModelBase
         ? $"{StartDisplay} - {EndDisplay}"
         : "Load a video to choose a clip.";
 
-    public Bitmap? StartPreviewImage
-    {
-        get => _startPreviewImage;
-        private set
-        {
-            Bitmap? previous = _startPreviewImage;
-            if (SetProperty(ref _startPreviewImage, value))
-                previous?.Dispose();
-        }
-    }
-
-    public Bitmap? EndPreviewImage
-    {
-        get => _endPreviewImage;
-        private set
-        {
-            Bitmap? previous = _endPreviewImage;
-            if (SetProperty(ref _endPreviewImage, value))
-                previous?.Dispose();
-        }
-    }
-
-    public bool IsStartPreviewLoading
-    {
-        get => _isStartPreviewLoading;
-        private set => SetProperty(ref _isStartPreviewLoading, value);
-    }
-
-    public bool IsEndPreviewLoading
-    {
-        get => _isEndPreviewLoading;
-        private set => SetProperty(ref _isEndPreviewLoading, value);
-    }
-
-    public string? StartPreviewMessage
-    {
-        get => _startPreviewMessage;
-        private set => SetProperty(ref _startPreviewMessage, value);
-    }
-
-    public string? EndPreviewMessage
-    {
-        get => _endPreviewMessage;
-        private set => SetProperty(ref _endPreviewMessage, value);
-    }
-
-    public bool HasStartPreview => StartPreviewImage is not null;
-
-    public bool HasEndPreview => EndPreviewImage is not null;
-
     [RelayCommand(CanExecute = nameof(CanResetSelection))]
     private void ResetSelection()
     {
@@ -170,70 +111,18 @@ public partial class ClipRangeViewModel : ViewModelBase
         }
 
         NotifyDerivedProperties();
-        SetPreviewLoading(ClipPreviewTarget.Start, false);
-        SetPreviewLoading(ClipPreviewTarget.End, false);
-        SetPreview(ClipPreviewTarget.Start, null, "Load a video to see a preview frame.");
-        SetPreview(ClipPreviewTarget.End, null, "Load a video to see a preview frame.");
     }
 
-    public void RequestPreviewCommit(ClipPreviewTarget target)
+    public void SetBoundary(ClipBoundary boundary, TimeSpan position)
     {
-        if (target is ClipPreviewTarget.None)
+        if (!HasDuration)
             return;
 
-        PreviewCommitRequested?.Invoke(target);
-    }
-
-    public TimeSpan ResolvePreviewPosition(ClipPreviewTarget target)
-    {
-        TimeSpan basePosition = target == ClipPreviewTarget.End ? End : Start;
-        if (SourceDuration <= TimeSpan.Zero)
-            return TimeSpan.Zero;
-
-        TimeSpan maxPreviewPosition = SourceDuration - TimeSpan.FromMilliseconds(100);
-        if (maxPreviewPosition < TimeSpan.Zero)
-            maxPreviewPosition = TimeSpan.Zero;
-
-        return basePosition > maxPreviewPosition ? maxPreviewPosition : basePosition;
-    }
-
-    public void SetPreviewLoading(ClipPreviewTarget target, bool isLoading)
-    {
-        switch (target)
-        {
-            case ClipPreviewTarget.Start:
-                IsStartPreviewLoading = isLoading;
-                if (isLoading)
-                    StartPreviewMessage = "Updating preview...";
-                break;
-            case ClipPreviewTarget.End:
-                IsEndPreviewLoading = isLoading;
-                if (isLoading)
-                    EndPreviewMessage = "Updating preview...";
-                break;
-        }
-    }
-
-    public void SetPreview(ClipPreviewTarget target, Bitmap? image, string? message = null)
-    {
-        switch (target)
-        {
-            case ClipPreviewTarget.Start:
-                IsStartPreviewLoading = false;
-                StartPreviewImage = image;
-                StartPreviewMessage = message ?? (image is null ? "Preview unavailable." : null);
-                OnPropertyChanged(nameof(HasStartPreview));
-                break;
-            case ClipPreviewTarget.End:
-                IsEndPreviewLoading = false;
-                EndPreviewImage = image;
-                EndPreviewMessage = message ?? (image is null ? "Preview unavailable." : null);
-                OnPropertyChanged(nameof(HasEndPreview));
-                break;
-            default:
-                image?.Dispose();
-                break;
-        }
+        double seconds = Clamp(position.TotalSeconds, 0, MaximumSeconds);
+        if (boundary == ClipBoundary.Start)
+            SetRange(seconds, _endSeconds);
+        else
+            SetRange(_startSeconds, seconds);
     }
 
     private void SetRange(double startSeconds, double endSeconds)
@@ -251,15 +140,7 @@ public partial class ClipRangeViewModel : ViewModelBase
         NotifyDerivedProperties();
 
         if (!_suppressSelectionChanged)
-        {
-            ClipPreviewTarget changedTargets = ClipPreviewTarget.None;
-            if (Math.Abs(normalized.Start - previousStart) >= double.Epsilon)
-                changedTargets |= ClipPreviewTarget.Start;
-            if (Math.Abs(normalized.End - previousEnd) >= double.Epsilon)
-                changedTargets |= ClipPreviewTarget.End;
-
-            SelectionChanged?.Invoke(changedTargets);
-        }
+            SelectionChanged?.Invoke();
     }
 
     private void SetRangeCore(double startSeconds, double endSeconds)

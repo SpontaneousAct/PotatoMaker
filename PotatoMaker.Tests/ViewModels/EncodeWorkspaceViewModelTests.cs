@@ -16,11 +16,9 @@ public sealed class EncodeWorkspaceViewModelTests
         try
         {
             var analysisService = new RecordingAnalysisService();
-            var previewService = new RecordingFramePreviewService();
             var workspace = new EncodeWorkspaceViewModel(
                 analysisService,
                 new NoOpEncodingService(),
-                previewService,
                 new StaticEncoderCapabilityService(),
                 null,
                 initializeEncoderSupport: false);
@@ -29,16 +27,12 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.True(accepted);
 
             await analysisService.WaitForStrategyCountAsync(1);
-            (string _, TimeSpan startPreviewPosition) = await previewService.WaitForRequestCountAsync(1);
-            (string _, TimeSpan endPreviewPosition) = await previewService.WaitForRequestCountAsync(2);
 
             Assert.True(workspace.VideoSummary.HasData);
             Assert.True(workspace.VideoSummary.HasStrategy);
             Assert.Equal("1920x1080", workspace.VideoSummary.Resolution);
             Assert.Equal("0:00.0 - 1:35.0", workspace.VideoSummary.SelectedRange);
             Assert.Equal("1:35.0", workspace.VideoSummary.SelectedDuration);
-            Assert.Equal(TimeSpan.Zero, startPreviewPosition);
-            Assert.Equal(TimeSpan.FromSeconds(94.9), endPreviewPosition);
             Assert.Equal("crop=1920:800:0:140", workspace.VideoSummary.StrategyCrop);
             Assert.Equal("crop=1920:800:0:140,scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
         }
@@ -57,35 +51,25 @@ public sealed class EncodeWorkspaceViewModelTests
         try
         {
             var analysisService = new RecordingAnalysisService();
-            var previewService = new RecordingFramePreviewService();
             var workspace = new EncodeWorkspaceViewModel(
                 analysisService,
                 new NoOpEncodingService(),
-                previewService,
                 new StaticEncoderCapabilityService(),
                 null,
                 initializeEncoderSupport: false);
 
             Assert.True(workspace.FileInput.SetFile(inputPath));
             await analysisService.WaitForStrategyCountAsync(1);
-            await previewService.WaitForRequestCountAsync(2);
 
             workspace.ClipRange.StartSeconds = 15;
             workspace.ClipRange.EndSeconds = 45;
 
             await analysisService.WaitForStrategyCountAsync(2);
-            await previewService.WaitForRequestCountAsync(4);
-            TimeSpan[] refreshedPreviewPositions = previewService.GetRequests()
-                .Skip(2)
-                .Select(request => request.Position)
-                .ToArray();
 
             Assert.Equal(TimeSpan.FromSeconds(30), analysisService.LastRequestedClipRange?.Duration);
             Assert.Equal(TimeSpan.FromSeconds(15), analysisService.LastRequestedClipRange?.Start);
             Assert.Equal("0:15.0 - 0:45.0", workspace.VideoSummary.SelectedRange);
             Assert.Equal("0:30.0", workspace.VideoSummary.SelectedDuration);
-            Assert.Contains(TimeSpan.FromSeconds(15), refreshedPreviewPositions);
-            Assert.Contains(TimeSpan.FromSeconds(45), refreshedPreviewPositions);
             Assert.NotNull(workspace.VideoSummary.StrategyAnalysis);
             Assert.Equal("crop=1920:800:0:140", workspace.VideoSummary.StrategyAnalysis!.CropFilter);
         }
@@ -108,7 +92,6 @@ public sealed class EncodeWorkspaceViewModelTests
             var workspace = new EncodeWorkspaceViewModel(
                 analysisService,
                 encodingService,
-                new RecordingFramePreviewService(),
                 new StaticEncoderCapabilityService(),
                 null,
                 initializeEncoderSupport: false);
@@ -133,6 +116,46 @@ public sealed class EncodeWorkspaceViewModelTests
     }
 
     [Fact]
+    public async Task TrimCommands_UseCurrentPlaybackPosition()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var player = new VideoPlayerViewModel(initializePlayer: false);
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                player,
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            player.TimelineSeconds = 18;
+            player.SetTrimStartCommand.Execute(null);
+            await analysisService.WaitForStrategyCountAsync(2);
+
+            player.TimelineSeconds = 41;
+            player.SetTrimEndCommand.Execute(null);
+            await analysisService.WaitForStrategyCountAsync(3);
+
+            Assert.Equal(TimeSpan.FromSeconds(18), workspace.ClipRange.Start);
+            Assert.Equal(TimeSpan.FromSeconds(41), workspace.ClipRange.End);
+            Assert.Equal("0:18.0 - 0:41.0", workspace.VideoSummary.SelectedRange);
+            Assert.Equal("0:23.0", workspace.VideoSummary.SelectedDuration);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task ChangingOutputSettings_PersistsThroughCoordinator()
     {
         string outputFolder = Path.Combine(Path.GetTempPath(), $"potatomaker-out-{Guid.NewGuid():N}");
@@ -149,7 +172,6 @@ public sealed class EncodeWorkspaceViewModelTests
             var workspace = new EncodeWorkspaceViewModel(
                 new RecordingAnalysisService(),
                 new NoOpEncodingService(),
-                new RecordingFramePreviewService(),
                 new StaticEncoderCapabilityService(),
                 settingsCoordinator,
                 initializeEncoderSupport: false);
@@ -220,48 +242,6 @@ public sealed class EncodeWorkspaceViewModelTests
             Microsoft.Extensions.Logging.ILogger<ProcessingPipeline> logger,
             IProgress<EncodeProgress>? progress = null,
             CancellationToken ct = default) => Task.CompletedTask;
-    }
-
-    private sealed class RecordingFramePreviewService : IVideoFramePreviewService
-    {
-        private readonly List<(string Path, TimeSpan Position)> _requests = [];
-
-        public Task<VideoFramePreviewResult> GenerateAsync(
-            string inputPath,
-            TimeSpan position,
-            CancellationToken ct = default)
-        {
-            lock (_requests)
-            {
-                _requests.Add((inputPath, position));
-            }
-
-            return Task.FromResult(new VideoFramePreviewResult(null, "Preview stub"));
-        }
-
-        public async Task<(string Path, TimeSpan Position)> WaitForRequestCountAsync(int expectedCount)
-        {
-            for (int attempt = 0; attempt < 200; attempt++)
-            {
-                lock (_requests)
-                {
-                    if (_requests.Count >= expectedCount)
-                        return _requests[expectedCount - 1];
-                }
-
-                await Task.Delay(10);
-            }
-
-            throw new TimeoutException($"Timed out waiting for {expectedCount} preview requests.");
-        }
-
-        public IReadOnlyList<(string Path, TimeSpan Position)> GetRequests()
-        {
-            lock (_requests)
-            {
-                return _requests.ToArray();
-            }
-        }
     }
 
     private sealed class RecordingEncodingService : IVideoEncodingService

@@ -1,0 +1,194 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PotatoMaker.GUI.ViewModels"
+             xmlns:vlc="using:LibVLCSharp.Avalonia"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="430"
+             x:Class="PotatoMaker.GUI.Views.VideoPlayerView"
+             x:DataType="vm:EncodeWorkspaceViewModel">
+
+    <Design.DataContext>
+        <vm:EncodeWorkspaceViewModel/>
+    </Design.DataContext>
+
+    <Border Classes="pm-card"
+            Padding="8">
+        <Grid RowDefinitions="Auto,*,Auto,Auto,Auto"
+              RowSpacing="6">
+            <Grid Grid.Row="0"
+                  ColumnDefinitions="*,Auto,Auto,Auto"
+                  ColumnSpacing="8">
+                <StackPanel Grid.Column="0"
+                            Spacing="2">
+                    <TextBlock Text="Video Preview"
+                               Classes="pm-section-title"/>
+                    <TextBlock Text="{Binding VideoPlayer.LoadedFileName}"
+                               Classes="pm-caption"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Spacing="1"
+                            MinWidth="72">
+                    <TextBlock Text="Start"
+                               Classes="pm-caption"/>
+                    <TextBlock Text="{Binding ClipRange.StartDisplay}"
+                               FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            Spacing="1"
+                            MinWidth="72">
+                    <TextBlock Text="End"
+                               Classes="pm-caption"/>
+                    <TextBlock Text="{Binding ClipRange.EndDisplay}"
+                               FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="3"
+                            Spacing="1"
+                            MinWidth="72">
+                    <TextBlock Text="Length"
+                               Classes="pm-caption"/>
+                    <TextBlock Text="{Binding ClipRange.SelectedDurationDisplay}"
+                               FontWeight="SemiBold"/>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Classes="pm-video-surface"
+                    MinHeight="220">
+                <Grid>
+                    <vlc:VideoView MediaPlayer="{Binding VideoPlayer.MediaPlayer}"
+                                   IsVisible="{Binding VideoPlayer.IsVideoSurfaceVisible}"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch"/>
+
+                    <StackPanel IsVisible="{Binding !VideoPlayer.IsVideoSurfaceVisible}"
+                                Spacing="6"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                MaxWidth="280"
+                                Margin="16">
+                        <TextBlock Text="{Binding VideoPlayer.StatusMessage}"
+                                   Classes="pm-caption"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding VideoPlayer.PlayerErrorMessage}"
+                                   Foreground="{DynamicResource PmErrorForeground}"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding VideoPlayer.HasPlayerError}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <StackPanel Grid.Row="2"
+                        Spacing="3">
+                <Canvas x:Name="TimelineMarkerCanvas"
+                        Height="12"
+                        ClipToBounds="True"
+                        IsVisible="{Binding ClipRange.HasDuration}">
+                    <Border x:Name="SelectionRangeBar"
+                            Height="4"
+                            CornerRadius="2"
+                            Background="{DynamicResource PmPrimaryBackground}"
+                            Opacity="0.35"
+                            Canvas.Top="4"/>
+                    <Border x:Name="StartMarker"
+                            Width="2"
+                            Height="12"
+                            Background="{DynamicResource PmPrimaryBackground}"/>
+                    <Border x:Name="EndMarker"
+                            Width="2"
+                            Height="12"
+                            Background="{DynamicResource PmCancelBackground}"/>
+                </Canvas>
+
+                <Slider x:Name="TimelineSlider"
+                        Minimum="0"
+                        Maximum="{Binding VideoPlayer.DurationSeconds}"
+                        Value="{Binding VideoPlayer.TimelineSeconds}"
+                        IsEnabled="{Binding VideoPlayer.CanSeek}"/>
+
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding VideoPlayer.CurrentTimeDisplay}"
+                               Classes="pm-caption"/>
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding VideoPlayer.DurationDisplay}"
+                               Classes="pm-caption"
+                               HorizontalAlignment="Right"/>
+                </Grid>
+            </StackPanel>
+
+            <Grid Grid.Row="3"
+                  ColumnDefinitions="Auto,Auto,Auto,Auto,*"
+                  ColumnSpacing="6">
+                <Button Grid.Column="0"
+                        Content="{Binding VideoPlayer.TogglePlaybackText}"
+                        Command="{Binding VideoPlayer.TogglePlaybackCommand}"
+                        Classes.pm-primary="{Binding VideoPlayer.CanControlPlayback}"/>
+
+                <Button Grid.Column="1"
+                        Content="Stop"
+                        Command="{Binding VideoPlayer.StopPlaybackCommand}"/>
+
+                <Button Grid.Column="2"
+                        Content="Set Start"
+                        Command="{Binding VideoPlayer.SetTrimStartCommand}"/>
+
+                <Button Grid.Column="3"
+                        Content="Set End"
+                        Command="{Binding VideoPlayer.SetTrimEndCommand}"/>
+
+                <TextBlock Grid.Column="4"
+                           Text="{Binding ClipRange.RangeSummary}"
+                           Classes="pm-caption"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Border Grid.Row="4"
+                    Classes="pm-inset"
+                    Padding="8,6">
+                <StackPanel Spacing="4"
+                            IsEnabled="{Binding ClipRange.HasDuration}">
+                    <StackPanel Spacing="2">
+                        <Grid ColumnDefinitions="*,Auto"
+                              ColumnSpacing="8">
+                            <TextBlock Grid.Column="0"
+                                       Text="Start point"
+                                       Classes="pm-caption"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding ClipRange.StartDisplay}"
+                                       FontWeight="SemiBold"/>
+                        </Grid>
+
+                        <Slider Minimum="0"
+                                Maximum="{Binding ClipRange.MaximumSeconds}"
+                                Value="{Binding ClipRange.StartSeconds}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="2">
+                        <Grid ColumnDefinitions="*,Auto"
+                              ColumnSpacing="8">
+                            <TextBlock Grid.Column="0"
+                                       Text="End point"
+                                       Classes="pm-caption"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding ClipRange.EndDisplay}"
+                                       FontWeight="SemiBold"/>
+                        </Grid>
+
+                        <Slider Minimum="0"
+                                Maximum="{Binding ClipRange.MaximumSeconds}"
+                                Value="{Binding ClipRange.EndSeconds}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

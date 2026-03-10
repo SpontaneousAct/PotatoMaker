@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PotatoMaker.GUI.ViewModels"
+        xmlns:views="using:PotatoMaker.GUI.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="960" d:DesignHeight="720"
@@ -106,10 +107,10 @@
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Top"/>
 
-                    <ContentControl Grid.Row="1"
-                                    Content="{Binding Workspace.ClipRange}"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Top"/>
+                    <views:VideoPlayerView Grid.Row="1"
+                                           DataContext="{Binding Workspace}"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Top"/>
 
                     <ContentControl Grid.Row="2"
                                     Content="{Binding Workspace.ConversionLog}"
