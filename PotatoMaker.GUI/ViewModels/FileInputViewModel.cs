@@ -9,6 +9,8 @@ namespace PotatoMaker.GUI.ViewModels;
 /// </summary>
 public partial class FileInputViewModel : ViewModelBase
 {
+    public const string LockedSelectionMessage = "Wait for compression to finish before changing the source video.";
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasFile))]
     [NotifyPropertyChangedFor(nameof(HasNoFile))]
@@ -21,11 +23,20 @@ public partial class FileInputViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(HasValidationMessage))]
     private string? _validationMessage;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanSelectFile))]
+    [NotifyPropertyChangedFor(nameof(CanClearFile))]
+    private bool _isSourceSelectionLocked;
+
     public bool HasFile => !string.IsNullOrEmpty(InputFilePath);
 
     public bool HasNoFile => !HasFile;
 
     public bool HasValidationMessage => !string.IsNullOrWhiteSpace(ValidationMessage);
+
+    public bool CanSelectFile => !IsSourceSelectionLocked;
+
+    public bool CanClearFile => HasFile && !IsSourceSelectionLocked;
 
     /// <summary>
     /// Set by the view to open the native file picker dialog.
@@ -39,20 +50,45 @@ public partial class FileInputViewModel : ViewModelBase
 
     public event Action? FileCleared;
 
-    [RelayCommand]
-    private void SelectFile() => FilePickerRequested?.Invoke();
+    [RelayCommand(CanExecute = nameof(CanSelectFile))]
+    private void SelectFile()
+    {
+        if (!CanSelectFile)
+            return;
 
-    [RelayCommand(CanExecute = nameof(HasFile))]
+        FilePickerRequested?.Invoke();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanClearFile))]
     private void ClearFile()
     {
+        if (!CanClearFile)
+            return;
+
         Clear();
         FileCleared?.Invoke();
     }
 
-    partial void OnInputFilePathChanged(string? value) => ClearFileCommand.NotifyCanExecuteChanged();
+    partial void OnInputFilePathChanged(string? value)
+    {
+        SelectFileCommand.NotifyCanExecuteChanged();
+        ClearFileCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsSourceSelectionLockedChanged(bool value)
+    {
+        SelectFileCommand.NotifyCanExecuteChanged();
+        ClearFileCommand.NotifyCanExecuteChanged();
+    }
 
     public bool SetFile(string path)
     {
+        if (IsSourceSelectionLocked)
+        {
+            ValidationMessage = LockedSelectionMessage;
+            return false;
+        }
+
         if (!InputMediaSupport.TryValidatePath(path, out string errorMessage))
         {
             ValidationMessage = errorMessage;

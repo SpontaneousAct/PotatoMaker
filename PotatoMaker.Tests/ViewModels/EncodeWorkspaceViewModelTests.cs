@@ -428,6 +428,59 @@ public sealed class EncodeWorkspaceViewModelTests
         }
     }
 
+    [Fact]
+    public async Task EncodingInProgress_LocksSourceSelectionUntilCompletion()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        string replacementPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mov");
+        await File.WriteAllTextAsync(inputPath, "video");
+        await File.WriteAllTextAsync(replacementPath, "replacement");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var encodingService = new BlockingEncodingService();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                encodingService,
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            string fullInputPath = Path.GetFullPath(inputPath);
+            Task encodeTask = workspace.StartEncodeCommand.ExecuteAsync(null);
+            await encodingService.WaitForStartAsync();
+
+            Assert.True(workspace.IsEncodeInProgress);
+            Assert.False(workspace.FileInput.ClearFileCommand.CanExecute(null));
+            Assert.False(workspace.FileInput.SelectFileCommand.CanExecute(null));
+
+            workspace.FileInput.ClearFileCommand.Execute(null);
+            Assert.Equal(fullInputPath, workspace.FileInput.InputFilePath);
+
+            bool changed = workspace.FileInput.SetFile(replacementPath);
+
+            Assert.False(changed);
+            Assert.Equal(fullInputPath, workspace.FileInput.InputFilePath);
+            Assert.Equal(FileInputViewModel.LockedSelectionMessage, workspace.FileInput.ValidationMessage);
+
+            workspace.CancelEncodeCommand.Execute(null);
+            await encodeTask;
+
+            Assert.False(workspace.IsEncodeInProgress);
+            Assert.True(workspace.FileInput.ClearFileCommand.CanExecute(null));
+            Assert.True(workspace.FileInput.SelectFileCommand.CanExecute(null));
+        }
+        finally
+        {
+            File.Delete(inputPath);
+            File.Delete(replacementPath);
+        }
+    }
+
     private sealed class RecordingAnalysisService : IVideoAnalysisService
     {
         private readonly List<StrategyAnalysis> _strategies = [];

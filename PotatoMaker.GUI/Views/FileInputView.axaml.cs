@@ -66,7 +66,9 @@ public partial class FileInputView : UserControl
     {
         Border? dropZone = this.FindControl<Border>("DropZone");
 
-        bool hasSupportedFile = TryGetSingleLocalFilePath(e.DataTransfer, out string? path) &&
+        bool canSelectFile = Vm.CanSelectFile;
+        bool hasSupportedFile = canSelectFile &&
+            TryGetSingleLocalFilePath(e.DataTransfer, out string? path) &&
             InputMediaSupport.IsSupportedPath(path);
 
         e.DragEffects = hasSupportedFile
@@ -92,6 +94,12 @@ public partial class FileInputView : UserControl
     {
         Border? dropZone = this.FindControl<Border>("DropZone");
         dropZone?.Classes.Remove("drag-over");
+
+        if (!Vm.CanSelectFile)
+        {
+            Vm.RejectFileSelection(FileInputViewModel.LockedSelectionMessage);
+            return;
+        }
 
         if (!TryGetSingleLocalFilePath(e.DataTransfer, out string? path) || path is null)
         {

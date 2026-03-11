@@ -323,7 +323,7 @@ public partial class VideoPlayerView : UserControl
 
     private async void OpenFilePickerAsync()
     {
-        if (_workspace is null)
+        if (_workspace is null || !_workspace.FileInput.CanSelectFile)
             return;
 
         var topLevel = TopLevel.GetTopLevel(this);
@@ -350,7 +350,8 @@ public partial class VideoPlayerView : UserControl
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
-        bool hasSupportedFile = TryGetSingleLocalFilePath(e.DataTransfer, out string? path) &&
+        bool hasSupportedFile = _workspace?.FileInput.CanSelectFile == true &&
+            TryGetSingleLocalFilePath(e.DataTransfer, out string? path) &&
             InputMediaSupport.IsSupportedPath(path);
 
         e.DragEffects = hasSupportedFile
@@ -374,6 +375,12 @@ public partial class VideoPlayerView : UserControl
 
         if (_workspace is null)
             return;
+
+        if (!_workspace.FileInput.CanSelectFile)
+        {
+            _workspace.FileInput.RejectFileSelection(FileInputViewModel.LockedSelectionMessage);
+            return;
+        }
 
         if (!TryGetSingleLocalFilePath(e.DataTransfer, out string? path) || path is null)
         {

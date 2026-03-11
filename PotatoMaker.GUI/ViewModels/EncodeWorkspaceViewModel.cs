@@ -78,6 +78,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         OutputSettings.PropertyChanged += OnOutputSettingsChanged;
 
         ApplyInitialSettings();
+        UpdateSourceSelectionState();
         if (_initializeEncoderSupport)
             _ = InitializeEncoderSupportAsync();
     }
@@ -490,12 +491,18 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
     private void NotifyEncodeStateChanged()
     {
+        UpdateSourceSelectionState();
         StartEncodeCommand.NotifyCanExecuteChanged();
         CancelEncodeCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(IsEncodeInProgress));
         OnPropertyChanged(nameof(IsEncodeIdle));
         OnPropertyChanged(nameof(EncodeButtonText));
         OnPropertyChanged(nameof(EncodeButtonCommand));
+    }
+
+    private void UpdateSourceSelectionState()
+    {
+        FileInput.IsSourceSelectionLocked = ConversionLog.IsProcessing;
     }
 
     public void Dispose()
