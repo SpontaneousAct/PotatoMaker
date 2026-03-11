@@ -24,6 +24,13 @@ public sealed class CpuEncodePresetOption
 /// </summary>
 public partial class OutputSettingsViewModel : ViewModelBase
 {
+    private static readonly int[] AvailableCpuPresets =
+    [
+        6,
+        8,
+        10
+    ];
+
     public OutputSettingsViewModel()
     {
         SelectedCpuEncodePreset = CpuEncodePresetOptions.First(option => option.Value == EncodeSettings.DefaultSvtAv1Preset);
@@ -135,7 +142,10 @@ public partial class OutputSettingsViewModel : ViewModelBase
     public void SetCpuEncodePreset(int preset)
     {
         int normalizedPreset = EncodeSettings.NormalizeSvtAv1Preset(preset);
-        SelectedCpuEncodePreset = CpuEncodePresetOptions.First(option => option.Value == normalizedPreset);
+        SelectedCpuEncodePreset = CpuEncodePresetOptions
+            .OrderBy(option => Math.Abs(option.Value - normalizedPreset))
+            .ThenBy(option => option.Value)
+            .First();
     }
 
     private static string? NormalizeFolderPath(string? folder)
@@ -161,8 +171,7 @@ public partial class OutputSettingsViewModel : ViewModelBase
             .Replace("/", "/\u200B", StringComparison.Ordinal);
 
     private static IReadOnlyList<CpuEncodePresetOption> CreateCpuEncodePresetOptions() =>
-        Enumerable
-            .Range(EncodeSettings.MinSvtAv1Preset, EncodeSettings.MaxSvtAv1Preset - EncodeSettings.MinSvtAv1Preset + 1)
+        AvailableCpuPresets
             .Select(CreateCpuEncodePresetOption)
             .ToArray();
 
@@ -171,8 +180,9 @@ public partial class OutputSettingsViewModel : ViewModelBase
         string description = preset switch
         {
             EncodeSettings.DefaultSvtAv1Preset => "Balanced (default)",
-            < EncodeSettings.DefaultSvtAv1Preset => "Slower, more efficient",
-            _ => "Faster, less efficient"
+            8 => "Faster",
+            10 => "Fastest",
+            _ => "Custom"
         };
 
         return new CpuEncodePresetOption(preset, $"{preset} - {description}");

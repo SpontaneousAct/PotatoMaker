@@ -104,7 +104,7 @@ public sealed class EncodeWorkspaceViewModelTests
             await analysisService.WaitForStrategyCountAsync(2);
 
             workspace.OutputSettings.UseNvencEncoder = false;
-            workspace.OutputSettings.SetCpuEncodePreset(9);
+            workspace.OutputSettings.SetCpuEncodePreset(10);
 
             workspace.EncodeButtonCommand.Execute(null);
             EncodeRequest request = await encodingService.WaitForRequestAsync();
@@ -112,7 +112,7 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal(TimeSpan.FromSeconds(12), request.ClipRange?.Start);
             Assert.Equal(TimeSpan.FromSeconds(27), request.ClipRange?.End);
             Assert.Equal(EncoderChoice.SvtAv1, request.Settings.Encoder);
-            Assert.Equal(9, request.Settings.SvtAv1Preset);
+            Assert.Equal(10, request.Settings.SvtAv1Preset);
         }
         finally
         {
@@ -268,7 +268,7 @@ public sealed class EncodeWorkspaceViewModelTests
 
         AppSettings persisted = await settingsCoordinator.WaitForUpdateAsync();
 
-        Assert.Equal(11, persisted.SvtAv1Preset);
+        Assert.Equal(10, persisted.SvtAv1Preset);
     }
 
     [Fact]
