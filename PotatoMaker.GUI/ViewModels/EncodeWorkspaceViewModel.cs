@@ -296,6 +296,22 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         ClipRange.SetBoundary(boundary, VideoPlayer.CurrentPosition);
     }
 
+    public void BeginTrimBoundaryPreview()
+    {
+        VideoPlayer.BeginTrimPreview();
+    }
+
+    public void PreviewTrimBoundary(ClipBoundary boundary, TimeSpan position)
+    {
+        ClipRange.SetBoundary(boundary, position);
+        VideoPlayer.PreviewTrimPosition(position);
+    }
+
+    public void EndTrimBoundaryPreview()
+    {
+        VideoPlayer.EndTrimPreview();
+    }
+
     private void OnResetStateChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is FileInputViewModel && e.PropertyName == nameof(FileInputViewModel.HasFile))

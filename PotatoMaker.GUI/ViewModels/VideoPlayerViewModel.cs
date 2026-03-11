@@ -429,6 +429,12 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         UpdatePlaybackState();
     }
 
+    public void BeginTrimPreview()
+    {
+        if (CanSeek)
+            BeginSeekInteraction();
+    }
+
     public void SeekDuringInteraction(TimeSpan position)
     {
         if (!CanSeek)
@@ -437,6 +443,18 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         TimeSpan clampedPosition = ClampPosition(position);
         SetTimelineFromPlayer(clampedPosition);
         QueueSeekDuringInteraction(clampedPosition);
+    }
+
+    public void PreviewTrimPosition(TimeSpan position)
+    {
+        TimeSpan clampedPosition = ClampPosition(position);
+        if (CanSeek)
+        {
+            SeekDuringInteraction(clampedPosition);
+            return;
+        }
+
+        SetTimelineFromPlayer(clampedPosition);
     }
 
     public void EndSeekInteraction()
@@ -462,6 +480,12 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         _resumePlaybackAfterSeek = false;
         UpdatePlaybackState();
+    }
+
+    public void EndTrimPreview()
+    {
+        if (CanSeek)
+            EndSeekInteraction();
     }
 
     public void Dispose()

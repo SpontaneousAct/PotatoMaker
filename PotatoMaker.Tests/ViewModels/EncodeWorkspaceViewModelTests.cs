@@ -161,6 +161,48 @@ public sealed class EncodeWorkspaceViewModelTests
     }
 
     [Fact]
+    public async Task PreviewTrimBoundary_UpdatesPlaybackPositionWhileAdjustingSelection()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var player = new VideoPlayerViewModel(initializePlayer: false);
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                player,
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            workspace.BeginTrimBoundaryPreview();
+            workspace.PreviewTrimBoundary(ClipBoundary.Start, TimeSpan.FromSeconds(22));
+            await analysisService.WaitForStrategyCountAsync(2);
+
+            Assert.Equal(TimeSpan.FromSeconds(22), workspace.ClipRange.Start);
+            Assert.Equal(22, workspace.VideoPlayer.TimelineSeconds);
+
+            workspace.PreviewTrimBoundary(ClipBoundary.End, TimeSpan.FromSeconds(48));
+            await analysisService.WaitForStrategyCountAsync(3);
+
+            Assert.Equal(TimeSpan.FromSeconds(48), workspace.ClipRange.End);
+            Assert.Equal(48, workspace.VideoPlayer.TimelineSeconds);
+
+            workspace.EndTrimBoundaryPreview();
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task ChangingOutputSettings_PersistsThroughCoordinator()
     {
         string outputFolder = Path.Combine(Path.GetTempPath(), $"potatomaker-out-{Guid.NewGuid():N}");

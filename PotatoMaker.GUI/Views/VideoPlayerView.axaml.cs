@@ -106,6 +106,7 @@ public partial class VideoPlayerView : UserControl
             return;
 
         _activeDragTarget = target;
+        _workspace.BeginTrimBoundaryPreview();
         e.Pointer.Capture(captureTarget);
         UpdateTrimBoundaryFromPointer(e.GetPosition(_timelineCanvas).X);
         e.Handled = true;
@@ -260,7 +261,7 @@ public partial class VideoPlayerView : UserControl
         };
 
         double seconds = duration * NormalizePointer(pointerX);
-        _workspace.ClipRange.SetBoundary(boundary, TimeSpan.FromSeconds(seconds));
+        _workspace.PreviewTrimBoundary(boundary, TimeSpan.FromSeconds(seconds));
     }
 
     private double NormalizePointer(double pointerX)
@@ -275,7 +276,13 @@ public partial class VideoPlayerView : UserControl
         pointer.Capture(null);
 
         if (_activeDragTarget == DragTarget.Playback)
+        {
             _workspace?.VideoPlayer.EndSeekInteraction();
+        }
+        else if (_activeDragTarget is DragTarget.TrimStart or DragTarget.TrimEnd)
+        {
+            _workspace?.EndTrimBoundaryPreview();
+        }
 
         _activeDragTarget = DragTarget.None;
     }
