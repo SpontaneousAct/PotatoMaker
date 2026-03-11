@@ -32,6 +32,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private bool _isPrimingInitialFrame;
     private bool _isResettingToFirstFrame;
     private bool _muteBeforeInitialFramePrime;
+    private int _volumeBeforeInitialFramePrime;
     private bool _resumePlaybackAfterSeek;
     private string _statusMessage;
     private string? _playerErrorMessage;
@@ -444,13 +445,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             _isPrimingInitialFrame = false;
             _isResettingToFirstFrame = false;
 
-            try
-            {
-                MediaPlayer.Mute = IsMuted;
-            }
-            catch
-            {
-            }
+            ApplyAudioSettings();
         }
 
         UpdatePlaybackState();
@@ -653,6 +648,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         {
             _isPrimingInitialFrame = true;
             _muteBeforeInitialFramePrime = MediaPlayer.Mute;
+            _volumeBeforeInitialFramePrime = MediaPlayer.Volume;
+            MediaPlayer.Volume = 0;
             MediaPlayer.Mute = true;
             MediaPlayer.Play();
         }
@@ -662,7 +659,10 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             _isResettingToFirstFrame = false;
 
             if (MediaPlayer is not null)
+            {
+                MediaPlayer.Volume = _volumeBeforeInitialFramePrime;
                 MediaPlayer.Mute = _muteBeforeInitialFramePrime;
+            }
         }
     }
 
@@ -697,7 +697,9 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         finally
         {
             _isResettingToFirstFrame = false;
+            MediaPlayer.Volume = _volumeBeforeInitialFramePrime;
             MediaPlayer.Mute = _muteBeforeInitialFramePrime;
+            ApplyAudioSettings();
             UpdatePlaybackState();
         }
     }

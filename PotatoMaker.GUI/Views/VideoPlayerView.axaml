@@ -12,20 +12,19 @@
         <vm:EncodeWorkspaceViewModel/>
     </Design.DataContext>
 
-    <Border Classes="pm-card"
-            Padding="8">
-        <Grid RowDefinitions="Auto,*,Auto,Auto"
+    <Border x:Name="PlayerDropZone"
+            Classes="pm-card pm-dropzone"
+            Padding="8"
+            DragDrop.AllowDrop="True">
+        <Grid RowDefinitions="Auto,Auto,*,Auto,Auto"
               RowSpacing="6">
             <Grid Grid.Row="0"
-                  ColumnDefinitions="*,Auto,Auto,Auto"
+                  ColumnDefinitions="*,Auto,Auto,Auto,28"
                   ColumnSpacing="8">
                 <StackPanel Grid.Column="0"
-                            Spacing="2">
+                            Spacing="0">
                     <TextBlock Text="Video Preview"
                                Classes="pm-section-title"/>
-                    <TextBlock Text="{Binding VideoPlayer.LoadedFileName}"
-                               Classes="pm-caption"
-                               TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1"
@@ -54,9 +53,30 @@
                     <TextBlock Text="{Binding ClipRange.SelectedDurationDisplay}"
                                FontWeight="SemiBold"/>
                 </StackPanel>
+
+                <Button Grid.Column="4"
+                        Content="X"
+                        Command="{Binding FileInput.ClearFileCommand}"
+                        IsVisible="{Binding FileInput.HasFile}"
+                        Width="28"
+                        Height="28"
+                        MinWidth="28"
+                        MinHeight="28"
+                        Padding="0"
+                        FontWeight="Bold"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        ToolTip.Tip="Remove selected file"/>
             </Grid>
 
-            <Border Grid.Row="1"
+            <TextBlock Grid.Row="1"
+                       Text="{Binding FileInput.ValidationMessage}"
+                       IsVisible="{Binding FileInput.HasValidationMessage}"
+                       Foreground="{DynamicResource PmErrorForeground}"
+                       FontSize="11"
+                       TextWrapping="Wrap"/>
+
+            <Border Grid.Row="2"
                     Classes="pm-video-surface"
                     CornerRadius="0"
                     MinHeight="180">
@@ -66,26 +86,45 @@
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Stretch"/>
 
-                    <StackPanel IsVisible="{Binding VideoPlayer.IsVideoStatusVisible}"
+                    <StackPanel IsVisible="{Binding VideoPlayer.HasPlayerError}"
                                 Spacing="6"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 MaxWidth="280"
                                 Margin="16">
-                        <TextBlock Text="{Binding VideoPlayer.StatusMessage}"
-                                   Classes="pm-caption"
-                                   TextAlignment="Center"
-                                   TextWrapping="Wrap"/>
                         <TextBlock Text="{Binding VideoPlayer.PlayerErrorMessage}"
                                    Foreground="{DynamicResource PmErrorForeground}"
                                    TextAlignment="Center"
                                    TextWrapping="Wrap"
                                    IsVisible="{Binding VideoPlayer.HasPlayerError}"/>
                     </StackPanel>
+
+                    <Border IsVisible="{Binding FileInput.HasNoFile}"
+                            Background="#12000000">
+                        <StackPanel Spacing="12"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    MaxWidth="320"
+                                    Margin="20">
+                            <TextBlock Text="Drop a video here to preview it."
+                                       Classes="pm-section-title"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="Browse for a source file or drag and drop one anywhere on this card."
+                                       Classes="pm-caption"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"/>
+                            <Button Content="Browse..."
+                                    Command="{Binding FileInput.SelectFileCommand}"
+                                    Classes="pm-primary"
+                                    HorizontalAlignment="Center"
+                                    MinWidth="140"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
 
-            <StackPanel Grid.Row="2"
+            <StackPanel Grid.Row="3"
                         Spacing="3">
                 <Canvas x:Name="PlaybackTimelineCanvas"
                         Height="46"
@@ -175,7 +214,7 @@
                 </Grid>
             </StackPanel>
 
-            <Grid Grid.Row="3"
+            <Grid Grid.Row="4"
                   ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,96,*"
                   ColumnSpacing="4">
                 <Button Grid.Column="0"

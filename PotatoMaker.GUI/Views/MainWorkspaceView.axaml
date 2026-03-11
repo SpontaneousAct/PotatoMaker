@@ -15,19 +15,14 @@
     <Grid ColumnDefinitions="1.8*,1.1*"
           ColumnSpacing="12">
         <Grid Grid.Column="0"
-              RowDefinitions="Auto,1.7*,*"
+              RowDefinitions="1.7*,*"
               RowSpacing="12">
-            <ContentControl Grid.Row="0"
-                            Content="{Binding FileInput}"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Top"/>
-
-            <views:VideoPlayerView Grid.Row="1"
+            <views:VideoPlayerView Grid.Row="0"
                                    DataContext="{Binding}"
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Stretch"/>
 
-            <ContentControl Grid.Row="2"
+            <ContentControl Grid.Row="1"
                             Content="{Binding ConversionLog}"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"/>

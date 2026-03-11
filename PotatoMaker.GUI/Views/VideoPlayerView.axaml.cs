@@ -2,6 +2,9 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
+using PotatoMaker.Core;
 using PotatoMaker.GUI.ViewModels;
 
 namespace PotatoMaker.GUI.Views;
@@ -23,6 +26,7 @@ public partial class VideoPlayerView : UserControl
     private readonly Border _trimStartHandle;
     private readonly Border _trimEndHandle;
     private readonly Border _timelineThumb;
+    private readonly Border _playerDropZone;
     private DragTarget _activeDragTarget;
 
     public VideoPlayerView()
@@ -38,6 +42,7 @@ public partial class VideoPlayerView : UserControl
         _trimStartHandle = this.FindControl<Border>("TrimStartHandle")!;
         _trimEndHandle = this.FindControl<Border>("TrimEndHandle")!;
         _timelineThumb = this.FindControl<Border>("TimelineThumb")!;
+        _playerDropZone = this.FindControl<Border>("PlayerDropZone")!;
 
         _timelineCanvas.PointerPressed += OnTimelineCanvasPressed;
         _timelineCanvas.PointerMoved += OnTimelineCanvasPointerMoved;
@@ -53,17 +58,34 @@ public partial class VideoPlayerView : UserControl
         _trimEndHandle.PointerPressed += OnTrimEndPressed;
         _trimEndHandle.PointerReleased += OnTimelinePointerReleased;
         _trimEndHandle.PointerCaptureLost += OnTimelinePointerCaptureLost;
+        _playerDropZone.AddHandler(DragDrop.DropEvent, OnDrop);
+        _playerDropZone.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        _playerDropZone.AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
 
         UpdateTimelineVisuals();
     }
 
     protected override void OnDataContextChanged(EventArgs e)
     {
+        DetachFilePickerHandler(_workspace);
         Unsubscribe(_workspace);
         _workspace = DataContext as EncodeWorkspaceViewModel;
         Subscribe(_workspace);
+        AttachFilePickerHandler(_workspace);
         UpdateTimelineVisuals();
         base.OnDataContextChanged(e);
+    }
+
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        base.OnLoaded(e);
+        AttachFilePickerHandler(_workspace);
+    }
+
+    protected override void OnUnloaded(RoutedEventArgs e)
+    {
+        base.OnUnloaded(e);
+        DetachFilePickerHandler(_workspace);
     }
 
     private void OnTimelineCanvasPressed(object? sender, PointerPressedEventArgs e)
@@ -157,6 +179,18 @@ public partial class VideoPlayerView : UserControl
 
         workspace.ClipRange.PropertyChanged -= OnObservedPropertyChanged;
         workspace.VideoPlayer.PropertyChanged -= OnObservedPropertyChanged;
+    }
+
+    private void AttachFilePickerHandler(EncodeWorkspaceViewModel? workspace)
+    {
+        if (workspace is not null)
+            workspace.FileInput.FilePickerRequested = OpenFilePickerAsync;
+    }
+
+    private void DetachFilePickerHandler(EncodeWorkspaceViewModel? workspace)
+    {
+        if (workspace?.FileInput.FilePickerRequested == OpenFilePickerAsync)
+            workspace.FileInput.FilePickerRequested = null;
     }
 
     private void OnObservedPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -285,6 +319,84 @@ public partial class VideoPlayerView : UserControl
         }
 
         _activeDragTarget = DragTarget.None;
+    }
+
+    private async void OpenFilePickerAsync()
+    {
+        if (_workspace is null)
+            return;
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is null)
+            return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select a video file",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Supported video files")
+                {
+                    Patterns = InputMediaSupport.FileDialogPatterns.ToArray()
+                }
+            ]
+        });
+
+        string? path = files.FirstOrDefault()?.TryGetLocalPath();
+        if (path is not null)
+            _workspace.FileInput.SetFile(path);
+    }
+
+    private void OnDragOver(object? sender, DragEventArgs e)
+    {
+        bool hasSupportedFile = TryGetSingleLocalFilePath(e.DataTransfer, out string? path) &&
+            InputMediaSupport.IsSupportedPath(path);
+
+        e.DragEffects = hasSupportedFile
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+
+        if (hasSupportedFile)
+            _playerDropZone.Classes.Add("drag-over");
+        else
+            _playerDropZone.Classes.Remove("drag-over");
+    }
+
+    private void OnDragLeave(object? sender, RoutedEventArgs e)
+    {
+        _playerDropZone.Classes.Remove("drag-over");
+    }
+
+    private void OnDrop(object? sender, DragEventArgs e)
+    {
+        _playerDropZone.Classes.Remove("drag-over");
+
+        if (_workspace is null)
+            return;
+
+        if (!TryGetSingleLocalFilePath(e.DataTransfer, out string? path) || path is null)
+        {
+            _workspace.FileInput.RejectFileSelection("Drop exactly one supported video file.");
+            return;
+        }
+
+        _workspace.FileInput.SetFile(path);
+    }
+
+    private static bool TryGetSingleLocalFilePath(IDataTransfer dataTransfer, out string? path)
+    {
+        path = null;
+
+        if (!dataTransfer.Contains(DataFormat.File))
+            return false;
+
+        var files = dataTransfer.TryGetFiles()?.ToList();
+        if (files is null || files.Count != 1)
+            return false;
+
+        path = files[0].TryGetLocalPath();
+        return path is not null;
     }
 
     private static double Clamp(double value, double min, double max)

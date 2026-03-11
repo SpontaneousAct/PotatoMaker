@@ -11,6 +11,7 @@ public partial class FileInputViewModel : ViewModelBase
 {
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasFile))]
+    [NotifyPropertyChangedFor(nameof(HasNoFile))]
     private string? _inputFilePath;
 
     [ObservableProperty]
@@ -21,6 +22,8 @@ public partial class FileInputViewModel : ViewModelBase
     private string? _validationMessage;
 
     public bool HasFile => !string.IsNullOrEmpty(InputFilePath);
+
+    public bool HasNoFile => !HasFile;
 
     public bool HasValidationMessage => !string.IsNullOrWhiteSpace(ValidationMessage);
 
