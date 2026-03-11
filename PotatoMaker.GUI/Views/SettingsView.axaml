@@ -19,10 +19,10 @@
                     <Grid Classes="pm-settings-row"
                           ColumnDefinitions="*,Auto"
                           ColumnSpacing="16">
-                        <StackPanel Spacing="2">
+                        <StackPanel Spacing="1">
                             <TextBlock Text="Theme"
                                        Classes="pm-settings-label"/>
-                            <TextBlock Text="Use a dark theme when you want lower glare during longer editing sessions."
+                            <TextBlock Text="Switch between light and dark themes."
                                        Classes="pm-caption"
                                        TextWrapping="Wrap"/>
                         </StackPanel>

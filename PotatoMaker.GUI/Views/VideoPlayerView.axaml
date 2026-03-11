@@ -100,7 +100,7 @@
                     </StackPanel>
 
                     <Border IsVisible="{Binding FileInput.HasNoFile}"
-                            Background="#12000000">
+                            Background="{DynamicResource PmVideoEmptyBackground}">
                         <StackPanel Spacing="12"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"

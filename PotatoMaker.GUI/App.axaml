@@ -81,6 +81,7 @@
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FFD6DEE8</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBackground">#FF0B0E14</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBorderBrush">#FF2B3340</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmVideoEmptyBackground">#FFE8EEF6</SolidColorBrush>
                     <SolidColorBrush x:Key="PmErrorForeground">#FFBC3030</SolidColorBrush>
                 </ResourceDictionary>
 
@@ -133,6 +134,7 @@
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FF273143</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBackground">#FF05070B</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBorderBrush">#FF2A3342</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmVideoEmptyBackground">#FF0B1017</SolidColorBrush>
                     <SolidColorBrush x:Key="PmErrorForeground">#FFFF8E8E</SolidColorBrush>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
