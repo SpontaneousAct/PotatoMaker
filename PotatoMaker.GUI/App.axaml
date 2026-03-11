@@ -46,6 +46,8 @@
                     <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FFE4E8EF</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FFD3D9E4</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF7A8699</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmTrimStartBackground">#FF2FA36B</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmTrimRangeBackground">#FF9DDFB8</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCancelBackground">#FFD24B4B</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCancelPointerOver">#FFDF5B5B</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCancelPressed">#FFB63F3F</SolidColorBrush>
@@ -85,6 +87,8 @@
                     <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FF2A3342</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FF2A3342</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF98A6BB</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmTrimStartBackground">#FF41B87E</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmTrimRangeBackground">#FF5A9C74</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCancelBackground">#FFC65252</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCancelPointerOver">#FFD26262</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCancelPressed">#FFAA4747</SolidColorBrush>

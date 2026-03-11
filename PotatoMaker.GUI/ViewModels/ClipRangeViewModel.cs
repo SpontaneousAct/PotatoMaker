@@ -9,6 +9,7 @@ namespace PotatoMaker.GUI.ViewModels;
 public partial class ClipRangeViewModel : ViewModelBase
 {
     private const double MinimumGapSeconds = 0.1;
+    private const double ComparisonTolerance = 0.0001;
 
     private double _maximumSeconds;
     private double _startSeconds;
@@ -159,8 +160,8 @@ public partial class ClipRangeViewModel : ViewModelBase
         double previousStart = _startSeconds;
         double previousEnd = _endSeconds;
         var normalized = Normalize(startSeconds, endSeconds);
-        if (Math.Abs(normalized.Start - previousStart) < double.Epsilon &&
-            Math.Abs(normalized.End - previousEnd) < double.Epsilon)
+        if (Math.Abs(normalized.Start - previousStart) < ComparisonTolerance &&
+            Math.Abs(normalized.End - previousEnd) < ComparisonTolerance)
         {
             return;
         }
@@ -189,12 +190,22 @@ public partial class ClipRangeViewModel : ViewModelBase
             double gap = Math.Min(MinimumGapSeconds, max);
             if (normalizedEnd - normalizedStart < gap)
             {
-                if (startSeconds != _startSeconds)
+                bool startChanged = Math.Abs(startSeconds - _startSeconds) >= ComparisonTolerance;
+                bool endChanged = Math.Abs(endSeconds - _endSeconds) >= ComparisonTolerance;
+
+                if (startChanged && !endChanged)
                 {
+                    normalizedStart = Math.Min(normalizedStart, Math.Max(0, normalizedEnd - gap));
                     normalizedEnd = Math.Min(max, normalizedStart + gap);
+                }
+                else if (endChanged && !startChanged)
+                {
+                    normalizedEnd = Math.Max(normalizedEnd, Math.Min(max, normalizedStart + gap));
+                    normalizedStart = Math.Max(0, normalizedEnd - gap);
                 }
                 else
                 {
+                    normalizedEnd = Math.Min(max, normalizedStart + gap);
                     normalizedStart = Math.Max(0, normalizedEnd - gap);
                 }
             }

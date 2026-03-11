@@ -46,4 +46,17 @@ public sealed class ClipRangeViewModelTests
         Assert.Equal(TimeSpan.FromSeconds(80), viewModel.Start);
         Assert.Equal(TimeSpan.FromSeconds(100), viewModel.End);
     }
+
+    [Fact]
+    public void EndSeconds_CannotCollapseSelectionBelowMinimumGapAtStart()
+    {
+        var viewModel = new ClipRangeViewModel();
+        viewModel.SetSourceDuration(TimeSpan.FromSeconds(100));
+        viewModel.StartSeconds = 0;
+        viewModel.EndSeconds = 0;
+
+        Assert.Equal(TimeSpan.Zero, viewModel.Start);
+        Assert.Equal(TimeSpan.FromSeconds(0.1), viewModel.End);
+        Assert.Equal(TimeSpan.FromSeconds(0.1), viewModel.SelectedDuration);
+    }
 }

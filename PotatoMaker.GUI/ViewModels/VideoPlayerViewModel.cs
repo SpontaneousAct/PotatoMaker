@@ -11,6 +11,7 @@ namespace PotatoMaker.GUI.ViewModels;
 public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 {
     private static readonly TimeSpan SeekThrottleInterval = TimeSpan.FromMilliseconds(75);
+    private const double PlaybackEndRestartThresholdSeconds = 0.05;
     private readonly DispatcherTimer _positionTimer;
     private readonly DispatcherTimer _seekTimer;
     private readonly SeekRequestThrottler _seekRequestThrottler = new(SeekThrottleInterval);
@@ -29,6 +30,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private bool _isSeekInteractionActive;
     private bool _isUpdatingFromPlayer;
     private bool _isPrimingInitialFrame;
+    private bool _isResettingToFirstFrame;
     private bool _muteBeforeInitialFramePrime;
     private bool _resumePlaybackAfterSeek;
     private string _statusMessage;
@@ -262,7 +264,14 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         }
         else
         {
-            MediaPlayer.Play();
+            if (IsAtPlaybackEndPosition(TimelineSeconds, DurationSeconds))
+            {
+                RestartPlaybackFromBeginningAndPlay();
+            }
+            else
+            {
+                MediaPlayer.Play();
+            }
         }
 
         UpdatePlaybackState();
@@ -364,6 +373,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         ReleaseMedia();
         _sourcePath = null;
         _isPrimingInitialFrame = false;
+        _isResettingToFirstFrame = false;
         HasMedia = false;
         IsPlaying = false;
         DurationSeconds = 0;
@@ -416,6 +426,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         if (_isPrimingInitialFrame)
         {
             _isPrimingInitialFrame = false;
+            _isResettingToFirstFrame = false;
 
             try
             {
@@ -587,7 +598,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     private void UpdatePlaybackState()
     {
-        IsPlaying = MediaPlayer?.IsPlaying ?? false;
+        bool mediaPlayerIsPlaying = MediaPlayer?.IsPlaying ?? false;
+        IsPlaying = ShouldExposePlayingState(mediaPlayerIsPlaying, _isPrimingInitialFrame, _isResettingToFirstFrame);
     }
 
     private void SetMutedCore(bool value, bool applyAudio = true)
@@ -631,6 +643,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         catch
         {
             _isPrimingInitialFrame = false;
+            _isResettingToFirstFrame = false;
 
             if (MediaPlayer is not null)
                 MediaPlayer.Mute = _muteBeforeInitialFramePrime;
@@ -667,6 +680,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         }
         finally
         {
+            _isResettingToFirstFrame = false;
             MediaPlayer.Mute = _muteBeforeInitialFramePrime;
             UpdatePlaybackState();
         }
@@ -678,6 +692,27 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             return;
 
         ResetToFirstFrame();
+    }
+
+    private void RestartPlaybackFromBeginningAndPlay()
+    {
+        if (MediaPlayer is null || !HasMedia)
+            return;
+
+        CancelPendingSeekInteraction();
+        _isPrimingInitialFrame = false;
+        _isResettingToFirstFrame = false;
+
+        try
+        {
+            MediaPlayer.Stop();
+        }
+        catch
+        {
+        }
+
+        SetTimelineFromPlayer(TimeSpan.Zero);
+        MediaPlayer.Play();
     }
 
     private void SetTimelineFromPlayer(TimeSpan value)
@@ -751,6 +786,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         CancelPendingSeekInteraction();
         _isPrimingInitialFrame = false;
+        _isResettingToFirstFrame = true;
 
         try
         {
@@ -785,4 +821,11 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         value.TotalHours >= 1
             ? value.ToString(@"h\:mm\:ss")
             : value.ToString(@"m\:ss");
+
+    private static bool ShouldExposePlayingState(bool mediaPlayerIsPlaying, bool isPrimingInitialFrame, bool isResettingToFirstFrame) =>
+        mediaPlayerIsPlaying && !isPrimingInitialFrame && !isResettingToFirstFrame;
+
+    private static bool IsAtPlaybackEndPosition(double timelineSeconds, double durationSeconds) =>
+        durationSeconds > 0 &&
+        timelineSeconds >= Math.Max(0, durationSeconds - PlaybackEndRestartThresholdSeconds);
 }

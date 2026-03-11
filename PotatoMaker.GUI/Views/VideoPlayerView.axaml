@@ -101,7 +101,7 @@
                     <Border x:Name="TrimRangeBar"
                             Height="10"
                             CornerRadius="5"
-                            Background="{DynamicResource PmPrimaryBackground}"
+                            Background="{DynamicResource PmTrimRangeBackground}"
                             Opacity="0.26"
                             Canvas.Top="23"/>
                     <Border x:Name="TimelineProgressBar"
@@ -113,7 +113,7 @@
                             Width="3"
                             Height="14"
                             CornerRadius="1.5"
-                            Background="{DynamicResource PmPrimaryBackground}"
+                            Background="{DynamicResource PmTrimStartBackground}"
                             Canvas.Top="14"/>
                     <Border x:Name="TrimEndStem"
                             Width="3"
@@ -125,7 +125,7 @@
                             Width="20"
                             Height="20"
                             CornerRadius="10"
-                            Background="{DynamicResource PmPrimaryBackground}"
+                            Background="{DynamicResource PmTrimStartBackground}"
                             BorderBrush="{DynamicResource PmCardBackground}"
                             BorderThickness="2"
                             Cursor="Hand"

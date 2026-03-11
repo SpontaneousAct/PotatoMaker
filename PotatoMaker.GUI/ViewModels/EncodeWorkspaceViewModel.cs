@@ -282,6 +282,14 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         catch (OperationCanceledException) when (previewCts.IsCancellationRequested)
         {
         }
+        catch (Exception ex)
+        {
+            if (previewVersion != _previewVersion)
+                return;
+
+            VideoSummary.ClearStrategy();
+            ConversionLog.AddLog($"Error building strategy preview: {ex.Message}");
+        }
         finally
         {
             if (ReferenceEquals(_previewCts, previewCts))
@@ -304,7 +312,10 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     public void PreviewTrimBoundary(ClipBoundary boundary, TimeSpan position)
     {
         ClipRange.SetBoundary(boundary, position);
-        VideoPlayer.PreviewTrimPosition(position);
+        TimeSpan previewPosition = boundary == ClipBoundary.Start
+            ? ClipRange.Start
+            : ClipRange.End;
+        VideoPlayer.PreviewTrimPosition(previewPosition);
     }
 
     public void EndTrimBoundaryPreview()
