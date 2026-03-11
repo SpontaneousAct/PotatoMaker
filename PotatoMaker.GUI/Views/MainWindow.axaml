@@ -1,147 +1,81 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:PotatoMaker.GUI.ViewModels"
-        xmlns:views="using:PotatoMaker.GUI.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="960" d:DesignHeight="720"
+        mc:Ignorable="d" d:DesignWidth="1180" d:DesignHeight="780"
         x:Class="PotatoMaker.GUI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/potato.ico"
         Title="PotatoMaker"
-        Width="960"
-        Height="720"
-        MinWidth="860"
-        MinHeight="640"
+        Width="1180"
+        Height="780"
+        MinWidth="1020"
+        MinHeight="700"
         CanResize="True">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Window.Styles>
-        <Style Selector="Button.pm-help-trigger">
-            <Setter Property="Width" Value="28"/>
-            <Setter Property="Height" Value="28"/>
-            <Setter Property="MinHeight" Value="28"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="FontSize" Value="15"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
-        </Style>
+    <Grid Margin="12"
+          ColumnDefinitions="Auto,*"
+          ColumnSpacing="14">
+        <Border Grid.Column="0"
+                x:Name="NavigationPane"
+                Classes="pm-nav-surface"
+                Width="72"
+                Padding="10">
+            <Grid RowDefinitions="Auto,Auto,*,Auto"
+                  RowSpacing="14">
+                <TextBlock Text="🥔"
+                           Classes="pm-nav-brand"/>
 
-        <Style Selector="Grid#MainContent">
-            <Setter Property="Opacity" Value="1"/>
-            <Setter Property="Effect">
-                <BlurEffect Radius="0"/>
-            </Setter>
-            <Setter Property="Transitions">
-                <Transitions>
-                    <DoubleTransition Property="Opacity" Duration="0:0:0.20"/>
-                </Transitions>
-            </Setter>
-        </Style>
+                <StackPanel Grid.Row="1"
+                            Spacing="8">
+                    <Button Classes="pm-nav-button"
+                            Classes.pm-nav-active="{Binding IsMainViewSelected}"
+                            Command="{Binding ShowMainViewCommand}"
+                            ToolTip.Tip="Main">
+                        <TextBlock Text="&#xE80F;"
+                                   Classes="pm-nav-icon"/>
+                    </Button>
 
-        <Style Selector="Grid#MainContent.help-open">
-            <Setter Property="Opacity" Value="0.84"/>
-            <Setter Property="Effect">
-                <BlurEffect Radius="9"/>
-            </Setter>
-        </Style>
-    </Window.Styles>
+                    <Button Classes="pm-nav-button"
+                            Classes.pm-nav-active="{Binding IsSettingsViewSelected}"
+                            Command="{Binding ShowSettingsViewCommand}"
+                            ToolTip.Tip="Settings">
+                        <TextBlock Text="&#xE713;"
+                                   Classes="pm-nav-icon"/>
+                    </Button>
 
-    <Grid>
-        <Grid x:Name="MainContent"
-              Classes.help-open="{Binding HelpModal.IsOpen}"
-              Margin="10"
-              RowDefinitions="Auto,*"
-              RowSpacing="8">
-            <Border Grid.Row="0"
-                    Classes="pm-card pm-hero"
-                    Padding="10,7">
-                <Grid ColumnDefinitions="*,Auto"
-                      ColumnSpacing="10">
-                    <StackPanel Grid.Column="0"
-                                Spacing="0"
-                                VerticalAlignment="Center">
-                        <TextBlock Text="PotatoMaker"
-                                   Classes="pm-heading"/>
-                        <TextBlock Text="Discord-ready AV1 compression"
-                                   Classes="pm-caption"/>
-                    </StackPanel>
+                    <Button Classes="pm-nav-button"
+                            Classes.pm-nav-active="{Binding IsHelpViewSelected}"
+                            Command="{Binding ShowHelpViewCommand}"
+                            ToolTip.Tip="Help">
+                        <TextBlock Text="&#xE897;"
+                                   Classes="pm-nav-icon"/>
+                    </Button>
+                </StackPanel>
 
-                    <StackPanel Grid.Column="1"
-                                Orientation="Horizontal"
-                                Spacing="8"
-                                VerticalAlignment="Center">
-                        <ToggleSwitch IsChecked="{Binding IsDarkMode}"
-                                      OnContent="Dark"
-                                      OffContent="Light"/>
-
-                        <Button Content="?"
-                                Classes="pm-help-trigger"
-                                Command="{Binding HelpModal.OpenCommand}"
-                                ToolTip.Tip="Quick help"/>
-
-                        <Border Classes="pm-inset"
-                                Padding="7,3">
-                            <TextBlock Text="{Binding VersionText}"
-                                       Classes="pm-caption"
-                                       VerticalAlignment="Center"/>
-                        </Border>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <Grid Grid.Row="1"
-                  ColumnDefinitions="1.65*,*"
-                  ColumnSpacing="8">
-                <Grid Grid.Column="0"
-                      RowDefinitions="Auto,Auto,*"
-                      RowSpacing="8">
-                    <ContentControl Grid.Row="0"
-                                    Content="{Binding Workspace.FileInput}"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Top"/>
-
-                    <views:VideoPlayerView Grid.Row="1"
-                                           DataContext="{Binding Workspace}"
-                                           HorizontalAlignment="Stretch"
-                                           VerticalAlignment="Top"/>
-
-                    <ContentControl Grid.Row="2"
-                                    Content="{Binding Workspace.ConversionLog}"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch"/>
-                </Grid>
-
-                <Grid Grid.Column="1"
-                      RowDefinitions="*,Auto,Auto"
-                      RowSpacing="8">
-                    <ContentControl Grid.Row="0"
-                                    Content="{Binding Workspace.VideoSummary}"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch"/>
-
-                    <ContentControl Grid.Row="1"
-                                    Content="{Binding Workspace.OutputSettings}"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Top"/>
-
-                    <Button Grid.Row="2"
-                            Content="{Binding Workspace.EncodeButtonText}"
-                            Command="{Binding Workspace.EncodeButtonCommand}"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Classes.pm-primary="{Binding Workspace.IsEncodeIdle}"
-                            Classes.pm-cancel="{Binding Workspace.IsEncodeInProgress}"/>
-                </Grid>
+                <Border Grid.Row="3"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        VerticalAlignment="Bottom">
+                    <TextBlock Text="{Binding VersionText}"
+                               Classes="pm-sidebar-version"/>
+                </Border>
             </Grid>
+        </Border>
+
+        <Grid Grid.Column="1">
+            <ContentControl Content="{Binding Workspace}"
+                            IsVisible="{Binding IsMainViewSelected}"/>
+            <ContentControl Content="{Binding Settings}"
+                            IsVisible="{Binding IsSettingsViewSelected}"/>
+            <ContentControl Content="{Binding Help}"
+                            IsVisible="{Binding IsHelpViewSelected}"/>
         </Grid>
-        <ContentControl Content="{Binding HelpModal}"
-                        ZIndex="100"/>
     </Grid>
 </Window>

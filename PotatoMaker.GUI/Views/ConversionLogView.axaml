@@ -12,7 +12,8 @@
     </Design.DataContext>
 
     <Border Classes="pm-card"
-            Padding="8">
+            Padding="8"
+            MinHeight="190">
         <Grid RowDefinitions="Auto,Auto,*"
               RowSpacing="5">
             <Grid Grid.Row="0"

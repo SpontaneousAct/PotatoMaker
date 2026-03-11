@@ -1,0 +1,58 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PotatoMaker.GUI.ViewModels"
+             xmlns:views="using:PotatoMaker.GUI.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="920" d:DesignHeight="720"
+             x:Class="PotatoMaker.GUI.Views.MainWorkspaceView"
+             x:DataType="vm:EncodeWorkspaceViewModel">
+
+    <Design.DataContext>
+        <vm:EncodeWorkspaceViewModel/>
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="1.8*,1.1*"
+          ColumnSpacing="12">
+        <Grid Grid.Column="0"
+              RowDefinitions="Auto,1.7*,*"
+              RowSpacing="12">
+            <ContentControl Grid.Row="0"
+                            Content="{Binding FileInput}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top"/>
+
+            <views:VideoPlayerView Grid.Row="1"
+                                   DataContext="{Binding}"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch"/>
+
+            <ContentControl Grid.Row="2"
+                            Content="{Binding ConversionLog}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"/>
+        </Grid>
+
+        <Grid Grid.Column="1"
+              RowDefinitions="*,Auto,Auto"
+              RowSpacing="12">
+            <ContentControl Grid.Row="0"
+                            Content="{Binding VideoSummary}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"/>
+
+            <ContentControl Grid.Row="1"
+                            Content="{Binding OutputSettings}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top"/>
+
+            <Button Grid.Row="2"
+                    Content="{Binding EncodeButtonText}"
+                    Command="{Binding EncodeButtonCommand}"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Bottom"
+                    Classes.pm-primary="{Binding IsEncodeIdle}"
+                    Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
+        </Grid>
+    </Grid>
+</UserControl>

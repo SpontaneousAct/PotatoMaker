@@ -59,7 +59,7 @@
             <Border Grid.Row="1"
                     Classes="pm-video-surface"
                     CornerRadius="0"
-                    MinHeight="220">
+                    MinHeight="180">
                 <Grid>
                     <vlc:VideoView MediaPlayer="{Binding VideoPlayer.MediaPlayer}"
                                    IsVisible="{Binding VideoPlayer.IsVideoSurfaceVisible}"
@@ -208,7 +208,7 @@
                         Content="{Binding VideoPlayer.ToggleMuteText}"
                         Command="{Binding VideoPlayer.ToggleMuteCommand}"
                         IsEnabled="{Binding VideoPlayer.CanAdjustVolume}"
-                        MinWidth="64"
+                        Width="78"
                         MinHeight="28"
                         Padding="9,4"/>
 

@@ -314,6 +314,22 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         ResetToFirstFrame();
     }
 
+    public void PausePlaybackIfPlaying()
+    {
+        if (!IsPlaying || MediaPlayer is null)
+            return;
+
+        try
+        {
+            MediaPlayer.Pause();
+        }
+        catch
+        {
+        }
+
+        UpdatePlaybackState();
+    }
+
     private bool CanStopPlayback() => CanResetPlayback;
 
     [RelayCommand(CanExecute = nameof(CanSetTrimBoundary))]

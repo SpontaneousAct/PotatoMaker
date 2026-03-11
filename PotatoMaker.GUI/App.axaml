@@ -6,6 +6,9 @@
              RequestedThemeVariant="Default">
 
     <Application.DataTemplates>
+        <DataTemplate DataType="vm:EncodeWorkspaceViewModel">
+            <views:MainWorkspaceView/>
+        </DataTemplate>
         <DataTemplate DataType="vm:FileInputViewModel">
             <views:FileInputView/>
         </DataTemplate>
@@ -18,8 +21,11 @@
         <DataTemplate DataType="vm:ConversionLogViewModel">
             <views:ConversionLogView/>
         </DataTemplate>
-        <DataTemplate DataType="vm:HelpModalViewModel">
-            <views:HelpModalView/>
+        <DataTemplate DataType="vm:SettingsViewModel">
+            <views:SettingsView/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:HelpViewModel">
+            <views:HelpView/>
         </DataTemplate>
     </Application.DataTemplates>
 
@@ -38,6 +44,17 @@
                     <SolidColorBrush x:Key="PmHeadingForeground">#FF151D2B</SolidColorBrush>
                     <SolidColorBrush x:Key="PmSectionTitleForeground">#FF223045</SolidColorBrush>
                     <SolidColorBrush x:Key="PmMutedForeground">#FF5A667B</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavSurfaceBackground">#FFF8FAFD</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavSurfaceBorderBrush">#FFD8E0EA</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemBackground">#00000000</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemPointerOver">#FFEAF1FA</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemSelectedBackground">#FFDDE9F9</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemSelectedBorderBrush">#FFB9CDE8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemForeground">#FF223045</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPageBannerBackground">#FFF5F8FC</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPageBannerBorderBrush">#FFD5DFEC</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHelpBadgeBackground">#FFE1EAF7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FFC3D2E5</SolidColorBrush>
 
                     <SolidColorBrush x:Key="PmPrimaryBackground">#FF176FE5</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF267BEF</SolidColorBrush>
@@ -79,6 +96,17 @@
                     <SolidColorBrush x:Key="PmHeadingForeground">#FFF2F7FF</SolidColorBrush>
                     <SolidColorBrush x:Key="PmSectionTitleForeground">#FFE7EDF7</SolidColorBrush>
                     <SolidColorBrush x:Key="PmMutedForeground">#FFD3DCEC</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavSurfaceBackground">#FF151B25</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavSurfaceBorderBrush">#FF273243</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemBackground">#00000000</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemPointerOver">#FF1F2937</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemSelectedBackground">#FF243448</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemSelectedBorderBrush">#FF3B516D</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemForeground">#FFE7EDF7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPageBannerBackground">#FF141B24</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPageBannerBorderBrush">#FF2A3547</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHelpBadgeBackground">#FF233246</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FF3A4F68</SolidColorBrush>
 
                     <SolidColorBrush x:Key="PmPrimaryBackground">#FF3A7AFE</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF4A86FF</SolidColorBrush>
@@ -131,6 +159,13 @@
             <Setter Property="BorderBrush" Value="{DynamicResource PmHeroBorderBrush}"/>
         </Style>
 
+        <Style Selector="Border.pm-nav-surface">
+            <Setter Property="Background" Value="{DynamicResource PmNavSurfaceBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmNavSurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+        </Style>
+
         <Style Selector="Border.pm-inset">
             <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
@@ -160,6 +195,42 @@
             <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
 
+        <Style Selector="TextBlock.pm-page-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmHeadingForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-nav-brand">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-nav-icon">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons,Segoe MDL2 Assets"/>
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-sidebar-version">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-settings-label">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
         <Style Selector="TextBlock.pm-muted">
             <Setter Property="Opacity" Value="0.82"/>
             <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
@@ -178,6 +249,34 @@
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="MinHeight" Value="30"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmNavItemForeground}"/>
+            <Setter Property="MinHeight" Value="46"/>
+            <Setter Property="MinWidth" Value="46"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button.pm-nav-active">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemSelectedBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmNavItemSelectedBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button.pm-nav-active TextBlock.pm-nav-icon">
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
 
         <Style Selector="Button.pm-primary">
@@ -247,6 +346,18 @@
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="6"/>
             <Setter Property="MinWidth" Value="0"/>
+        </Style>
+
+        <Style Selector="Border.pm-page-banner">
+            <Setter Property="Background" Value="{DynamicResource PmPageBannerBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPageBannerBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Border.pm-help-badge">
+            <Setter Property="Background" Value="{DynamicResource PmHelpBadgeBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmHelpBadgeBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
         </Style>
 
         <Style Selector="ProgressBar">

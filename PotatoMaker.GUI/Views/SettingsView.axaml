@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PotatoMaker.GUI.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="920" d:DesignHeight="720"
+             x:Class="PotatoMaker.GUI.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12">
+            <Border Classes="pm-card pm-settings-section"
+                    Padding="16">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Appearance"
+                               Classes="pm-section-title"/>
+
+                    <Grid Classes="pm-settings-row"
+                          ColumnDefinitions="*,Auto"
+                          ColumnSpacing="16">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Theme"
+                                       Classes="pm-settings-label"/>
+                            <TextBlock Text="Use a dark theme when you want lower glare during longer editing sessions."
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <ToggleSwitch Grid.Column="1"
+                                      IsChecked="{Binding IsDarkMode}"
+                                      OnContent="Dark"
+                                      OffContent="Light"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="pm-card pm-settings-section"
+                    Padding="16">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Encoding Defaults"
+                               Classes="pm-section-title"/>
+
+                    <Grid Classes="pm-settings-row"
+                          ColumnDefinitions="*,Auto"
+                          ColumnSpacing="16">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Prefer NVIDIA NVENC AV1"
+                                       Classes="pm-settings-label"/>
+                            <TextBlock Text="Use the GPU encoder by default when this machine supports AV1 NVENC."
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding OutputSettings.NvencSupportSummary}"
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <ToggleSwitch Grid.Column="1"
+                                      IsChecked="{Binding OutputSettings.UseNvencEncoder}"
+                                      IsEnabled="{Binding OutputSettings.CanUseNvenc}"
+                                      OnContent="Enabled"
+                                      OffContent="Off"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Classes="pm-settings-row"
+                          ColumnDefinitions="*,220"
+                          ColumnSpacing="16">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="CPU preset"
+                                       Classes="pm-settings-label"/>
+                            <TextBlock Text="Controls CPU encode speed when NVENC is unavailable or turned off."
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding OutputSettings.CpuEncodePresetOptions}"
+                                  SelectedItem="{Binding OutputSettings.SelectedCpuEncodePreset}"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

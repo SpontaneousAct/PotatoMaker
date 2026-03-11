@@ -28,7 +28,6 @@ public sealed class MainWindowViewModelTests
 
         var viewModel = new MainWindowViewModel(
             workspace,
-            new HelpModalViewModel(),
             themeService,
             settingsCoordinator);
 
@@ -58,7 +57,6 @@ public sealed class MainWindowViewModelTests
 
             var viewModel = new MainWindowViewModel(
                 workspace,
-                new HelpModalViewModel(),
                 new RecordingThemeService(),
                 null);
 
@@ -94,7 +92,6 @@ public sealed class MainWindowViewModelTests
                 initializeEncoderSupport: false);
             var viewModel = new MainWindowViewModel(
                 workspace,
-                new HelpModalViewModel(),
                 new RecordingThemeService(),
                 null);
 
@@ -131,7 +128,6 @@ public sealed class MainWindowViewModelTests
                 initializeEncoderSupport: false);
             var viewModel = new MainWindowViewModel(
                 workspace,
-                new HelpModalViewModel(),
                 new RecordingThemeService(),
                 null);
 
@@ -165,7 +161,6 @@ public sealed class MainWindowViewModelTests
                 new StaticEncoderCapabilityService(),
                 null,
                 initializeEncoderSupport: false),
-            new HelpModalViewModel(),
             new RecordingThemeService(),
             null);
 
@@ -173,7 +168,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public void OpeningHelpModal_SuppressesVideoSurface()
+    public void SwitchingAwayFromMain_DoesNotManipulateVideoSurface()
     {
         var workspace = new EncodeWorkspaceViewModel(
             new NoOpAnalysisService(),
@@ -181,22 +176,40 @@ public sealed class MainWindowViewModelTests
             new StaticEncoderCapabilityService(),
             null,
             initializeEncoderSupport: false);
-        var helpModal = new HelpModalViewModel();
         var viewModel = new MainWindowViewModel(
             workspace,
-            helpModal,
             new RecordingThemeService(),
             null);
 
         Assert.False(workspace.VideoPlayer.SuppressVideoSurface);
 
-        helpModal.IsOpen = true;
-        Assert.True(workspace.VideoPlayer.SuppressVideoSurface);
-
-        helpModal.IsOpen = false;
+        viewModel.ShowSettingsViewCommand.Execute(null);
         Assert.False(workspace.VideoPlayer.SuppressVideoSurface);
 
+        viewModel.ShowMainViewCommand.Execute(null);
+        Assert.False(workspace.VideoPlayer.SuppressVideoSurface);
+        Assert.True(viewModel.IsMainViewSelected);
+
         viewModel.Dispose();
+    }
+
+    [Fact]
+    public void GlobalShortcuts_AreIgnoredOutsideMainView()
+    {
+        var workspace = new EncodeWorkspaceViewModel(
+            new NoOpAnalysisService(),
+            new NoOpEncodingService(),
+            new StaticEncoderCapabilityService(),
+            null,
+            initializeEncoderSupport: false);
+        var viewModel = new MainWindowViewModel(
+            workspace,
+            new RecordingThemeService(),
+            null);
+
+        viewModel.ShowHelpViewCommand.Execute(null);
+
+        Assert.False(viewModel.TryHandleGlobalShortcut(Key.Space, KeyModifiers.None));
     }
 
     private sealed class RecordingThemeService : IThemeService

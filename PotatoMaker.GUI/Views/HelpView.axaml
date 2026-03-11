@@ -1,0 +1,93 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PotatoMaker.GUI.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="920" d:DesignHeight="720"
+             x:Class="PotatoMaker.GUI.Views.HelpView"
+             x:DataType="vm:HelpViewModel">
+
+    <Design.DataContext>
+        <vm:HelpViewModel/>
+    </Design.DataContext>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12">
+            <Border Classes="pm-card pm-help-section"
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Quick Start"
+                               Classes="pm-section-title"/>
+
+                    <ItemsControl ItemsSource="{Binding QuickStartSteps}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="Auto,*"
+                                      ColumnSpacing="10"
+                                      Margin="0,0,0,8">
+                                    <Border Classes="pm-help-badge"
+                                            Width="24"
+                                            Height="24">
+                                        <TextBlock Text="*"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold"/>
+                                    </Border>
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding .}"
+                                               Classes="pm-muted"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="pm-card pm-help-section"
+                    Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Keyboard Shortcuts"
+                               Classes="pm-section-title"/>
+
+                    <ItemsControl ItemsSource="{Binding ShortcutHints}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:ShortcutHint">
+                                <Grid ColumnDefinitions="Auto,*"
+                                      ColumnSpacing="12"
+                                      Margin="0,0,0,10">
+                                    <Border Classes="pm-inset"
+                                            Padding="10,6"
+                                            VerticalAlignment="Top">
+                                        <TextBlock Text="{Binding Keys}"
+                                                   FontWeight="SemiBold"/>
+                                    </Border>
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Description}"
+                                               Classes="pm-muted"
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="pm-card pm-help-section"
+                    Padding="16">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Encoder Behavior"
+                               Classes="pm-section-title"/>
+                    <TextBlock Text="{Binding EncoderSummary}"
+                               Classes="pm-muted"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

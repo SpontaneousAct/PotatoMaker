@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using PotatoMaker.GUI.Services;
-using System.ComponentModel;
 using Avalonia.Input;
 
 namespace PotatoMaker.GUI.ViewModels;
@@ -15,39 +15,60 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isApplyingSettings;
 
     public MainWindowViewModel()
-        : this(new EncodeWorkspaceViewModel(), new HelpModalViewModel(), new AvaloniaThemeService(), null)
+        : this(new EncodeWorkspaceViewModel(), new AvaloniaThemeService(), null)
     {
     }
 
     public MainWindowViewModel(
         EncodeWorkspaceViewModel workspace,
-        HelpModalViewModel helpModal,
         IThemeService themeService,
         IAppSettingsCoordinator? settingsCoordinator)
     {
         Workspace = workspace;
-        HelpModal = helpModal;
+        Settings = new SettingsViewModel(workspace.OutputSettings, () => IsDarkMode, value => IsDarkMode = value);
+        Help = new HelpViewModel();
         VersionText = $"v{GetType().Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
         _themeService = themeService;
         _settingsCoordinator = settingsCoordinator;
-        HelpModal.PropertyChanged += OnHelpModalPropertyChanged;
 
         ApplyInitialSettings();
-        SyncOverlayState();
     }
 
     public EncodeWorkspaceViewModel Workspace { get; }
 
-    public HelpModalViewModel HelpModal { get; }
+    public SettingsViewModel Settings { get; }
+
+    public HelpViewModel Help { get; }
 
     public string VersionText { get; }
 
     [ObservableProperty]
     private bool _isDarkMode;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CurrentView))]
+    [NotifyPropertyChangedFor(nameof(IsMainViewSelected))]
+    [NotifyPropertyChangedFor(nameof(IsSettingsViewSelected))]
+    [NotifyPropertyChangedFor(nameof(IsHelpViewSelected))]
+    private ShellViewKind _selectedView = ShellViewKind.Main;
+
+    public object CurrentView => SelectedView switch
+    {
+        ShellViewKind.Settings => Settings,
+        ShellViewKind.Help => Help,
+        _ => Workspace
+    };
+
+    public bool IsMainViewSelected => SelectedView == ShellViewKind.Main;
+
+    public bool IsSettingsViewSelected => SelectedView == ShellViewKind.Settings;
+
+    public bool IsHelpViewSelected => SelectedView == ShellViewKind.Help;
+
     partial void OnIsDarkModeChanged(bool value)
     {
         _themeService.ApplyTheme(value);
+        Settings.NotifyThemeChanged();
 
         if (_isApplyingSettings || _settingsCoordinator is null)
             return;
@@ -73,6 +94,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public bool TryHandleGlobalShortcut(Key key, KeyModifiers modifiers)
     {
+        if (SelectedView != ShellViewKind.Main)
+            return false;
+
         if (!IsGlobalShortcut(key, modifiers))
             return false;
 
@@ -91,6 +115,23 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public static bool IsGlobalShortcut(Key key, KeyModifiers modifiers) =>
         modifiers == KeyModifiers.None &&
         key is Key.Space or Key.A or Key.D;
+
+    [RelayCommand]
+    private void ShowMainView() => SelectedView = ShellViewKind.Main;
+
+    [RelayCommand]
+    private void ShowSettingsView() => SelectedView = ShellViewKind.Settings;
+
+    [RelayCommand]
+    private void ShowHelpView() => SelectedView = ShellViewKind.Help;
+
+    partial void OnSelectedViewChanged(ShellViewKind value)
+    {
+        if (value != ShellViewKind.Main)
+            Workspace.VideoPlayer.PausePlaybackIfPlaying();
+
+        OnPropertyChanged(nameof(CurrentView));
+    }
 
     private void ApplyInitialSettings()
     {
@@ -123,17 +164,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void OnHelpModalPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(HelpModalViewModel.IsOpen))
-            SyncOverlayState();
-    }
-
-    private void SyncOverlayState()
-    {
-        Workspace.VideoPlayer.SuppressVideoSurface = HelpModal.IsOpen;
-    }
-
     private static bool ExecuteShortcut(System.Windows.Input.ICommand command)
     {
         command.Execute(null);
@@ -142,7 +172,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
-        HelpModal.PropertyChanged -= OnHelpModalPropertyChanged;
         Workspace.Dispose();
     }
 }
