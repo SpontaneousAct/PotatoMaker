@@ -214,7 +214,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
             VideoSummary.SetProbeResult(path, info);
             ClipRange.SetSourceDuration(info.Duration);
-            VideoPlayer.LoadSource(path, info.Duration, info.FrameRate, ClipRange.Selection);
+            VideoPlayer.LoadSource(path, info.Duration, ClipRange.Selection);
             VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
             ResetPreviewCommand.NotifyCanExecuteChanged();
 

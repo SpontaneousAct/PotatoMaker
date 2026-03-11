@@ -39,8 +39,7 @@ public partial class MainWindow : Window
             return;
 
         if (MainWindowViewModel.IsGlobalShortcut(e.Key, e.KeyModifiers) &&
-            !_pressedShortcutKeys.Add(e.Key) &&
-            !MainWindowViewModel.IsRepeatableGlobalShortcut(e.Key))
+            !_pressedShortcutKeys.Add(e.Key))
         {
             e.Handled = true;
             return;

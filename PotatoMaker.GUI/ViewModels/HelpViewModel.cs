@@ -20,9 +20,7 @@ public sealed class HelpViewModel : ViewModelBase
     [
         new("Space", "Play or pause the current preview."),
         new("A", "Set the trim start to the current playback position."),
-        new("D", "Set the trim end to the current playback position."),
-        new("W", "Move forward by one frame."),
-        new("S", "Move backward by one frame.")
+        new("D", "Set the trim end to the current playback position.")
     ];
 }
 

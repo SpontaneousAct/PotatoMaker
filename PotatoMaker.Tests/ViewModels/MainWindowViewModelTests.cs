@@ -165,25 +165,18 @@ public sealed class MainWindowViewModelTests
             null);
 
         Assert.False(viewModel.TryHandleGlobalShortcut(Key.Space, KeyModifiers.Control));
-        Assert.False(viewModel.TryHandleGlobalShortcut(Key.W, KeyModifiers.Control));
-        Assert.False(viewModel.TryHandleGlobalShortcut(Key.S, KeyModifiers.Shift));
+        Assert.False(viewModel.TryHandleGlobalShortcut(Key.A, KeyModifiers.Control));
+        Assert.False(viewModel.TryHandleGlobalShortcut(Key.D, KeyModifiers.Shift));
     }
 
     [Fact]
-    public void GlobalShortcutMap_IncludesFrameSteppingKeys()
+    public void GlobalShortcutMap_IncludesPlaybackAndTrimKeys()
     {
-        Assert.True(MainWindowViewModel.IsGlobalShortcut(Key.W, KeyModifiers.None));
-        Assert.True(MainWindowViewModel.IsGlobalShortcut(Key.S, KeyModifiers.None));
-    }
-
-    [Fact]
-    public void RepeatableGlobalShortcutMap_AllowsFrameSteppingOnly()
-    {
-        Assert.True(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.W));
-        Assert.True(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.S));
-        Assert.False(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.Space));
-        Assert.False(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.A));
-        Assert.False(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.D));
+        Assert.True(MainWindowViewModel.IsGlobalShortcut(Key.Space, KeyModifiers.None));
+        Assert.True(MainWindowViewModel.IsGlobalShortcut(Key.A, KeyModifiers.None));
+        Assert.True(MainWindowViewModel.IsGlobalShortcut(Key.D, KeyModifiers.None));
+        Assert.False(MainWindowViewModel.IsGlobalShortcut(Key.W, KeyModifiers.None));
+        Assert.False(MainWindowViewModel.IsGlobalShortcut(Key.S, KeyModifiers.None));
     }
 
     [Fact]
