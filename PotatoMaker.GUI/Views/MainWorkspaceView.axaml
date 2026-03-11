@@ -12,7 +12,7 @@
         <vm:EncodeWorkspaceViewModel/>
     </Design.DataContext>
 
-    <Grid ColumnDefinitions="2.2*,0.9*"
+    <Grid ColumnDefinitions="*,320"
           RowDefinitions="1.95*,0.82*,Auto"
           RowSpacing="12"
           ColumnSpacing="12">
