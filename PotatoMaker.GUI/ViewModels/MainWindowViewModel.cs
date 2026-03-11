@@ -108,13 +108,20 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 ExecuteShortcut(Workspace.VideoPlayer.SetTrimStartCommand),
             Key.D when Workspace.VideoPlayer.SetTrimEndCommand.CanExecute(null) =>
                 ExecuteShortcut(Workspace.VideoPlayer.SetTrimEndCommand),
+            Key.W when Workspace.VideoPlayer.StepForwardFrameCommand.CanExecute(null) =>
+                ExecuteShortcut(Workspace.VideoPlayer.StepForwardFrameCommand),
+            Key.S when Workspace.VideoPlayer.StepBackwardFrameCommand.CanExecute(null) =>
+                ExecuteShortcut(Workspace.VideoPlayer.StepBackwardFrameCommand),
             _ => false
         };
     }
 
     public static bool IsGlobalShortcut(Key key, KeyModifiers modifiers) =>
         modifiers == KeyModifiers.None &&
-        key is Key.Space or Key.A or Key.D;
+        key is Key.Space or Key.A or Key.D or Key.W or Key.S;
+
+    public static bool IsRepeatableGlobalShortcut(Key key) =>
+        key is Key.W or Key.S;
 
     [RelayCommand]
     private void ShowMainView() => SelectedView = ShellViewKind.Main;

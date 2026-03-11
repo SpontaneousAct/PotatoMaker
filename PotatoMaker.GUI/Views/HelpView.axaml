@@ -11,25 +11,46 @@
         <vm:HelpViewModel/>
     </Design.DataContext>
 
+    <UserControl.Styles>
+        <Style Selector="TextBlock.pm-help-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmHeadingForeground}"/>
+        </Style>
+    </UserControl.Styles>
+
     <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="12">
-            <Border Classes="pm-card pm-help-section"
+        <StackPanel Spacing="12"
+                    Margin="0,0,0,12">
+            <Border Classes="pm-card"
                     Padding="16">
-                <StackPanel Spacing="12">
-                    <TextBlock Text="Quick Start"
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Quick Guide"
+                               Classes="pm-help-title"/>
+                    <TextBlock Text="{Binding IntroText}"
+                               Classes="pm-muted"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="pm-card"
+                    Padding="16">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="How To Use It"
                                Classes="pm-section-title"/>
 
-                    <ItemsControl ItemsSource="{Binding QuickStartSteps}">
+                    <ItemsControl ItemsSource="{Binding QuickGuideSteps}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid ColumnDefinitions="Auto,*"
-                                      ColumnSpacing="10"
+                                      ColumnSpacing="12"
                                       Margin="0,0,0,8">
                                     <Border Classes="pm-help-badge"
                                             Width="24"
-                                            Height="24">
-                                        <TextBlock Text="*"
+                                            Height="24"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="•"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
                                                    FontWeight="SemiBold"/>
@@ -47,7 +68,7 @@
                 </StackPanel>
             </Border>
 
-            <Border Classes="pm-card pm-help-section"
+            <Border Classes="pm-card"
                     Padding="16">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Keyboard Shortcuts"
@@ -58,7 +79,7 @@
                             <DataTemplate DataType="vm:ShortcutHint">
                                 <Grid ColumnDefinitions="Auto,*"
                                       ColumnSpacing="12"
-                                      Margin="0,0,0,10">
+                                      Margin="0,0,0,8">
                                     <Border Classes="pm-inset"
                                             Padding="10,6"
                                             VerticalAlignment="Top">
@@ -75,17 +96,6 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </StackPanel>
-            </Border>
-
-            <Border Classes="pm-card pm-help-section"
-                    Padding="16">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Encoder Behavior"
-                               Classes="pm-section-title"/>
-                    <TextBlock Text="{Binding EncoderSummary}"
-                               Classes="pm-muted"
-                               TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </StackPanel>

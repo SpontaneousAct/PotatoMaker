@@ -5,24 +5,25 @@ namespace PotatoMaker.GUI.ViewModels;
 /// </summary>
 public sealed class HelpViewModel : ViewModelBase
 {
-    public IReadOnlyList<string> QuickStartSteps { get; } =
+    public string IntroText =>
+        "PotatoMaker keeps things simple: load a video, choose the part you want, then start compression. The app handles the technical stuff for you.";
+
+    public IReadOnlyList<string> QuickGuideSteps { get; } =
     [
-        "Drop in a video or click Browse to choose one from disk.",
-        "Preview the clip and use Space to play or pause while you inspect it.",
-        "Press A to mark the trim start and D to mark the trim end.",
-        "Review the summary, choose where to save, and verify the expected output.",
-        "Start compression and follow the live progress log until the encode finishes."
+        "Load a video with Browse, or drag and drop one into the app.",
+        "Preview the video and choose the clip you want with Set Start and Set End.",
+        "Check the summary and choose where the output should be saved if needed.",
+        "Click Start Compression and watch the console until the job finishes."
     ];
 
     public IReadOnlyList<ShortcutHint> ShortcutHints { get; } =
     [
         new("Space", "Play or pause the current preview."),
         new("A", "Set the trim start to the current playback position."),
-        new("D", "Set the trim end to the current playback position.")
+        new("D", "Set the trim end to the current playback position."),
+        new("W", "Move forward by one frame."),
+        new("S", "Move backward by one frame.")
     ];
-
-    public string EncoderSummary =>
-        "PotatoMaker prefers NVIDIA AV1 encoding when it is enabled and available. If NVENC AV1 is unavailable, the app falls back to CPU encoding with the preset you choose in Settings.";
 }
 
 /// <summary>

@@ -7,14 +7,18 @@ namespace PotatoMaker.Tests.ViewModels;
 public sealed class VideoPlayerViewModelTests
 {
     [Theory]
-    [InlineData(true, false, false, true)]
-    [InlineData(true, true, false, false)]
-    [InlineData(true, false, true, false)]
-    [InlineData(false, false, false, false)]
+    [InlineData(true, false, false, false, false, true)]
+    [InlineData(true, true, false, false, false, false)]
+    [InlineData(true, false, true, false, false, false)]
+    [InlineData(true, false, false, true, false, false)]
+    [InlineData(true, false, false, false, true, false)]
+    [InlineData(false, false, false, false, false, false)]
     public void ShouldExposePlayingState_HidesAutomaticResetTransitions(
         bool mediaPlayerIsPlaying,
         bool isPrimingInitialFrame,
         bool isResettingToFirstFrame,
+        bool startedPlaybackForSeekPreview,
+        bool pauseAfterSeekPauseInFlight,
         bool expected)
     {
         MethodInfo? method = typeof(VideoPlayerViewModel).GetMethod(
@@ -23,7 +27,7 @@ public sealed class VideoPlayerViewModelTests
 
         Assert.NotNull(method);
 
-        bool result = Assert.IsType<bool>(method!.Invoke(null, [mediaPlayerIsPlaying, isPrimingInitialFrame, isResettingToFirstFrame]));
+        bool result = Assert.IsType<bool>(method!.Invoke(null, [mediaPlayerIsPlaying, isPrimingInitialFrame, isResettingToFirstFrame, startedPlaybackForSeekPreview, pauseAfterSeekPauseInFlight]));
 
         Assert.Equal(expected, result);
     }

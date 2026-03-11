@@ -165,6 +165,25 @@ public sealed class MainWindowViewModelTests
             null);
 
         Assert.False(viewModel.TryHandleGlobalShortcut(Key.Space, KeyModifiers.Control));
+        Assert.False(viewModel.TryHandleGlobalShortcut(Key.W, KeyModifiers.Control));
+        Assert.False(viewModel.TryHandleGlobalShortcut(Key.S, KeyModifiers.Shift));
+    }
+
+    [Fact]
+    public void GlobalShortcutMap_IncludesFrameSteppingKeys()
+    {
+        Assert.True(MainWindowViewModel.IsGlobalShortcut(Key.W, KeyModifiers.None));
+        Assert.True(MainWindowViewModel.IsGlobalShortcut(Key.S, KeyModifiers.None));
+    }
+
+    [Fact]
+    public void RepeatableGlobalShortcutMap_AllowsFrameSteppingOnly()
+    {
+        Assert.True(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.W));
+        Assert.True(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.S));
+        Assert.False(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.Space));
+        Assert.False(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.A));
+        Assert.False(MainWindowViewModel.IsRepeatableGlobalShortcut(Key.D));
     }
 
     [Fact]
