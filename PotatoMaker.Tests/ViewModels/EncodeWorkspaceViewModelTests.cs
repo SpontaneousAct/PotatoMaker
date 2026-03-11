@@ -271,6 +271,39 @@ public sealed class EncodeWorkspaceViewModelTests
         Assert.Equal(11, persisted.SvtAv1Preset);
     }
 
+    [Fact]
+    public async Task DisposingDuringEncode_CancelsWithoutThrowing()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var encodingService = new BlockingEncodingService();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                encodingService,
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            Task encodeTask = workspace.StartEncodeCommand.ExecuteAsync(null);
+            await encodingService.WaitForStartAsync();
+
+            workspace.Dispose();
+
+            await encodeTask;
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
     private sealed class RecordingAnalysisService : IVideoAnalysisService
     {
         private readonly List<StrategyAnalysis> _strategies = [];
@@ -342,6 +375,23 @@ public sealed class EncodeWorkspaceViewModelTests
         }
 
         public Task<EncodeRequest> WaitForRequestAsync() => _requestTcs.Task;
+    }
+
+    private sealed class BlockingEncodingService : IVideoEncodingService
+    {
+        private readonly TaskCompletionSource _startTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task RunAsync(
+            EncodeRequest request,
+            Microsoft.Extensions.Logging.ILogger<ProcessingPipeline> logger,
+            IProgress<EncodeProgress>? progress = null,
+            CancellationToken ct = default)
+        {
+            _startTcs.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+        }
+
+        public Task WaitForStartAsync() => _startTcs.Task;
     }
 
     private sealed class StaticEncoderCapabilityService : IEncoderCapabilityService

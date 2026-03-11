@@ -5,6 +5,8 @@ namespace PotatoMaker.Core;
 /// </summary>
 public static class EncodePlanner
 {
+    internal const string InvalidDurationMessage = "The selected clip has no duration. Choose a valid source video or a longer clip.";
+
     /// <summary>
     /// Describes the chosen encode plan.
     /// </summary>
@@ -30,6 +32,7 @@ public static class EncodePlanner
 
     public static EncodePlan PlanStrategy(double durationSecs, int origHeight, EncodeSettings settings)
     {
+        ValidateDuration(durationSecs);
         int bitrate = CalculateVideoBitrate(durationSecs, settings);
 
         if (bitrate >= settings.FullHdFloorKbps)
@@ -75,6 +78,12 @@ public static class EncodePlanner
 
     private static int CalculateVideoBitrate(double durationSecs, EncodeSettings settings) =>
         (int)(settings.EffectiveTargetMb * 8192.0 / durationSecs) - settings.AudioBitrateKbps;
+
+    private static void ValidateDuration(double durationSecs)
+    {
+        if (double.IsNaN(durationSecs) || double.IsInfinity(durationSecs) || durationSecs <= 0)
+            throw new InvalidOperationException(InvalidDurationMessage);
+    }
 
     // -2 preserves aspect ratio and keeps the width even for AV1 encoders.
     private static string ScaleFilter(int maxHeight) => $"scale=-2:min(ih\\,{maxHeight})";

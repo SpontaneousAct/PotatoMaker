@@ -31,6 +31,8 @@ public static class StrategyAnalyzer
 
         VideoClipRange effectiveRange = (clipRange ?? VideoClipRange.Full(info.Duration)).Normalize(info.Duration);
         TimeSpan effectiveDuration = effectiveRange.Duration;
+        if (effectiveDuration <= TimeSpan.Zero)
+            throw new InvalidOperationException(EncodePlanner.InvalidDurationMessage);
 
         string? cropFilter = settings.SkipCropDetect
             ? null

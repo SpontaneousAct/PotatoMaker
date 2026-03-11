@@ -111,7 +111,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         if (info is null || path is null || strategy is null)
             return;
 
-        _encodeCts = new CancellationTokenSource();
+        var encodeCts = new CancellationTokenSource();
+        _encodeCts = encodeCts;
         ConversionLog.Clear();
         ConversionLog.IsProcessing = true;
         NotifyEncodeStateChanged();
@@ -134,7 +135,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 request,
                 new ViewModelLogger(ConversionLog),
                 new ViewModelProgressHandler(ConversionLog),
-                _encodeCts.Token);
+                encodeCts.Token);
 
             ConversionLog.AddLog("Done!");
         }
@@ -151,8 +152,10 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             ConversionLog.IsProcessing = false;
             ConversionLog.ProgressPercent = 0;
             ConversionLog.ProgressLabel = null;
-            _encodeCts.Dispose();
-            _encodeCts = null;
+            if (ReferenceEquals(_encodeCts, encodeCts))
+                _encodeCts = null;
+
+            encodeCts.Dispose();
             NotifyEncodeStateChanged();
         }
     }
@@ -163,11 +166,12 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     [RelayCommand(CanExecute = nameof(CanCancelEncode))]
     private void CancelEncode()
     {
-        if (_encodeCts is null || _encodeCts.IsCancellationRequested)
+        CancellationTokenSource? encodeCts = _encodeCts;
+        if (encodeCts is null || encodeCts.IsCancellationRequested)
             return;
 
         ConversionLog.AddLog("Cancellation requested...");
-        _encodeCts.Cancel();
+        encodeCts.Cancel();
         NotifyEncodeStateChanged();
     }
 
@@ -462,12 +466,22 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     public void Dispose()
     {
         CancelPendingPreview();
-        _encodeCts?.Cancel();
-        _encodeCts?.Dispose();
+        CancellationTokenSource? encodeCts = _encodeCts;
         _encodeCts = null;
+        encodeCts?.Cancel();
+        encodeCts?.Dispose();
+        FileInput.FileSelected -= OnFileSelected;
+        FileInput.FileCleared -= OnFileCleared;
+        FileInput.PropertyChanged -= OnEncodePrerequisiteChanged;
         FileInput.PropertyChanged -= OnResetStateChanged;
+        ClipRange.SelectionChanged -= OnClipRangeSelectionChanged;
         ClipRange.PropertyChanged -= OnResetStateChanged;
+        VideoPlayer.TrimBoundaryRequested -= OnTrimBoundaryRequested;
         VideoPlayer.PropertyChanged -= OnResetStateChanged;
+        VideoPlayer.PropertyChanged -= OnVideoPlayerSettingChanged;
+        VideoSummary.PropertyChanged -= OnEncodePrerequisiteChanged;
+        ConversionLog.PropertyChanged -= OnEncodePrerequisiteChanged;
+        OutputSettings.PropertyChanged -= OnOutputSettingsChanged;
         VideoPlayer.Dispose();
     }
 }

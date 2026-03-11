@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
@@ -26,7 +27,7 @@ public static class CropDetector
     {
         string ffmpegPath = FFmpegBinaries.FfmpegExecutable();
         double seekSecs = startOffset.TotalSeconds + (totalDuration.TotalSeconds * StartOffsetPercent);
-        string seekArg = seekSecs > 1.0 ? $"-ss {seekSecs:F1} " : string.Empty;
+        string seekArg = seekSecs > 1.0 ? $"-ss {FormatSeconds(seekSecs)} " : string.Empty;
 
         string arguments = $"{seekArg}-i \"{inputPath}\" -frames:v {SampleFrames} -vf cropdetect={CropLimit}:{CropRound}:{CropReset} -an -f null NUL";
         logger.LogInformation("  {Ffmpeg} {Arguments}", Path.GetFileName(ffmpegPath), arguments);
@@ -132,6 +133,9 @@ public static class CropDetector
         int gcd = Gcd(width, height);
         return $"{width / gcd}:{height / gcd}";
     }
+
+    private static string FormatSeconds(double seconds) =>
+        seconds.ToString("F1", CultureInfo.InvariantCulture);
 
     private static int Gcd(int a, int b) => b == 0 ? a : Gcd(b, a % b);
 }

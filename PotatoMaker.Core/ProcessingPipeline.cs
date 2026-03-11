@@ -47,6 +47,9 @@ public class ProcessingPipeline
 
         VideoClipRange effectiveRange = _clipRange ?? VideoClipRange.Full(_info.Duration);
         TimeSpan selectedDuration = effectiveRange.Duration;
+        if (selectedDuration <= TimeSpan.Zero)
+            throw new InvalidOperationException(EncodePlanner.InvalidDurationMessage);
+
         double durationSecs = selectedDuration.TotalSeconds;
         long inputSizeBytes = new FileInfo(_inputPath).Length;
         int origWidth = _info.Width;
