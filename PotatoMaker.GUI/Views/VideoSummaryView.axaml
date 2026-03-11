@@ -88,8 +88,11 @@
                         Spacing="2">
                 <TextBlock Text="Strategy Preview"
                            Classes="pm-summary-title"/>
-                <TextBlock Text="{Binding StrategyStatus, TargetNullValue=Select a source file to preview the plan.}"
+                <TextBlock Text="{Binding StrategyStatus, TargetNullValue=' '}"
                            Classes="pm-summary-caption"
+                           LineHeight="16"
+                           MinHeight="32"
+                           MaxLines="2"
                            TextWrapping="Wrap"/>
             </StackPanel>
 

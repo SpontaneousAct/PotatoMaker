@@ -71,7 +71,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
     public void SetStrategyResult(StrategyAnalysis analysis)
     {
         StrategyAnalysis = analysis;
-        StrategyStatus = "Strategy ready";
+        StrategyStatus = null;
 
         var plan = analysis.Plan;
         StrategyResolution = plan.ResolutionLabel;
