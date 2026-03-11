@@ -105,6 +105,8 @@ public sealed class EncodeWorkspaceViewModelTests
 
             workspace.OutputSettings.UseNvencEncoder = false;
             workspace.OutputSettings.SetCpuEncodePreset(10);
+            workspace.OutputSettings.OutputNamePrefix = "share_";
+            workspace.OutputSettings.OutputNameSuffix = "_mobile";
 
             workspace.EncodeButtonCommand.Execute(null);
             EncodeRequest request = await encodingService.WaitForRequestAsync();
@@ -112,6 +114,8 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal(TimeSpan.FromSeconds(12), request.ClipRange?.Start);
             Assert.Equal(TimeSpan.FromSeconds(27), request.ClipRange?.End);
             Assert.Equal(EncoderChoice.SvtAv1, request.Settings.Encoder);
+            Assert.Equal("share_", request.Settings.OutputNamePrefix);
+            Assert.Equal("_mobile", request.Settings.OutputNameSuffix);
             Assert.Equal(10, request.Settings.SvtAv1Preset);
         }
         finally
@@ -255,6 +259,8 @@ public sealed class EncodeWorkspaceViewModelTests
             {
                 IsDarkMode = false,
                 UseNvencEncoder = true,
+                OutputNamePrefix = "",
+                OutputNameSuffix = "_discord",
                 PreviewVolumePercent = 100,
                 SvtAv1Preset = 6,
                 LastOutputFolder = null
@@ -279,6 +285,33 @@ public sealed class EncodeWorkspaceViewModelTests
     }
 
     [Fact]
+    public async Task ChangingOutputNameSettings_PersistsThroughCoordinator()
+    {
+        var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
+        {
+            IsDarkMode = false,
+            UseNvencEncoder = true,
+            OutputNamePrefix = "",
+            OutputNameSuffix = "_discord",
+            PreviewVolumePercent = 100,
+            SvtAv1Preset = 6
+        });
+        var workspace = new EncodeWorkspaceViewModel(
+            new RecordingAnalysisService(),
+            new NoOpEncodingService(),
+            new StaticEncoderCapabilityService(),
+            settingsCoordinator,
+            initializeEncoderSupport: false);
+
+        workspace.OutputSettings.OutputNamePrefix = "share_";
+
+        AppSettings persisted = await settingsCoordinator.WaitForUpdateAsync();
+
+        Assert.Equal("share_", persisted.OutputNamePrefix);
+        Assert.Equal("_discord", persisted.OutputNameSuffix);
+    }
+
+    [Fact]
     public void InitialSettings_ApplyVolumeAndCpuPreset()
     {
         const double initialVolume = 37;
@@ -293,6 +326,8 @@ public sealed class EncodeWorkspaceViewModelTests
             {
                 IsDarkMode = false,
                 UseNvencEncoder = false,
+                OutputNamePrefix = "clip_",
+                OutputNameSuffix = "_mobile",
                 PreviewVolumePercent = initialVolume,
                 SvtAv1Preset = initialPreset,
                 LastOutputFolder = "C:\\encoded"
@@ -302,6 +337,8 @@ public sealed class EncodeWorkspaceViewModelTests
         Assert.Equal(initialVolume, workspace.VideoPlayer.VolumePercent);
         Assert.Equal(initialPreset, workspace.OutputSettings.CpuEncodePreset);
         Assert.False(workspace.OutputSettings.UseNvencEncoder);
+        Assert.Equal("clip_", workspace.OutputSettings.OutputNamePrefix);
+        Assert.Equal("_mobile", workspace.OutputSettings.OutputNameSuffix);
         Assert.Equal("C:\\encoded", workspace.OutputSettings.CustomOutputFolder);
     }
 
@@ -312,6 +349,8 @@ public sealed class EncodeWorkspaceViewModelTests
         {
             IsDarkMode = false,
             UseNvencEncoder = true,
+            OutputNamePrefix = "",
+            OutputNameSuffix = "_discord",
             PreviewVolumePercent = 100,
             SvtAv1Preset = 6
         });
@@ -337,6 +376,8 @@ public sealed class EncodeWorkspaceViewModelTests
         {
             IsDarkMode = false,
             UseNvencEncoder = true,
+            OutputNamePrefix = "",
+            OutputNameSuffix = "_discord",
             PreviewVolumePercent = 100,
             SvtAv1Preset = 6
         });

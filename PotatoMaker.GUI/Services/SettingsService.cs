@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Diagnostics;
 
 namespace PotatoMaker.GUI.Services;
@@ -14,48 +15,63 @@ public interface IAppSettingsService
 }
 
 /// <summary>
-/// Persists <see cref="AppSettings"/> as JSON in <c>%APPDATA%/PotatoMaker/settings.json</c>.
+/// Persists <see cref="AppSettings"/> in <c>%APPDATA%/PotatoMaker/appsettings.json</c>.
 /// </summary>
 public sealed class JsonAppSettingsService : IAppSettingsService
 {
+    private const string AppSettingsSectionName = "AppSettings";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true
     };
 
     private readonly string _settingsPath;
+    private readonly string _legacySettingsPath;
 
-    public JsonAppSettingsService(string? settingsPath = null)
+    public JsonAppSettingsService(string? settingsPath = null, string? legacySettingsPath = null)
     {
-        _settingsPath = settingsPath ?? Path.Combine(
+        string settingsDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "PotatoMaker",
-            "settings.json");
+            "PotatoMaker");
+
+        _settingsPath = settingsPath ?? Path.Combine(settingsDirectory, "appsettings.json");
+        _legacySettingsPath = legacySettingsPath ?? Path.Combine(Path.GetDirectoryName(_settingsPath) ?? settingsDirectory, "settings.json");
     }
 
     public AppSettings Load()
     {
-        if (!File.Exists(_settingsPath))
+        string? settingsPath = ResolveSettingsPathForLoad();
+        if (settingsPath is null)
             return new AppSettings();
 
         try
         {
-            string json = File.ReadAllText(_settingsPath);
-            return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+            string json = File.ReadAllText(settingsPath);
+            JsonNode? rootNode = JsonNode.Parse(json);
+            if (rootNode is null)
+                return new AppSettings();
+
+            JsonNode? settingsNode = rootNode is JsonObject rootObject &&
+                                     rootObject.TryGetPropertyValue(AppSettingsSectionName, out JsonNode? sectionNode)
+                ? sectionNode
+                : rootNode;
+
+            return settingsNode.Deserialize<AppSettings>(JsonOptions) ?? new AppSettings();
         }
         catch (JsonException ex)
         {
-            Trace.TraceWarning("Failed to parse settings file '{0}'. Default settings will be used. {1}", _settingsPath, ex.Message);
+            Trace.TraceWarning("Failed to parse settings file '{0}'. Default settings will be used. {1}", settingsPath, ex.Message);
             return new AppSettings();
         }
         catch (IOException ex)
         {
-            Trace.TraceWarning("Failed to read settings file '{0}'. Default settings will be used. {1}", _settingsPath, ex.Message);
+            Trace.TraceWarning("Failed to read settings file '{0}'. Default settings will be used. {1}", settingsPath, ex.Message);
             return new AppSettings();
         }
         catch (UnauthorizedAccessException ex)
         {
-            Trace.TraceWarning("Settings file '{0}' is not accessible. Default settings will be used. {1}", _settingsPath, ex.Message);
+            Trace.TraceWarning("Settings file '{0}' is not accessible. Default settings will be used. {1}", settingsPath, ex.Message);
             return new AppSettings();
         }
     }
@@ -66,7 +82,9 @@ public sealed class JsonAppSettingsService : IAppSettingsService
         Directory.CreateDirectory(directory);
 
         string tempPath = Path.Combine(directory, $"{Path.GetFileName(_settingsPath)}.{Guid.NewGuid():N}.tmp");
-        string json = JsonSerializer.Serialize(settings, JsonOptions);
+        JsonObject root = await LoadExistingRootObjectAsync(ct).ConfigureAwait(false) ?? new JsonObject();
+        root[AppSettingsSectionName] = JsonSerializer.SerializeToNode(settings, JsonOptions);
+        string json = root.ToJsonString(JsonOptions);
         try
         {
             await File.WriteAllTextAsync(tempPath, json, ct).ConfigureAwait(false);
@@ -86,6 +104,41 @@ public sealed class JsonAppSettingsService : IAppSettingsService
         finally
         {
             TryDeleteFile(tempPath);
+        }
+    }
+
+    private string? ResolveSettingsPathForLoad()
+    {
+        if (File.Exists(_settingsPath))
+            return _settingsPath;
+
+        return File.Exists(_legacySettingsPath)
+            ? _legacySettingsPath
+            : null;
+    }
+
+    private async Task<JsonObject?> LoadExistingRootObjectAsync(CancellationToken ct)
+    {
+        if (!File.Exists(_settingsPath))
+            return null;
+
+        try
+        {
+            string json = await File.ReadAllTextAsync(_settingsPath, ct).ConfigureAwait(false);
+            return JsonNode.Parse(json) as JsonObject;
+        }
+        catch (JsonException ex)
+        {
+            Trace.TraceWarning("Failed to parse existing settings file '{0}' before save. It will be overwritten. {1}", _settingsPath, ex.Message);
+            return null;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
         }
     }
 

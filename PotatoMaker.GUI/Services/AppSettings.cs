@@ -11,6 +11,10 @@ public sealed record AppSettings
 
     public bool UseNvencEncoder { get; init; } = true;
 
+    public string OutputNamePrefix { get; init; } = EncodeSettings.DefaultOutputNamePrefix;
+
+    public string OutputNameSuffix { get; init; } = EncodeSettings.DefaultOutputNameSuffix;
+
     public double PreviewVolumePercent { get; init; } = 100;
 
     public int SvtAv1Preset { get; init; } = EncodeSettings.DefaultSvtAv1Preset;

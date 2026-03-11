@@ -393,7 +393,9 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     {
         if (e.PropertyName is nameof(OutputSettingsViewModel.UseNvencEncoder)
             or nameof(OutputSettingsViewModel.CustomOutputFolder)
-            or nameof(OutputSettingsViewModel.SelectedCpuEncodePreset))
+            or nameof(OutputSettingsViewModel.SelectedCpuEncodePreset)
+            or nameof(OutputSettingsViewModel.OutputNamePrefix)
+            or nameof(OutputSettingsViewModel.OutputNameSuffix))
         {
             PersistWorkspaceSettingsSafely();
         }
@@ -414,6 +416,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         {
             OutputSettings.CustomOutputFolder = settings.LastOutputFolder;
             OutputSettings.UseNvencEncoder = settings.UseNvencEncoder;
+            OutputSettings.OutputNamePrefix = settings.OutputNamePrefix;
+            OutputSettings.OutputNameSuffix = settings.OutputNameSuffix;
             OutputSettings.SetCpuEncodePreset(settings.SvtAv1Preset);
             VideoPlayer.VolumePercent = settings.PreviewVolumePercent;
         }
@@ -428,6 +432,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         Encoder = OutputSettings.UseNvencEncoder && OutputSettings.CanUseNvenc
             ? EncoderChoice.Nvenc
             : EncoderChoice.SvtAv1,
+        OutputNamePrefix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNamePrefix),
+        OutputNameSuffix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNameSuffix),
         SvtAv1Preset = OutputSettings.CpuEncodePreset
     };
 
@@ -469,6 +475,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             await _settingsCoordinator!.UpdateAsync(settings => settings with
             {
                 UseNvencEncoder = OutputSettings.UseNvencEncoder,
+                OutputNamePrefix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNamePrefix),
+                OutputNameSuffix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNameSuffix),
                 PreviewVolumePercent = VideoPlayer.VolumePercent,
                 SvtAv1Preset = OutputSettings.CpuEncodePreset,
                 LastOutputFolder = OutputSettings.CustomOutputFolder

@@ -15,6 +15,8 @@ public sealed class AppSettingsCoordinatorTests
             {
                 IsDarkMode = false,
                 UseNvencEncoder = true,
+                OutputNamePrefix = "",
+                OutputNameSuffix = "_discord",
                 PreviewVolumePercent = 100,
                 SvtAv1Preset = 6,
                 LastOutputFolder = null
@@ -23,12 +25,16 @@ public sealed class AppSettingsCoordinatorTests
         await coordinator.UpdateAsync(settings => settings with
         {
             IsDarkMode = true,
+            OutputNamePrefix = "clip_",
+            OutputNameSuffix = "_mobile",
             PreviewVolumePercent = 42,
             SvtAv1Preset = 8,
             LastOutputFolder = "C:\\out"
         });
 
         Assert.True(coordinator.Current.IsDarkMode);
+        Assert.Equal("clip_", coordinator.Current.OutputNamePrefix);
+        Assert.Equal("_mobile", coordinator.Current.OutputNameSuffix);
         Assert.Equal(42, coordinator.Current.PreviewVolumePercent);
         Assert.Equal(8, coordinator.Current.SvtAv1Preset);
         Assert.Equal("C:\\out", coordinator.Current.LastOutputFolder);

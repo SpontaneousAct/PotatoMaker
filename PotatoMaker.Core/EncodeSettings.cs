@@ -5,6 +5,10 @@ namespace PotatoMaker.Core;
 /// </summary>
 public record EncodeSettings
 {
+    public const string DefaultOutputNamePrefix = "";
+
+    public const string DefaultOutputNameSuffix = "_discord";
+
     public const int MinSvtAv1Preset = 0;
 
     public const int MaxSvtAv1Preset = 13;
@@ -12,6 +16,10 @@ public record EncodeSettings
     public const int DefaultSvtAv1Preset = 6;
 
     public EncoderChoice Encoder { get; init; } = EncoderChoice.Nvenc;
+
+    public string OutputNamePrefix { get; init; } = DefaultOutputNamePrefix;
+
+    public string OutputNameSuffix { get; init; } = DefaultOutputNameSuffix;
 
     public double TargetSizeMb { get; init; } = 9.5;
 
@@ -32,4 +40,9 @@ public record EncodeSettings
     public bool SkipCropDetect { get; init; }
 
     public static int NormalizeSvtAv1Preset(int preset) => Math.Clamp(preset, MinSvtAv1Preset, MaxSvtAv1Preset);
+
+    public static string NormalizeOutputNameAffix(string? affix) =>
+        string.IsNullOrWhiteSpace(affix)
+            ? string.Empty
+            : affix.Trim();
 }

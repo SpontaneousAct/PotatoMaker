@@ -85,6 +85,61 @@
                     </Grid>
                 </StackPanel>
             </Border>
+
+            <Border Classes="pm-card pm-settings-section"
+                    Padding="16">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Output Naming"
+                               Classes="pm-section-title"/>
+
+                    <Grid Classes="pm-settings-row"
+                          ColumnDefinitions="*,220"
+                          ColumnSpacing="16">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Filename prefix"
+                                       Classes="pm-settings-label"/>
+                            <TextBlock Text="Added before the source file name for every encoded output."
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding OutputSettings.OutputNamePrefix}"
+                                 Watermark="Optional"
+                                 HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Classes="pm-settings-row"
+                          ColumnDefinitions="*,220"
+                          ColumnSpacing="16">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Filename suffix"
+                                       Classes="pm-settings-label"/>
+                            <TextBlock Text="Added after the source file name. Split outputs still append part numbers after this suffix."
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding OutputSettings.OutputNameSuffix}"
+                                 Watermark="_discord"
+                                 HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Border Classes="pm-inset"
+                            Padding="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Preview"
+                                       Classes="pm-settings-label"/>
+                            <TextBlock Text="{Binding OutputSettings.OutputFileNamePreview}"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

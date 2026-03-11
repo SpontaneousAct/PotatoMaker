@@ -120,7 +120,7 @@ public class ProcessingPipeline
     private async Task RunSingleAsync(int videoBitrateKbps, string? videoFilter, VideoClipRange effectiveRange, CancellationToken ct)
     {
         _logger.LogInformation("--- Encoding ----------------------------------------");
-        string outputPath = Path.Combine(_outputDir, $"{_outputBase}_discord.mp4");
+        string outputPath = OutputFileNameBuilder.BuildOutputPath(_outputDir, _outputBase, _settings);
 
         var job = new EncodeJob(
             InputPath: _inputPath,
@@ -161,7 +161,7 @@ public class ProcessingPipeline
         {
             for (int i = 0; i < parts; i++)
             {
-                string outputPath = Path.Combine(_outputDir, $"{_outputBase}_discord_part{i + 1}.mp4");
+                string outputPath = OutputFileNameBuilder.BuildOutputPath(_outputDir, _outputBase, _settings, i + 1);
                 outputPaths.Add(outputPath);
 
                 _logger.LogInformation("--- Part {Part}/{Total} ------------------------------------------", i + 1, parts);

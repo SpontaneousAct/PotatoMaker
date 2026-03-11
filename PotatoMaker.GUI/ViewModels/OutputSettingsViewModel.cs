@@ -20,7 +20,7 @@ public sealed class CpuEncodePresetOption
 }
 
 /// <summary>
-/// Stores output folder and encoder preferences.
+/// Stores output folder, file naming, and encoder preferences.
 /// </summary>
 public partial class OutputSettingsViewModel : ViewModelBase
 {
@@ -66,6 +66,14 @@ public partial class OutputSettingsViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(OutputFolderDisplayWrapped))]
     private string? _sourceFolder;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OutputFileNamePreview))]
+    private string _outputNamePrefix = EncodeSettings.DefaultOutputNamePrefix;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OutputFileNamePreview))]
+    private string _outputNameSuffix = EncodeSettings.DefaultOutputNameSuffix;
+
     public string? OutputFolderPath =>
         string.IsNullOrWhiteSpace(CustomOutputFolder) ? SourceFolder : CustomOutputFolder;
 
@@ -74,6 +82,9 @@ public partial class OutputSettingsViewModel : ViewModelBase
     public string OutputFolderDisplayWrapped => AddPathWrapHints(OutputFolderDisplay);
 
     public bool CanUseNvenc => IsNvencSupportKnown && IsNvencSupported;
+
+    public string OutputFileNamePreview =>
+        $"{EncodeSettings.NormalizeOutputNameAffix(OutputNamePrefix)}example-video{EncodeSettings.NormalizeOutputNameAffix(OutputNameSuffix)}.mp4";
 
     public string NvencSupportSummary =>
         !IsNvencSupportKnown
