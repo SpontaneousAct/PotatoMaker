@@ -12,42 +12,44 @@
         <vm:EncodeWorkspaceViewModel/>
     </Design.DataContext>
 
-    <Grid ColumnDefinitions="1.8*,1.1*"
+    <Grid ColumnDefinitions="2.2*,0.9*"
+          RowDefinitions="1.95*,0.82*,Auto"
+          RowSpacing="12"
           ColumnSpacing="12">
-        <Grid Grid.Column="0"
-              RowDefinitions="1.7*,*"
-              RowSpacing="12">
-            <views:VideoPlayerView Grid.Row="0"
-                                   DataContext="{Binding}"
-                                   HorizontalAlignment="Stretch"
-                                   VerticalAlignment="Stretch"/>
+        <views:VideoPlayerView Grid.Column="0"
+                               Grid.Row="0"
+                               DataContext="{Binding}"
+                               HorizontalAlignment="Stretch"
+                               VerticalAlignment="Stretch"/>
 
-            <ContentControl Grid.Row="1"
-                            Content="{Binding ConversionLog}"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"/>
-        </Grid>
+        <ContentControl Grid.Column="0"
+                        Grid.Row="1"
+                        Grid.RowSpan="2"
+                        Content="{Binding ConversionLog}"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"/>
 
-        <Grid Grid.Column="1"
-              RowDefinitions="*,Auto,Auto"
-              RowSpacing="12">
-            <ContentControl Grid.Row="0"
-                            Content="{Binding VideoSummary}"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"/>
+        <ContentControl Grid.Column="1"
+                        Grid.Row="0"
+                        Content="{Binding VideoSummary}"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"/>
 
-            <ContentControl Grid.Row="1"
-                            Content="{Binding OutputSettings}"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Top"/>
+        <ContentControl Grid.Column="1"
+                        Grid.Row="1"
+                        Content="{Binding OutputSettings}"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"/>
 
-            <Button Grid.Row="2"
-                    Content="{Binding EncodeButtonText}"
-                    Command="{Binding EncodeButtonCommand}"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Bottom"
-                    Classes.pm-primary="{Binding IsEncodeIdle}"
-                    Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
-        </Grid>
+        <Button Grid.Column="1"
+                Grid.Row="2"
+                Content="{Binding EncodeButtonText}"
+                Command="{Binding EncodeButtonCommand}"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Bottom"
+                MinHeight="34"
+                Padding="10,6"
+                Classes.pm-primary="{Binding IsEncodeIdle}"
+                Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
     </Grid>
 </UserControl>

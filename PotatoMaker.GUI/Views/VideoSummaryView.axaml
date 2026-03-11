@@ -14,27 +14,27 @@
     <UserControl.Styles>
         <Style Selector="TextBlock.pm-summary-title">
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
 
         <Style Selector="TextBlock.pm-summary-caption">
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Opacity" Value="0.82"/>
             <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
         </Style>
 
         <Style Selector="TextBlock.pm-summary-value">
-            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
     </UserControl.Styles>
 
     <Border Classes="pm-card"
-            Padding="7">
+            Padding="10">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,*"
-              RowSpacing="4">
+              RowSpacing="6">
             <TextBlock Grid.Row="0"
                        Text="Source Summary"
                        Classes="pm-summary-title"/>
@@ -71,7 +71,7 @@
             </Border>
 
             <StackPanel Grid.Row="2"
-                        Spacing="1">
+                        Spacing="2">
                 <TextBlock Text="Selected Clip"
                            Classes="pm-summary-title"/>
 
@@ -94,7 +94,7 @@
             </StackPanel>
 
             <StackPanel Grid.Row="3"
-                        Spacing="1">
+                        Spacing="2">
                 <TextBlock Text="Strategy Preview"
                            Classes="pm-summary-title"/>
                 <TextBlock Text="{Binding StrategyStatus, TargetNullValue=Select a source file to preview the plan.}"
@@ -105,8 +105,8 @@
             <Grid Grid.Row="4"
                   ColumnDefinitions="*,*"
                   RowDefinitions="Auto,Auto,Auto"
-                  RowSpacing="4"
-                  ColumnSpacing="4">
+                  RowSpacing="6"
+                  ColumnSpacing="6">
                 <StackPanel Grid.Row="0"
                             Grid.Column="0"
                             Spacing="0">
