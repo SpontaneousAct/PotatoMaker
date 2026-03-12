@@ -28,9 +28,6 @@
                 Padding="10">
             <Grid RowDefinitions="Auto,Auto,*,Auto"
                   RowSpacing="14">
-                <TextBlock Text="🥔"
-                           Classes="pm-nav-brand"/>
-
                 <StackPanel Grid.Row="1"
                             Spacing="8">
                     <Button Classes="pm-nav-button"
