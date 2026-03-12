@@ -7,6 +7,7 @@ It includes both a command-line app and a desktop GUI, backed by a shared core p
 
 - One-command CLI usage: `potatomaker video.mp4` outputs `video_discord.mp4`
 - Desktop GUI built with Avalonia
+- Explorer context-menu integration for common video files (`Compress with PotatoMaker`) on Windows installs
 - GPU-accelerated encoding with NVIDIA NVENC (`av1_nvenc`) when available
 - Automatic fallback to CPU two-pass encoding (`libsvtav1`) when NVENC is unavailable
 - Automatic crop detection to remove black bars

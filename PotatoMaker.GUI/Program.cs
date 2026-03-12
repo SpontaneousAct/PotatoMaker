@@ -1,8 +1,10 @@
 using Avalonia;
 using LibVLCSharp.Shared;
 using PotatoMaker.Core;
+using PotatoMaker.GUI.Services;
 using System;
 using System.IO;
+using System.Runtime.Versioning;
 using LibVlcCore = LibVLCSharp.Shared.Core;
 using Velopack;
 
@@ -41,10 +43,14 @@ namespace PotatoMaker.GUI
         // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
         // yet and stuff might break.
         [STAThread]
+        [SupportedOSPlatform("windows")]
         public static void Main(string[] args)
         {
             VelopackApp.Build()
                 .SetAutoApplyOnStartup(false)
+                .OnAfterInstallFastCallback(_ => WindowsFileContextMenuRegistration.RegisterForInstalledApp())
+                .OnAfterUpdateFastCallback(_ => WindowsFileContextMenuRegistration.RegisterForInstalledApp())
+                .OnBeforeUninstallFastCallback(_ => WindowsFileContextMenuRegistration.RemoveForInstalledApp())
                 .Run();
             FFmpegBinaries.EnsureConfigured();
             InitializeLibVlc();
