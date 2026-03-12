@@ -15,19 +15,23 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isApplyingSettings;
 
     public MainWindowViewModel()
-        : this(new EncodeWorkspaceViewModel(), new AvaloniaThemeService(), null)
+        : this(new EncodeWorkspaceViewModel(), new AvaloniaThemeService(), null, new AssemblyAppVersionService())
     {
     }
 
     public MainWindowViewModel(
         EncodeWorkspaceViewModel workspace,
         IThemeService themeService,
-        IAppSettingsCoordinator? settingsCoordinator)
+        IAppSettingsCoordinator? settingsCoordinator,
+        IAppVersionService? appVersionService = null)
     {
+        ArgumentNullException.ThrowIfNull(workspace);
+        ArgumentNullException.ThrowIfNull(themeService);
+
         Workspace = workspace;
         Settings = new SettingsViewModel(workspace.OutputSettings, () => IsDarkMode, value => IsDarkMode = value);
         Help = new HelpViewModel();
-        VersionText = $"v{GetType().Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
+        VersionText = (appVersionService ?? new AssemblyAppVersionService()).DisplayVersion;
         _themeService = themeService;
         _settingsCoordinator = settingsCoordinator;
 

@@ -170,6 +170,23 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void VersionText_UsesSemanticVersionDisplay()
+    {
+        var viewModel = new MainWindowViewModel(
+            new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false),
+            new RecordingThemeService(),
+            null,
+            new StubAppVersionService("2.3.4-beta.5"));
+
+        Assert.Equal("v2.3.4-beta.5", viewModel.VersionText);
+    }
+
+    [Fact]
     public void GlobalShortcutMap_IncludesPlaybackAndTrimKeys()
     {
         Assert.True(MainWindowViewModel.IsGlobalShortcut(Key.Space, KeyModifiers.None));
@@ -330,5 +347,14 @@ public sealed class MainWindowViewModelTests
     private sealed class StaticEncoderCapabilityService : IEncoderCapabilityService
     {
         public Task<bool> IsAv1NvencSupportedAsync(CancellationToken ct = default) => Task.FromResult(true);
+    }
+
+    private sealed class StubAppVersionService(string semanticVersion) : IAppVersionService
+    {
+        public string SemanticVersion { get; } = semanticVersion;
+
+        public string InformationalVersion { get; } = semanticVersion;
+
+        public string DisplayVersion { get; } = $"v{semanticVersion}";
     }
 }

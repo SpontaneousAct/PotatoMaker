@@ -2,9 +2,12 @@ param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
     [string]$Framework = "net10.0",
+    [string]$Version = "",
     [bool]$SingleFile = $false,
+    [bool]$ReadyToRun = $false,
     [string]$FfmpegDir = "",
-    [switch]$SkipFfmpeg
+    [switch]$SkipFfmpeg,
+    [switch]$SkipZip
 )
 
 Set-StrictMode -Version Latest
@@ -13,12 +16,59 @@ $ErrorActionPreference = "Stop"
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptRoot
 
-$guiProject = Join-Path $repoRoot "PotatoMaker.GUI\PotatoMaker.GUI.csproj"
-$publishDir = Join-Path $repoRoot "PotatoMaker.GUI\bin\$Configuration\$Framework\$Runtime\publish"
 $artifactsDir = Join-Path $repoRoot "artifacts"
 $packageName = "PotatoMaker"
-$packageDir = Join-Path $artifactsDir $packageName
-$zipPath = Join-Path $artifactsDir "$packageName.zip"
+$guiProject = Join-Path $repoRoot "PotatoMaker.GUI\PotatoMaker.GUI.csproj"
+$versionPropsPath = Join-Path $repoRoot "Directory.Build.props"
+$publishRoot = Join-Path $artifactsDir "publish"
+$portableRoot = Join-Path $artifactsDir "portable"
+
+function Invoke-External {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments
+    )
+
+    & $FilePath @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Command failed with exit code ${LASTEXITCODE}: $FilePath $($Arguments -join ' ')"
+    }
+}
+
+function Get-DefaultSemanticVersion {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    if (-not (Test-Path $Path)) {
+        throw "Version properties file not found: $Path"
+    }
+
+    [xml]$versionProps = Get-Content $Path
+    $propertyGroups = @($versionProps.Project.PropertyGroup)
+    $versionPrefixNode = $propertyGroups |
+        Where-Object { $_.PSObject.Properties.Name -contains 'VersionPrefix' } |
+        Select-Object -First 1
+    $versionSuffixNode = $propertyGroups |
+        Where-Object { $_.PSObject.Properties.Name -contains 'VersionSuffix' } |
+        Select-Object -First 1
+
+    $versionPrefix = if ($null -ne $versionPrefixNode) { $versionPrefixNode.VersionPrefix.InnerText } else { "" }
+    $versionSuffix = if ($null -ne $versionSuffixNode) { $versionSuffixNode.VersionSuffix.InnerText } else { "" }
+
+    if ([string]::IsNullOrWhiteSpace($versionPrefix)) {
+        throw "VersionPrefix was not found in $Path"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($versionSuffix)) {
+        return $versionPrefix.Trim()
+    }
+
+    return "$($versionPrefix.Trim())-$($versionSuffix.Trim())"
+}
 
 function Resolve-PathFfmpegDirFromPath {
     $ffmpegCmd = Get-Command ffmpeg -ErrorAction SilentlyContinue
@@ -51,20 +101,31 @@ if (-not $SkipFfmpeg -and [string]::IsNullOrWhiteSpace($FfmpegDir)) {
     }
 }
 
-Write-Host "Publishing GUI ($Configuration, $Runtime, $Framework)..."
-if (Test-Path $publishDir) {
-    Remove-Item $publishDir -Recurse -Force
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    $Version = Get-DefaultSemanticVersion -Path $versionPropsPath
 }
 
-& dotnet restore $guiProject -r $Runtime
+$packageDir = Join-Path $publishRoot "$packageName-$Runtime"
+$zipPath = Join-Path $portableRoot "$packageName-$Version-$Runtime-portable.zip"
+
+Write-Host "Publishing GUI ($Configuration, $Runtime, $Framework)..."
+if (Test-Path $packageDir) {
+    Remove-Item $packageDir -Recurse -Force
+}
+
 $publishArgs = @(
     "publish",
     $guiProject,
     "-c", $Configuration,
+    "-f", $Framework,
     "-r", $Runtime,
     "--self-contained", "true",
+    "-o", $packageDir,
+    "/p:Version=$Version",
     "/p:PublishSingleFile=$SingleFile",
-    "/p:PublishReadyToRun=true"
+    "/p:PublishReadyToRun=$ReadyToRun",
+    "/p:DebugSymbols=false",
+    "/p:DebugType=None"
 )
 
 if ($SingleFile) {
@@ -72,35 +133,10 @@ if ($SingleFile) {
     $publishArgs += "/p:EnableCompressionInSingleFile=true"
 }
 
-& dotnet @publishArgs
+Invoke-External -FilePath "dotnet" -Arguments $publishArgs
 
-if (-not (Test-Path $publishDir)) {
-    throw "Publish output not found: $publishDir"
-}
-
-New-Item -ItemType Directory -Path $artifactsDir -Force | Out-Null
-if (Test-Path $packageDir) {
-    Remove-Item $packageDir -Recurse -Force
-}
-
-New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
-Copy-Item -Path (Join-Path $publishDir "*") -Destination $packageDir -Recurse -Force
-
-Get-ChildItem -Path $packageDir -Recurse -File -Include *.pdb,*.lib -ErrorAction SilentlyContinue |
-    Remove-Item -Force
-
-$unusedLibVlcDir = if ($Runtime -eq "win-x64") {
-    Join-Path $packageDir "libvlc\win-x86"
-}
-elseif ($Runtime -eq "win-x86") {
-    Join-Path $packageDir "libvlc\win-x64"
-}
-else {
-    $null
-}
-
-if ($null -ne $unusedLibVlcDir -and (Test-Path $unusedLibVlcDir)) {
-    Remove-Item $unusedLibVlcDir -Recurse -Force
+if (-not (Test-Path $packageDir)) {
+    throw "Publish output not found: $packageDir"
 }
 
 if (-not $SkipFfmpeg) {
@@ -126,13 +162,20 @@ if (-not $SkipFfmpeg) {
         Copy-Item -Destination $targetFfmpegDir -Force
 }
 
+if ($SkipZip) {
+    Write-Host "Portable publish staging ready:"
+    Write-Host "  Folder: $packageDir"
+    return
+}
+
+New-Item -ItemType Directory -Path $portableRoot -Force | Out-Null
 if (Test-Path $zipPath) {
     Remove-Item $zipPath -Force
 }
 
-Push-Location $artifactsDir
+Push-Location $publishRoot
 try {
-    Compress-Archive -Path $packageName -DestinationPath $zipPath -Force
+    Compress-Archive -Path (Split-Path $packageDir -Leaf) -DestinationPath $zipPath -Force
 }
 finally {
     Pop-Location

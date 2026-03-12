@@ -4,6 +4,7 @@ using PotatoMaker.Core;
 using System;
 using System.IO;
 using LibVlcCore = LibVLCSharp.Shared.Core;
+using Velopack;
 
 namespace PotatoMaker.GUI
 {
@@ -42,6 +43,7 @@ namespace PotatoMaker.GUI
         [STAThread]
         public static void Main(string[] args)
         {
+            VelopackApp.Build().Run();
             FFmpegBinaries.EnsureConfigured();
             InitializeLibVlc();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

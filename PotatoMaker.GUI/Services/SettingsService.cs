@@ -28,8 +28,12 @@ public sealed class JsonAppSettingsService : IAppSettingsService
 
     private readonly string _settingsPath;
     private readonly string _legacySettingsPath;
+    private readonly string _packagedDefaultsPath;
 
-    public JsonAppSettingsService(string? settingsPath = null, string? legacySettingsPath = null)
+    public JsonAppSettingsService(
+        string? settingsPath = null,
+        string? legacySettingsPath = null,
+        string? packagedDefaultsPath = null)
     {
         string settingsDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -37,41 +41,47 @@ public sealed class JsonAppSettingsService : IAppSettingsService
 
         _settingsPath = settingsPath ?? Path.Combine(settingsDirectory, "appsettings.json");
         _legacySettingsPath = legacySettingsPath ?? Path.Combine(Path.GetDirectoryName(_settingsPath) ?? settingsDirectory, "settings.json");
+        _packagedDefaultsPath = packagedDefaultsPath ?? Path.Combine(AppContext.BaseDirectory, "appsettings.defaults.json");
     }
 
     public AppSettings Load()
     {
         string? settingsPath = ResolveSettingsPathForLoad();
-        if (settingsPath is null)
-            return new AppSettings();
-
         try
         {
-            string json = File.ReadAllText(settingsPath);
-            JsonNode? rootNode = JsonNode.Parse(json);
-            if (rootNode is null)
+            JsonObject mergedSettings = new();
+            bool hasSettingsData = false;
+
+            if (TryLoadSettingsObject(_packagedDefaultsPath, out JsonObject packagedDefaults))
+            {
+                MergeInto(mergedSettings, packagedDefaults);
+                hasSettingsData = true;
+            }
+
+            if (settingsPath is not null && TryLoadSettingsObject(settingsPath, out JsonObject persistedSettings))
+            {
+                MergeInto(mergedSettings, persistedSettings);
+                hasSettingsData = true;
+            }
+
+            if (!hasSettingsData)
                 return new AppSettings();
 
-            JsonNode? settingsNode = rootNode is JsonObject rootObject &&
-                                     rootObject.TryGetPropertyValue(AppSettingsSectionName, out JsonNode? sectionNode)
-                ? sectionNode
-                : rootNode;
-
-            return settingsNode.Deserialize<AppSettings>(JsonOptions) ?? new AppSettings();
+            return mergedSettings.Deserialize<AppSettings>(JsonOptions) ?? new AppSettings();
         }
         catch (JsonException ex)
         {
-            Trace.TraceWarning("Failed to parse settings file '{0}'. Default settings will be used. {1}", settingsPath, ex.Message);
+            Trace.TraceWarning("Failed to parse settings data. Default settings will be used. {0}", ex.Message);
             return new AppSettings();
         }
         catch (IOException ex)
         {
-            Trace.TraceWarning("Failed to read settings file '{0}'. Default settings will be used. {1}", settingsPath, ex.Message);
+            Trace.TraceWarning("Failed to read settings data. Default settings will be used. {0}", ex.Message);
             return new AppSettings();
         }
         catch (UnauthorizedAccessException ex)
         {
-            Trace.TraceWarning("Settings file '{0}' is not accessible. Default settings will be used. {1}", settingsPath, ex.Message);
+            Trace.TraceWarning("Settings data is not accessible. Default settings will be used. {0}", ex.Message);
             return new AppSettings();
         }
     }
@@ -140,6 +150,37 @@ public sealed class JsonAppSettingsService : IAppSettingsService
         {
             return null;
         }
+    }
+
+    private static void MergeInto(JsonObject target, JsonObject source)
+    {
+        foreach ((string key, JsonNode? value) in source)
+        {
+            target[key] = value?.DeepClone();
+        }
+    }
+
+    private static bool TryLoadSettingsObject(string path, out JsonObject settingsObject)
+    {
+        settingsObject = null!;
+        if (!File.Exists(path))
+            return false;
+
+        string json = File.ReadAllText(path);
+        JsonNode? rootNode = JsonNode.Parse(json);
+        if (rootNode is null)
+            return false;
+
+        JsonNode? nodeToDeserialize = rootNode is JsonObject rootObject &&
+                                      rootObject.TryGetPropertyValue(AppSettingsSectionName, out JsonNode? sectionNode)
+            ? sectionNode
+            : rootNode;
+
+        if (nodeToDeserialize is not JsonObject settingsRoot)
+            return false;
+
+        settingsObject = (JsonObject)settingsRoot.DeepClone();
+        return true;
     }
 
     private static void TryDeleteFile(string path)
