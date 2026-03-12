@@ -56,12 +56,11 @@
                 </StackPanel>
 
                 <Border Grid.Row="3"
-                        Padding="0"
-                        Background="Transparent"
-                        BorderThickness="0"
+                        Classes="pm-sidebar-version"
+                        HorizontalAlignment="Stretch"
                         VerticalAlignment="Bottom">
                     <TextBlock Text="{Binding VersionText}"
-                               Classes="pm-sidebar-version"/>
+                               Classes="pm-sidebar-version-text"/>
                 </Border>
             </Grid>
         </Border>

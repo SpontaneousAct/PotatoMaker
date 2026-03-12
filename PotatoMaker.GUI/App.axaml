@@ -220,12 +220,21 @@
             <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
         </Style>
 
-        <Style Selector="TextBlock.pm-sidebar-version">
+        <Style Selector="Border.pm-sidebar-version">
+            <Setter Property="Background" Value="{DynamicResource PmHelpBadgeBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmHelpBadgeBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-sidebar-version-text">
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
-            <Setter Property="HorizontalAlignment" Value="Left"/>
-            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmNavItemForeground}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
         </Style>
 
         <Style Selector="TextBlock.pm-settings-label">
