@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "dotnet-trace": {
+      "version": "9.0.661903",
+      "commands": [
+        "dotnet-trace"
+      ],
+      "rollForward": false
+    },
+    "dotnet-dump": {
+      "version": "9.0.661903",
+      "commands": [
+        "dotnet-dump"
+      ],
+      "rollForward": false
+    },
+    "dotnet-stack": {
+      "version": "9.0.661903",
+      "commands": [
+        "dotnet-stack"
+      ],
+      "rollForward": false
+    }
+  }
+}

@@ -381,8 +381,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         try
         {
-            MediaPlayer.Stop();
-            ReleaseMedia();
+            DetachCurrentMedia();
             _media = new Media(_libVlc, _sourcePath, FromType.FromPath);
             MediaPlayer.Media = _media;
             HasMedia = true;
@@ -406,10 +405,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     {
         CancelPendingSeekInteraction();
 
-        if (MediaPlayer is not null)
-            MediaPlayer.Stop();
-
-        ReleaseMedia();
+        DetachCurrentMedia();
         _sourcePath = null;
         _isPrimingInitialFrame = false;
         _isResettingToFirstFrame = false;
@@ -796,6 +792,22 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         _media?.Dispose();
         _media = null;
+    }
+
+    private void DetachCurrentMedia()
+    {
+        if (_mediaPlayer is not null)
+        {
+            try
+            {
+                _mediaPlayer.SetPause(true);
+            }
+            catch
+            {
+            }
+        }
+
+        ReleaseMedia();
     }
 
     private static double Clamp(double value, double min, double max)
