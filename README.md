@@ -1,183 +1,139 @@
 # PotatoMaker
 
-PotatoMaker compresses videos to fit Discord-sized uploads using AV1 encoding.
-It includes both a command-line app and a desktop GUI, backed by a shared core pipeline.
+PotatoMaker is a Windows desktop app for turning videos into small, shareable MP4s without hand-tuning `ffmpeg` settings.
 
-## Features
+Drop in a clip, trim the section you want, and let the app decide the crop, resolution, bitrate, and whether the export should be split into multiple parts.
 
-- One-command CLI usage: `potatomaker video.mp4` outputs `video_discord.mp4`
-- Desktop GUI built with Avalonia
-- Explorer context-menu integration for common video files (`Compress with PotatoMaker`) on Windows installs
-- GPU-accelerated encoding with NVIDIA NVENC (`av1_nvenc`) when available
-- Automatic fallback to CPU two-pass encoding (`libsvtav1`) when NVENC is unavailable
-- Automatic crop detection to remove black bars
-- Smart resolution scaling based on bitrate budget
-- Automatic splitting into multiple parts for long videos
-- Streaming-friendly output (`-movflags +faststart`)
+## What It Does
+
+- Loads a video with drag and drop or a file picker
+- Lets you preview the source before exporting
+- Trims a clip visually with a timeline
+- Detects crop automatically when it helps
+- Uses AV1 NVENC when it is available through FFmpeg
+- Falls back to CPU AV1 when NVENC is unavailable or an NVENC encode fails
+- Splits long videos into multiple files when one file would be too large
+- Saves output as `.mp4`
+- Supports choosing an output folder and filename prefix/suffix
+
+## Who It Is For
+
+PotatoMaker is for people who want a quick "make this easier to share" workflow instead of a full video editor.
+
+It is especially useful when you want to:
+
+- shrink gameplay clips or recordings
+- make videos easier to post in chat apps
+- avoid remembering encoder flags
+- trim and compress a clip in one pass
+
+## Quick Start
+
+1. Download the latest Windows build from [GitHub Releases](https://github.com/SpontaneousAct/PotatoMaker/releases).
+2. Launch `PotatoMaker.GUI.exe`, or install the packaged release if you want update support and Explorer integration.
+3. Drag a video into the window or click `Browse...`.
+4. Preview the video and set the start/end of the clip you want.
+5. Choose a different output folder if needed.
+6. Click `Start Compression`.
+
+## Keyboard Shortcuts
+
+- `Space` plays or pauses preview playback
+- `A` sets the trim start at the current position
+- `D` sets the trim end at the current position
+
+## Supported Input Formats
+
+PotatoMaker currently accepts:
+
+- `.mp4`
+- `.mkv`
+- `.avi`
+- `.mov`
+- `.webm`
+- `.wmv`
+- `.flv`
+
+## How PotatoMaker Chooses Settings
+
+PotatoMaker is designed to be automatic by default.
+
+For each video, it:
+
+1. probes the source file
+2. analyzes the selected clip length
+3. detects crop when useful
+4. picks an export resolution and bitrate
+5. decides whether the result should be one file or several parts
+
+The goal is a small, share-friendly export with as little manual setup as possible.
+
+## Output Behavior
+
+- Output files are written as `.mp4`
+- By default, exports use the suffix `_discord`
+- If you do not choose a custom output folder, files are written next to the source video
+- Installed Windows builds can add a `Compress with PotatoMaker` Explorer context menu entry
 
 ## Requirements
 
-- FFmpeg binaries (`ffmpeg.exe`, `ffprobe.exe`) either:
-  - bundled next to app in `ffmpeg\`, or
-  - available on system `PATH`
-- Download: https://ffmpeg.org/download.html
-- .NET 10 SDK: https://dotnet.microsoft.com/download/dotnet/10.0
-- Optional NVIDIA GPU for AV1 NVENC (Ada Lovelace / RTX 40-series or newer)
+### For End Users
 
-NVIDIA compatibility matrix:
-https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new
+- Windows is the primary supported platform for the GUI app
+- AV1 NVENC-capable NVIDIA hardware can make exports much faster
+- If FFmpeg cannot use AV1 NVENC on the current machine, PotatoMaker uses CPU AV1 instead
 
-## Solution Layout
+### For Building From Source
 
-```text
-PotatoMaker/
-|- PotatoMaker.Core/   # Shared probe/crop/strategy/encode components
-|- PotatoMaker.Cli/    # CLI front-end (assembly name: potatomaker)
-|- PotatoMaker.GUI/    # Avalonia desktop front-end
-|- PotatoMaker.slnx
-`- README.md
-```
+- .NET SDK `10.0.103` or newer in the `10.0.x` line
+- Windows for the desktop app workflow
+- `ffmpeg` and `ffprobe` available on `PATH`, or bundled locally for packaging
 
-## Build
+## Build From Source
 
-```bash
-dotnet build PotatoMaker.slnx
-```
-
-## Run
-
-### CLI
-
-```bash
-dotnet run --project PotatoMaker.Cli -- "C:\clips\gameplay.mp4"
-dotnet run --project PotatoMaker.Cli -- --cpu "C:\clips\gameplay.mp4"
-```
-
-CLI syntax:
-
-```text
-potatomaker [--cpu] <video_file>
-```
-
-`--cpu` forces libsvtav1 two-pass instead of NVENC.
-
-### GUI
-
-```bash
-dotnet run --project PotatoMaker.GUI
-```
-
-In the GUI, pick a file, review the probe summary, optionally enable CPU mode, and start encoding.
-The GUI also shows a precomputed strategy preview (crop/filter, bitrate, resolution, parts) before encoding starts.
-
-## Publish
-
-### CLI (single-file, self-contained win-x64)
-
-```bash
-dotnet publish PotatoMaker.Cli/PotatoMaker.Cli.csproj -c Release -r win-x64
-```
-
-Output path:
-
-```text
-PotatoMaker.Cli/bin/Release/net10.0/win-x64/publish/
-```
-
-### GUI
-
-```bash
-dotnet publish PotatoMaker.GUI/PotatoMaker.GUI.csproj -c Release -r win-x64
-```
-
-### GUI Portable Package
-
-Create a portable folder + zip under `artifacts/` with bundled FFmpeg:
+Clone the repository, then run:
 
 ```powershell
-# Option A: place ffmpeg.exe + ffprobe.exe in third_party\ffmpeg\win-x64\
+dotnet restore
+dotnet build
+dotnet test
+```
+
+To start the desktop app:
+
+```powershell
+dotnet run --project .\PotatoMaker.GUI
+```
+
+## Packaging
+
+Portable publish:
+
+```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\publish-portable.ps1
-
-# Option B: pass a custom FFmpeg directory
-powershell -ExecutionPolicy Bypass -File .\scripts\publish-portable.ps1 -FfmpegDir "C:\tools\ffmpeg\bin"
-
-# Option C: disable single-file (if needed for troubleshooting)
-powershell -ExecutionPolicy Bypass -File .\scripts\publish-portable.ps1 -SingleFile:$false
 ```
 
-If `-FfmpegDir` is not provided, the script tries `third_party\ffmpeg\win-x64\` first, then auto-detects FFmpeg from `PATH`.
-The app itself prefers bundled binaries from `ffmpeg\` and falls back to `PATH`.
-
-### GUI Installer + Updates (Velopack)
-
-Build a Velopack release feed locally:
+Velopack installer/release packaging:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\publish-velopack.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-velopack.ps1 -GitHubRepoUrl https://github.com/SpontaneousAct/PotatoMaker
 ```
 
-That produces a local update feed under `artifacts\velopack\win-x64\`. The GUI is configured to use GitHub Releases in production, but it can also read a local feed for end-to-end testing.
+If you are packaging releases yourself, make sure `ffmpeg.exe` and `ffprobe.exe` are available either on `PATH` or in `third_party\ffmpeg\win-x64`.
 
-Upload the feed assets to GitHub Releases:
+## Project Layout
 
-```powershell
-$env:GITHUB_TOKEN = "<token>"
-powershell -ExecutionPolicy Bypass -File .\scripts\publish-velopack.ps1 `
-  -GitHubRepoUrl "https://github.com/SpontaneousAct/PotatoMaker" `
-  -UploadToGitHub $true `
-  -PublishRelease $true
-```
+- `PotatoMaker.GUI` - Avalonia desktop app
+- `PotatoMaker.Core` - encoding, probing, crop detection, and planning logic
+- `PotatoMaker.Cli` - command-line wrapper around the core pipeline
+- `PotatoMaker.Tests` - automated tests
 
-Velopack needs the generated feed assets uploaded, not just the installer executable. The updater checks GitHub Releases for those Velopack assets and shows a small sidebar update button when a newer packaged release is available.
+## Attribution
 
-### Local Update Testing
+App icon attribution:
 
-1. Build version `A` with `.\scripts\publish-velopack.ps1` and install or launch the packaged app from that build.
-2. Point the packaged app at a local feed by adding an `UpdateSettings` section to `%APPDATA%\PotatoMaker\appsettings.json`:
-
-```json
-{
-  "UpdateSettings": {
-    "Mode": "File",
-    "LocalReleasePath": "F:\\source\\PotatoMaker\\artifacts\\velopack\\win-x64",
-    "ExplicitChannel": "win-x64"
-  }
-}
-```
-
-3. Bump `VersionPrefix` in `Directory.Build.props`, build version `B`, and run `.\scripts\publish-velopack.ps1` again so the newer package lands in the same local feed folder.
-4. Start the already-installed version `A`. After startup, the sidebar shows an update icon; clicking it downloads the new package and restarts into version `B`.
-
-You can also override the update source without editing config by setting environment variables such as `POTATOMAKER_UPDATE_MODE`, `POTATOMAKER_UPDATE_PATH`, `POTATOMAKER_UPDATE_REPO`, and `POTATOMAKER_UPDATE_GITHUB_TOKEN`.
-
-## Output Naming
-
-- Single output: `{name}_discord.mp4`
-- Split output: `{name}_discord_part1.mp4`, `{name}_discord_part2.mp4`, ...
-
-Outputs are written next to the input file.
-
-## Pipeline Overview
-
-1. Preflight (run once):
-   - Probe input media (`VideoInfo.ProbeAsync`)
-   - Detect crop (optional) using FFmpeg `cropdetect` (`CropDetector.DetectAsync`)
-   - Plan bitrate/resolution/splitting (`EncodePlanner.PlanStrategy`)
-   - Combined helper: `StrategyAnalyzer.AnalyzeAsync`
-2. Encode with AV1 (`ProcessingPipeline.RunAsync(strategy, ...)`) using precomputed strategy:
-   - `av1_nvenc` single-pass constrained VBR, or
-   - `libsvtav1` two-pass (with temp passlog files)
-3. Write MP4 with `+faststart`
-
-Default planning values (from `EncodeSettings`):
-
-- Hard size limit: 9.5 MB
-- Effective budget: 9.0 MB
-- Audio reserve: 128 kbps
-- 1080p threshold: 1000 kbps
-- 720p threshold: 500 kbps
-- Max split parts: 10
+<a href="https://www.flaticon.com/free-icons/potato" title="potato icons">Potato icons created by Freepik - Flaticon</a>
 
 ## License
 
-[MIT](LICENSE.txt)
+This project is licensed under the terms in [LICENSE.txt](./LICENSE.txt).
