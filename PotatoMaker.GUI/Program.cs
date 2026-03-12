@@ -12,6 +12,8 @@ namespace PotatoMaker.GUI
 {
     internal static class LibVlcRuntime
     {
+        private static readonly object Sync = new();
+        private static bool _initialized;
         private static readonly string ArchitectureFolder = Environment.Is64BitProcess ? "win-x64" : "win-x86";
 
         public static string? PackagedLibVlcDirectory
@@ -35,6 +37,28 @@ namespace PotatoMaker.GUI
                 return Directory.Exists(path) ? path : null;
             }
         }
+
+        public static void EnsureInitialized()
+        {
+            lock (Sync)
+            {
+                if (_initialized)
+                    return;
+
+                if (PackagedLibVlcDirectory is { } packagedLibVlcDirectory)
+                {
+                    if (PackagedPluginsDirectory is { } pluginsDirectory)
+                        Environment.SetEnvironmentVariable("VLC_PLUGIN_PATH", pluginsDirectory);
+
+                    LibVlcCore.Initialize(packagedLibVlcDirectory);
+                    _initialized = true;
+                    return;
+                }
+
+                LibVlcCore.Initialize();
+                _initialized = true;
+            }
+        }
     }
 
     internal sealed class Program
@@ -53,7 +77,6 @@ namespace PotatoMaker.GUI
                 .OnBeforeUninstallFastCallback(_ => WindowsFileContextMenuRegistration.RemoveForInstalledApp())
                 .Run();
             FFmpegBinaries.EnsureConfigured();
-            InitializeLibVlc();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
 
@@ -63,19 +86,5 @@ namespace PotatoMaker.GUI
                 .UsePlatformDetect()
                 .WithInterFont()
                 .LogToTrace();
-
-        private static void InitializeLibVlc()
-        {
-            if (LibVlcRuntime.PackagedLibVlcDirectory is { } packagedLibVlcDirectory)
-            {
-                if (LibVlcRuntime.PackagedPluginsDirectory is { } pluginsDirectory)
-                    Environment.SetEnvironmentVariable("VLC_PLUGIN_PATH", pluginsDirectory);
-
-                LibVlcCore.Initialize(packagedLibVlcDirectory);
-                return;
-            }
-
-            LibVlcCore.Initialize();
-        }
     }
 }

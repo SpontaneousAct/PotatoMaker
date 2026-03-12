@@ -579,6 +579,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            LibVlcRuntime.EnsureInitialized();
             _libVlc = LibVlcRuntime.PackagedPluginsDirectory is { } pluginsDirectory
                 ? new LibVLC($"--plugin-path={pluginsDirectory}", "--quiet")
                 : new LibVLC("--quiet");
