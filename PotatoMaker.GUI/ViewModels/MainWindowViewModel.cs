@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PotatoMaker.GUI.Services;
 using Avalonia.Input;
+using Avalonia.Threading;
 
 namespace PotatoMaker.GUI.ViewModels;
 
@@ -12,10 +13,17 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly IThemeService _themeService;
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
+    private readonly IAppUpdateService _updateService;
+    private readonly CancellationTokenSource _lifetimeCts = new();
     private bool _isApplyingSettings;
 
     public MainWindowViewModel()
-        : this(new EncodeWorkspaceViewModel(), new AvaloniaThemeService(), null, new AssemblyAppVersionService())
+        : this(
+            new EncodeWorkspaceViewModel(),
+            new AvaloniaThemeService(),
+            null,
+            new DisabledAppUpdateService(),
+            new AssemblyAppVersionService())
     {
     }
 
@@ -23,6 +31,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         EncodeWorkspaceViewModel workspace,
         IThemeService themeService,
         IAppSettingsCoordinator? settingsCoordinator,
+        IAppUpdateService? updateService,
         IAppVersionService? appVersionService = null)
     {
         ArgumentNullException.ThrowIfNull(workspace);
@@ -34,6 +43,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         VersionText = (appVersionService ?? new AssemblyAppVersionService()).DisplayVersion;
         _themeService = themeService;
         _settingsCoordinator = settingsCoordinator;
+        _updateService = updateService ?? new DisabledAppUpdateService();
 
         ApplyInitialSettings();
     }
@@ -45,6 +55,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public HelpViewModel Help { get; }
 
     public string VersionText { get; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsUpdateButtonVisible))]
+    [NotifyPropertyChangedFor(nameof(IsUpdateBadgeVisible))]
+    [NotifyPropertyChangedFor(nameof(UpdateButtonGlyph))]
+    [NotifyPropertyChangedFor(nameof(UpdateButtonToolTip))]
+    [NotifyCanExecuteChangedFor(nameof(ApplyUpdateCommand))]
+    private UpdateIndicatorState _updateButtonState;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UpdateButtonToolTip))]
+    private string? _availableUpdateVersion;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UpdateButtonToolTip))]
+    private int _updateProgressPercent;
 
     [ObservableProperty]
     private bool _isDarkMode;
@@ -68,6 +94,31 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public bool IsSettingsViewSelected => SelectedView == ShellViewKind.Settings;
 
     public bool IsHelpViewSelected => SelectedView == ShellViewKind.Help;
+
+    public bool IsUpdateButtonVisible => UpdateButtonState != UpdateIndicatorState.Hidden;
+
+    public bool IsUpdateBadgeVisible => UpdateButtonState is UpdateIndicatorState.Available or UpdateIndicatorState.PendingRestart;
+
+    public string UpdateButtonGlyph => UpdateButtonState == UpdateIndicatorState.PendingRestart
+        ? "\uE777"
+        : "\uE896";
+
+    public string UpdateButtonToolTip => UpdateButtonState switch
+    {
+        UpdateIndicatorState.Available when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
+            $"Update to v{AvailableUpdateVersion}",
+        UpdateIndicatorState.Available =>
+            "Update available",
+        UpdateIndicatorState.Downloading when UpdateProgressPercent > 0 =>
+            $"Downloading update... {UpdateProgressPercent}%",
+        UpdateIndicatorState.Downloading =>
+            "Downloading update...",
+        UpdateIndicatorState.PendingRestart when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
+            $"Restart to apply v{AvailableUpdateVersion}",
+        UpdateIndicatorState.PendingRestart =>
+            "Restart to apply update",
+        _ => string.Empty
+    };
 
     partial void OnIsDarkModeChanged(bool value)
     {
@@ -94,6 +145,32 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
 
         return false;
+    }
+
+    public async Task InitializeAsync()
+    {
+        try
+        {
+            AppUpdateSnapshot currentSnapshot = await _updateService.GetCurrentStateAsync(_lifetimeCts.Token);
+            ApplyUpdateSnapshot(currentSnapshot);
+
+            if (!_updateService.ShouldCheckOnStartup ||
+                !currentSnapshot.IsConfigured ||
+                !currentSnapshot.CanSelfUpdate ||
+                currentSnapshot.IsUpdatePendingRestart)
+            {
+                return;
+            }
+
+            if (_updateService.StartupCheckDelay > TimeSpan.Zero)
+                await Task.Delay(_updateService.StartupCheckDelay, _lifetimeCts.Token);
+
+            AppUpdateSnapshot latestSnapshot = await _updateService.CheckForUpdatesAsync(_lifetimeCts.Token);
+            ApplyUpdateSnapshot(latestSnapshot);
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     public bool TryHandleGlobalShortcut(Key key, KeyModifiers modifiers)
@@ -128,6 +205,35 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     [RelayCommand]
     private void ShowHelpView() => SelectedView = ShellViewKind.Help;
+
+    [RelayCommand(CanExecute = nameof(CanApplyUpdate), AllowConcurrentExecutions = false)]
+    private async Task ApplyUpdateAsync()
+    {
+        UpdateIndicatorState previousState = UpdateButtonState;
+
+        try
+        {
+            if (UpdateButtonState == UpdateIndicatorState.Available)
+            {
+                UpdateProgressPercent = 0;
+                UpdateButtonState = UpdateIndicatorState.Downloading;
+            }
+
+            await _updateService.ApplyUpdateAsync(
+                progress => Dispatcher.UIThread.Post(() => UpdateProgressPercent = progress),
+                _lifetimeCts.Token);
+
+            AppUpdateSnapshot currentSnapshot = await _updateService.GetCurrentStateAsync(_lifetimeCts.Token);
+            ApplyUpdateSnapshot(currentSnapshot);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch
+        {
+            UpdateButtonState = previousState;
+        }
+    }
 
     partial void OnSelectedViewChanged(ShellViewKind value)
     {
@@ -174,8 +280,34 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         return true;
     }
 
+    private bool CanApplyUpdate() =>
+        UpdateButtonState is UpdateIndicatorState.Available or UpdateIndicatorState.PendingRestart;
+
+    private void ApplyUpdateSnapshot(AppUpdateSnapshot snapshot)
+    {
+        AvailableUpdateVersion = snapshot.AvailableVersion;
+        UpdateProgressPercent = 0;
+
+        UpdateButtonState = snapshot switch
+        {
+            { IsUpdatePendingRestart: true } => UpdateIndicatorState.PendingRestart,
+            { IsUpdateAvailable: true } => UpdateIndicatorState.Available,
+            _ => UpdateIndicatorState.Hidden
+        };
+    }
+
     public void Dispose()
     {
+        _lifetimeCts.Cancel();
+        _lifetimeCts.Dispose();
         Workspace.Dispose();
+    }
+
+    public enum UpdateIndicatorState
+    {
+        Hidden,
+        Available,
+        Downloading,
+        PendingRestart
     }
 }

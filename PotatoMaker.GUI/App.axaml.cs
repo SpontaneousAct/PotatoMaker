@@ -40,7 +40,10 @@ public partial class App : Application
             desktop.MainWindow = mainWindow;
 
             if (mainWindow.DataContext is MainWindowViewModel viewModel)
+            {
                 viewModel.TryLoadStartupFiles(desktop.Args ?? []);
+                _ = viewModel.InitializeAsync();
+            }
         }
 
         base.OnFrameworkInitializationCompleted();

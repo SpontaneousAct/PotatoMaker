@@ -1,7 +1,8 @@
-using Xunit;
+using Avalonia.Input;
+using CommunityToolkit.Mvvm.Input;
 using PotatoMaker.GUI.Services;
 using PotatoMaker.GUI.ViewModels;
-using Avalonia.Input;
+using Xunit;
 
 namespace PotatoMaker.Tests.ViewModels;
 
@@ -29,7 +30,8 @@ public sealed class MainWindowViewModelTests
         var viewModel = new MainWindowViewModel(
             workspace,
             themeService,
-            settingsCoordinator);
+            settingsCoordinator,
+            null);
 
         Assert.True(viewModel.IsDarkMode);
         viewModel.IsDarkMode = false;
@@ -58,6 +60,7 @@ public sealed class MainWindowViewModelTests
             var viewModel = new MainWindowViewModel(
                 workspace,
                 new RecordingThemeService(),
+                null,
                 null);
 
             bool loaded = viewModel.TryLoadStartupFiles(["", "--flag", inputPath]);
@@ -93,6 +96,7 @@ public sealed class MainWindowViewModelTests
             var viewModel = new MainWindowViewModel(
                 workspace,
                 new RecordingThemeService(),
+                null,
                 null);
 
             Assert.True(workspace.FileInput.SetFile(inputPath));
@@ -129,6 +133,7 @@ public sealed class MainWindowViewModelTests
             var viewModel = new MainWindowViewModel(
                 workspace,
                 new RecordingThemeService(),
+                null,
                 null);
 
             Assert.True(workspace.FileInput.SetFile(inputPath));
@@ -162,6 +167,7 @@ public sealed class MainWindowViewModelTests
                 null,
                 initializeEncoderSupport: false),
             new RecordingThemeService(),
+            null,
             null);
 
         Assert.False(viewModel.TryHandleGlobalShortcut(Key.Space, KeyModifiers.Control));
@@ -180,6 +186,7 @@ public sealed class MainWindowViewModelTests
                 null,
                 initializeEncoderSupport: false),
             new RecordingThemeService(),
+            null,
             null,
             new StubAppVersionService("2.3.4-beta.5"));
 
@@ -208,6 +215,7 @@ public sealed class MainWindowViewModelTests
         var viewModel = new MainWindowViewModel(
             workspace,
             new RecordingThemeService(),
+            null,
             null);
 
         Assert.False(workspace.VideoPlayer.SuppressVideoSurface);
@@ -234,11 +242,75 @@ public sealed class MainWindowViewModelTests
         var viewModel = new MainWindowViewModel(
             workspace,
             new RecordingThemeService(),
+            null,
             null);
 
         viewModel.ShowHelpViewCommand.Execute(null);
 
         Assert.False(viewModel.TryHandleGlobalShortcut(Key.Space, KeyModifiers.None));
+    }
+
+    [Fact]
+    public async Task InitializeAsync_ShowsUpdateIndicator_WhenUpdateIsAvailable()
+    {
+        var updateService = new StubAppUpdateService(
+            currentSnapshot: new AppUpdateSnapshot(
+                IsConfigured: true,
+                CanSelfUpdate: true,
+                IsUpdateAvailable: false,
+                IsUpdatePendingRestart: false),
+            checkedSnapshot: new AppUpdateSnapshot(
+                IsConfigured: true,
+                CanSelfUpdate: true,
+                IsUpdateAvailable: true,
+                IsUpdatePendingRestart: false,
+                AvailableVersion: "9.9.9"));
+
+        var viewModel = new MainWindowViewModel(
+            new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false),
+            new RecordingThemeService(),
+            null,
+            updateService);
+
+        await viewModel.InitializeAsync();
+
+        Assert.True(viewModel.IsUpdateButtonVisible);
+        Assert.True(viewModel.IsUpdateBadgeVisible);
+        Assert.Equal("Update to v9.9.9", viewModel.UpdateButtonToolTip);
+    }
+
+    [Fact]
+    public async Task ApplyUpdateCommand_UsesUpdateService_WhenUpdateIsAvailable()
+    {
+        var updateService = new StubAppUpdateService(
+            currentSnapshot: new AppUpdateSnapshot(
+                IsConfigured: true,
+                CanSelfUpdate: true,
+                IsUpdateAvailable: true,
+                IsUpdatePendingRestart: false,
+                AvailableVersion: "2.0.0"));
+
+        var viewModel = new MainWindowViewModel(
+            new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false),
+            new RecordingThemeService(),
+            null,
+            updateService);
+
+        await ((IAsyncRelayCommand)viewModel.ApplyUpdateCommand).ExecuteAsync(null);
+
+        Assert.Equal(1, updateService.ApplyCallCount);
+        Assert.True(viewModel.IsUpdateButtonVisible);
+        Assert.Equal("Restart to apply v2.0.0", viewModel.UpdateButtonToolTip);
     }
 
     private sealed class RecordingThemeService : IThemeService
@@ -356,5 +428,42 @@ public sealed class MainWindowViewModelTests
         public string InformationalVersion { get; } = semanticVersion;
 
         public string DisplayVersion { get; } = $"v{semanticVersion}";
+    }
+
+    private sealed class StubAppUpdateService(
+        AppUpdateSnapshot currentSnapshot,
+        AppUpdateSnapshot? checkedSnapshot = null) : IAppUpdateService
+    {
+        public int ApplyCallCount { get; private set; }
+
+        public bool ShouldCheckOnStartup => true;
+
+        public TimeSpan StartupCheckDelay => TimeSpan.Zero;
+
+        public AppUpdateSnapshot CurrentSnapshot { get; private set; } = currentSnapshot;
+
+        public AppUpdateSnapshot CheckedSnapshot { get; } = checkedSnapshot ?? currentSnapshot;
+
+        public Task<AppUpdateSnapshot> GetCurrentStateAsync(CancellationToken ct = default) =>
+            Task.FromResult(CurrentSnapshot);
+
+        public Task<AppUpdateSnapshot> CheckForUpdatesAsync(CancellationToken ct = default)
+        {
+            CurrentSnapshot = CheckedSnapshot;
+            return Task.FromResult(CurrentSnapshot);
+        }
+
+        public Task ApplyUpdateAsync(Action<int>? progress = null, CancellationToken ct = default)
+        {
+            ApplyCallCount++;
+            progress?.Invoke(100);
+            CurrentSnapshot = CurrentSnapshot with
+            {
+                IsUpdateAvailable = false,
+                IsUpdatePendingRestart = true
+            };
+
+            return Task.CompletedTask;
+        }
     }
 }

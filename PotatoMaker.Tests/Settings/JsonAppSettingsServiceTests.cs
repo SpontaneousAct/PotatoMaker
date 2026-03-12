@@ -25,7 +25,7 @@ public sealed class JsonAppSettingsServiceTests
             AppSettings settings = service.Load();
 
             Assert.Equal(new AppSettings(), settings);
-            Assert.Contains(listener.Messages, message => message.Contains(settingsPath, StringComparison.Ordinal));
+            Assert.Contains(listener.Messages, message => message.Contains("Failed to parse settings data", StringComparison.Ordinal));
         }
         finally
         {

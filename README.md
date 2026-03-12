@@ -107,6 +107,48 @@ powershell -ExecutionPolicy Bypass -File .\scripts\publish-portable.ps1 -SingleF
 If `-FfmpegDir` is not provided, the script tries `third_party\ffmpeg\win-x64\` first, then auto-detects FFmpeg from `PATH`.
 The app itself prefers bundled binaries from `ffmpeg\` and falls back to `PATH`.
 
+### GUI Installer + Updates (Velopack)
+
+Build a Velopack release feed locally:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-velopack.ps1
+```
+
+That produces a local update feed under `artifacts\velopack\win-x64\`. The GUI is configured to use GitHub Releases in production, but it can also read a local feed for end-to-end testing.
+
+Upload the feed assets to GitHub Releases:
+
+```powershell
+$env:GITHUB_TOKEN = "<token>"
+powershell -ExecutionPolicy Bypass -File .\scripts\publish-velopack.ps1 `
+  -GitHubRepoUrl "https://github.com/SpontaneousAct/PotatoMaker" `
+  -UploadToGitHub $true `
+  -PublishRelease $true
+```
+
+Velopack needs the generated feed assets uploaded, not just the installer executable. The updater checks GitHub Releases for those Velopack assets and shows a small sidebar update button when a newer packaged release is available.
+
+### Local Update Testing
+
+1. Build version `A` with `.\scripts\publish-velopack.ps1` and install or launch the packaged app from that build.
+2. Point the packaged app at a local feed by adding an `UpdateSettings` section to `%APPDATA%\PotatoMaker\appsettings.json`:
+
+```json
+{
+  "UpdateSettings": {
+    "Mode": "File",
+    "LocalReleasePath": "F:\\source\\PotatoMaker\\artifacts\\velopack\\win-x64",
+    "ExplicitChannel": "win-x64"
+  }
+}
+```
+
+3. Bump `VersionPrefix` in `Directory.Build.props`, build version `B`, and run `.\scripts\publish-velopack.ps1` again so the newer package lands in the same local feed folder.
+4. Start the already-installed version `A`. After startup, the sidebar shows an update icon; clicking it downloads the new package and restarts into version `B`.
+
+You can also override the update source without editing config by setting environment variables such as `POTATOMAKER_UPDATE_MODE`, `POTATOMAKER_UPDATE_PATH`, `POTATOMAKER_UPDATE_REPO`, and `POTATOMAKER_UPDATE_GITHUB_TOKEN`.
+
 ## Output Naming
 
 - Single output: `{name}_discord.mp4`

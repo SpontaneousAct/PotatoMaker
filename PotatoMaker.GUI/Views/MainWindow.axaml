@@ -55,13 +55,33 @@
                     </Button>
                 </StackPanel>
 
-                <Border Grid.Row="3"
-                        Classes="pm-sidebar-version"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Bottom">
-                    <TextBlock Text="{Binding VersionText}"
-                               Classes="pm-sidebar-version-text"/>
-                </Border>
+                <StackPanel Grid.Row="3"
+                            Spacing="10"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Bottom">
+                    <Button Classes="pm-nav-button pm-update-button"
+                            Command="{Binding ApplyUpdateCommand}"
+                            IsVisible="{Binding IsUpdateButtonVisible}"
+                            ToolTip.Tip="{Binding UpdateButtonToolTip}">
+                        <Grid Width="46"
+                              Height="46">
+                            <TextBlock Text="{Binding UpdateButtonGlyph}"
+                                       Classes="pm-nav-icon"/>
+                            <Border Classes="pm-update-dot"
+                                    IsVisible="{Binding IsUpdateBadgeVisible}"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="0,5,5,0"/>
+                        </Grid>
+                    </Button>
+
+                    <Border Classes="pm-sidebar-version"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Bottom">
+                        <TextBlock Text="{Binding VersionText}"
+                                   Classes="pm-sidebar-version-text"/>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
 

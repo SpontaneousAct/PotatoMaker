@@ -7,10 +7,19 @@ param(
     [string]$PackTitle = "PotatoMaker",
     [string]$Authors = "PotatoMaker",
     [string]$Channel = "win-x64",
+    [string]$GitHubRepoUrl = "",
+    [string]$GitHubToken = "",
     [string]$FfmpegDir = "",
     [switch]$SkipFfmpeg,
     [bool]$SingleFile = $false,
-    [bool]$ReadyToRun = $false
+    [bool]$ReadyToRun = $false,
+    [bool]$DownloadPreviousReleases = $true,
+    [bool]$UploadToGitHub = $false,
+    [bool]$PublishRelease = $false,
+    [bool]$Prerelease = $false,
+    [bool]$MergeAssets = $true,
+    [string]$ReleaseName = "",
+    [string]$ReleaseTag = ""
 )
 
 Set-StrictMode -Version Latest
@@ -111,6 +120,23 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
     $Version = Get-DefaultSemanticVersion -Path $versionPropsPath
 }
 
+if ([string]::IsNullOrWhiteSpace($GitHubToken)) {
+    if (-not [string]::IsNullOrWhiteSpace($env:GITHUB_TOKEN)) {
+        $GitHubToken = $env:GITHUB_TOKEN
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($env:POTATOMAKER_GITHUB_TOKEN)) {
+        $GitHubToken = $env:POTATOMAKER_GITHUB_TOKEN
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($ReleaseName)) {
+    $ReleaseName = "$PackTitle $Version"
+}
+
+if ([string]::IsNullOrWhiteSpace($ReleaseTag)) {
+    $ReleaseTag = "v$Version"
+}
+
 $velopackCliVersion = Get-CentralPackageVersion -Path $packagesPropsPath -PackageId "Velopack"
 
 & $portableScript `
@@ -130,6 +156,30 @@ if (-not (Test-Path $packageDir)) {
 
 New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null
 
+if (-not [string]::IsNullOrWhiteSpace($GitHubRepoUrl) -and $DownloadPreviousReleases) {
+    $downloadArgs = @(
+        "--yes",
+        "vpk@$velopackCliVersion",
+        "download",
+        "github",
+        "--repoUrl", $GitHubRepoUrl,
+        "--outputDir", $releaseDir,
+        "--channel", $Channel
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($GitHubToken)) {
+        $downloadArgs += "--token"
+        $downloadArgs += $GitHubToken
+    }
+
+    if ($Prerelease) {
+        $downloadArgs += "--pre"
+    }
+
+    Write-Host "Downloading prior Velopack release metadata from GitHub..."
+    Invoke-External -FilePath "dnx" -Arguments $downloadArgs
+}
+
 $packArgs = @(
     "--yes",
     "vpk@$velopackCliVersion",
@@ -147,6 +197,44 @@ $packArgs = @(
 
 Write-Host "Packing Velopack installer ($Version, $Runtime) with vpk $velopackCliVersion..."
 Invoke-External -FilePath "dnx" -Arguments $packArgs
+
+if ($UploadToGitHub) {
+    if ([string]::IsNullOrWhiteSpace($GitHubRepoUrl)) {
+        throw "GitHub upload requested, but -GitHubRepoUrl was not provided."
+    }
+
+    $uploadArgs = @(
+        "--yes",
+        "vpk@$velopackCliVersion",
+        "upload",
+        "github",
+        "--repoUrl", $GitHubRepoUrl,
+        "--outputDir", $releaseDir,
+        "--channel", $Channel,
+        "--releaseName", $ReleaseName,
+        "--tag", $ReleaseTag
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($GitHubToken)) {
+        $uploadArgs += "--token"
+        $uploadArgs += $GitHubToken
+    }
+
+    if ($Prerelease) {
+        $uploadArgs += "--pre"
+    }
+
+    if ($PublishRelease) {
+        $uploadArgs += "--publish"
+    }
+
+    if ($MergeAssets) {
+        $uploadArgs += "--merge"
+    }
+
+    Write-Host "Uploading Velopack release feed assets to GitHub..."
+    Invoke-External -FilePath "dnx" -Arguments $uploadArgs
+}
 
 Write-Host "Velopack artifacts ready:"
 Write-Host "  Releases: $releaseDir"

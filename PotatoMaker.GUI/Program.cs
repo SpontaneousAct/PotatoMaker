@@ -43,7 +43,9 @@ namespace PotatoMaker.GUI
         [STAThread]
         public static void Main(string[] args)
         {
-            VelopackApp.Build().Run();
+            VelopackApp.Build()
+                .SetAutoApplyOnStartup(false)
+                .Run();
             FFmpegBinaries.EnsureConfigured();
             InitializeLibVlc();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

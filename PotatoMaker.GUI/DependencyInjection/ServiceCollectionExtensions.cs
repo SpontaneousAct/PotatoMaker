@@ -20,6 +20,10 @@ public static class ServiceCollectionExtensions
             var settingsService = sp.GetRequiredService<IAppSettingsService>();
             return new AppSettingsCoordinator(settingsService, settingsService.Load());
         });
+        services.AddSingleton<IUpdateSettingsProvider, JsonUpdateSettingsProvider>();
+        services.AddSingleton(sp => sp.GetRequiredService<IUpdateSettingsProvider>().Load());
+        services.AddSingleton<IVelopackUpdateManagerFactory, VelopackUpdateManagerFactory>();
+        services.AddSingleton<IAppUpdateService, AppUpdateService>();
         services.AddSingleton<IAppVersionService, AssemblyAppVersionService>();
         services.AddSingleton<IThemeService, AvaloniaThemeService>();
         services.AddSingleton<IVideoAnalysisService, VideoAnalysisService>();
