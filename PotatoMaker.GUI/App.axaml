@@ -55,11 +55,9 @@
                     <SolidColorBrush x:Key="PmPageBannerBorderBrush">#FFD5DFEC</SolidColorBrush>
                     <SolidColorBrush x:Key="PmHelpBadgeBackground">#FFE1EAF7</SolidColorBrush>
                     <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FFC3D2E5</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdateButtonBackground">#FFF4A63D</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdateButtonPointerOver">#FFFFB24E</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdateButtonBorderBrush">#FFE0A24D</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdateButtonForeground">#FF3F2700</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdateDotBackground">#FF1E8E3E</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmUpdatePanelBackground">#FFFFF2DE</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmUpdatePanelBorderBrush">#FFE8C98B</SolidColorBrush>
 
                     <SolidColorBrush x:Key="PmPrimaryBackground">#FF176FE5</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF267BEF</SolidColorBrush>
@@ -113,11 +111,9 @@
                     <SolidColorBrush x:Key="PmPageBannerBorderBrush">#FF2A3547</SolidColorBrush>
                     <SolidColorBrush x:Key="PmHelpBadgeBackground">#FF233246</SolidColorBrush>
                     <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FF3A4F68</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdateButtonBackground">#FFB97819</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdateButtonPointerOver">#FFD08A24</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdateButtonBorderBrush">#FFE3A04C</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdateButtonForeground">#FFFFF2DB</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdateDotBackground">#FF5FC779</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmUpdatePanelBackground">#FF2C2416</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmUpdatePanelBorderBrush">#FF6C5531</SolidColorBrush>
 
                     <SolidColorBrush x:Key="PmPrimaryBackground">#FF3A7AFE</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF4A86FF</SolidColorBrush>
@@ -300,19 +296,6 @@
             <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
 
-        <Style Selector="Button.pm-update-button">
-            <Setter Property="Background" Value="{DynamicResource PmUpdateButtonBackground}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource PmUpdateButtonBorderBrush}"/>
-        </Style>
-
-        <Style Selector="Button.pm-update-button:pointerover">
-            <Setter Property="Background" Value="{DynamicResource PmUpdateButtonPointerOver}"/>
-        </Style>
-
-        <Style Selector="Button.pm-update-button TextBlock.pm-nav-icon">
-            <Setter Property="Foreground" Value="{DynamicResource PmUpdateButtonForeground}"/>
-        </Style>
-
         <Style Selector="Border.pm-update-dot">
             <Setter Property="Width" Value="10"/>
             <Setter Property="Height" Value="10"/>
@@ -320,6 +303,11 @@
             <Setter Property="Background" Value="{DynamicResource PmUpdateDotBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmCardBackground}"/>
             <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+
+        <Style Selector="Border.pm-update-panel">
+            <Setter Property="Background" Value="{DynamicResource PmUpdatePanelBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmUpdatePanelBorderBrush}"/>
         </Style>
 
         <Style Selector="Button.pm-primary">

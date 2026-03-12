@@ -38,7 +38,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ArgumentNullException.ThrowIfNull(themeService);
 
         Workspace = workspace;
-        Settings = new SettingsViewModel(workspace.OutputSettings, () => IsDarkMode, value => IsDarkMode = value);
+        Settings = new SettingsViewModel(
+            workspace.OutputSettings,
+            () => IsDarkMode,
+            value => IsDarkMode = value,
+            () => IsUpdateSectionVisible,
+            () => SettingsUpdateTitle,
+            () => SettingsUpdateDescription,
+            () => SettingsUpdateActionText,
+            ApplyUpdateCommand);
         Help = new HelpViewModel();
         VersionText = (appVersionService ?? new AssemblyAppVersionService()).DisplayVersion;
         _themeService = themeService;
@@ -57,19 +65,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public string VersionText { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsUpdateButtonVisible))]
     [NotifyPropertyChangedFor(nameof(IsUpdateBadgeVisible))]
-    [NotifyPropertyChangedFor(nameof(UpdateButtonGlyph))]
-    [NotifyPropertyChangedFor(nameof(UpdateButtonToolTip))]
+    [NotifyPropertyChangedFor(nameof(IsUpdateSectionVisible))]
+    [NotifyPropertyChangedFor(nameof(SettingsUpdateTitle))]
+    [NotifyPropertyChangedFor(nameof(SettingsUpdateDescription))]
+    [NotifyPropertyChangedFor(nameof(SettingsUpdateActionText))]
     [NotifyCanExecuteChangedFor(nameof(ApplyUpdateCommand))]
     private UpdateIndicatorState _updateButtonState;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(UpdateButtonToolTip))]
+    [NotifyPropertyChangedFor(nameof(SettingsUpdateTitle))]
+    [NotifyPropertyChangedFor(nameof(SettingsUpdateDescription))]
     private string? _availableUpdateVersion;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(UpdateButtonToolTip))]
+    [NotifyPropertyChangedFor(nameof(SettingsUpdateDescription))]
     private int _updateProgressPercent;
 
     [ObservableProperty]
@@ -95,29 +105,48 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public bool IsHelpViewSelected => SelectedView == ShellViewKind.Help;
 
-    public bool IsUpdateButtonVisible => UpdateButtonState != UpdateIndicatorState.Hidden;
-
     public bool IsUpdateBadgeVisible => UpdateButtonState is UpdateIndicatorState.Available or UpdateIndicatorState.PendingRestart;
 
-    public string UpdateButtonGlyph => UpdateButtonState == UpdateIndicatorState.PendingRestart
-        ? "\uE777"
-        : "\uE896";
+    public bool IsUpdateSectionVisible => UpdateButtonState != UpdateIndicatorState.Hidden;
 
-    public string UpdateButtonToolTip => UpdateButtonState switch
+    public string SettingsUpdateTitle => UpdateButtonState switch
     {
         UpdateIndicatorState.Available when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
-            $"Update to v{AvailableUpdateVersion}",
+            $"Update available: v{AvailableUpdateVersion}",
         UpdateIndicatorState.Available =>
             "Update available",
-        UpdateIndicatorState.Downloading when UpdateProgressPercent > 0 =>
-            $"Downloading update... {UpdateProgressPercent}%",
+        UpdateIndicatorState.Downloading when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
+            $"Downloading v{AvailableUpdateVersion}",
         UpdateIndicatorState.Downloading =>
-            "Downloading update...",
+            "Downloading update",
         UpdateIndicatorState.PendingRestart when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
-            $"Restart to apply v{AvailableUpdateVersion}",
+            $"Restart to finish v{AvailableUpdateVersion}",
         UpdateIndicatorState.PendingRestart =>
             "Restart to apply update",
         _ => string.Empty
+    };
+
+    public string SettingsUpdateDescription => UpdateButtonState switch
+    {
+        UpdateIndicatorState.Available when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
+            $"PotatoMaker {AvailableUpdateVersion} is ready to download and install.",
+        UpdateIndicatorState.Available =>
+            "A newer packaged version of PotatoMaker is available.",
+        UpdateIndicatorState.Downloading when UpdateProgressPercent > 0 =>
+            $"Downloading the update package now. Progress: {UpdateProgressPercent}%.",
+        UpdateIndicatorState.Downloading =>
+            "Downloading the update package now.",
+        UpdateIndicatorState.PendingRestart when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
+            $"The update package for PotatoMaker {AvailableUpdateVersion} has finished downloading. Restart the app to apply it.",
+        UpdateIndicatorState.PendingRestart =>
+            "The update has finished downloading. Restart the app to apply it.",
+        _ => string.Empty
+    };
+
+    public string SettingsUpdateActionText => UpdateButtonState switch
+    {
+        UpdateIndicatorState.PendingRestart => "Restart to update",
+        _ => "Install update"
     };
 
     partial void OnIsDarkModeChanged(bool value)
@@ -242,6 +271,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         OnPropertyChanged(nameof(CurrentView));
     }
+
+    partial void OnUpdateButtonStateChanged(UpdateIndicatorState value) => Settings.NotifyUpdateChanged();
+
+    partial void OnAvailableUpdateVersionChanged(string? value) => Settings.NotifyUpdateChanged();
+
+    partial void OnUpdateProgressPercentChanged(int value) => Settings.NotifyUpdateChanged();
 
     private void ApplyInitialSettings()
     {

@@ -140,6 +140,24 @@
                     </Border>
                 </StackPanel>
             </Border>
+
+            <Border Classes="pm-card pm-settings-section pm-update-panel"
+                    Padding="16"
+                    IsVisible="{Binding IsUpdateSectionVisible}">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="{Binding UpdateTitle}"
+                               Classes="pm-section-title"/>
+
+                    <TextBlock Text="{Binding UpdateDescription}"
+                               Classes="pm-caption"
+                               TextWrapping="Wrap"/>
+
+                    <Button Command="{Binding ApplyUpdateCommand}"
+                            Classes="pm-primary"
+                            HorizontalAlignment="Left"
+                            Content="{Binding UpdateActionText}"/>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

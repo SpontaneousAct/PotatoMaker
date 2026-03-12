@@ -279,9 +279,10 @@ public sealed class MainWindowViewModelTests
 
         await viewModel.InitializeAsync();
 
-        Assert.True(viewModel.IsUpdateButtonVisible);
         Assert.True(viewModel.IsUpdateBadgeVisible);
-        Assert.Equal("Update to v9.9.9", viewModel.UpdateButtonToolTip);
+        Assert.True(viewModel.Settings.IsUpdateSectionVisible);
+        Assert.Equal("Update available: v9.9.9", viewModel.Settings.UpdateTitle);
+        Assert.Equal("Install update", viewModel.Settings.UpdateActionText);
     }
 
     [Fact]
@@ -309,8 +310,9 @@ public sealed class MainWindowViewModelTests
         await ((IAsyncRelayCommand)viewModel.ApplyUpdateCommand).ExecuteAsync(null);
 
         Assert.Equal(1, updateService.ApplyCallCount);
-        Assert.True(viewModel.IsUpdateButtonVisible);
-        Assert.Equal("Restart to apply v2.0.0", viewModel.UpdateButtonToolTip);
+        Assert.True(viewModel.Settings.IsUpdateSectionVisible);
+        Assert.Equal("Restart to update", viewModel.Settings.UpdateActionText);
+        Assert.Contains("finished downloading", viewModel.Settings.UpdateDescription, StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed class RecordingThemeService : IThemeService
