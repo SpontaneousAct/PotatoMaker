@@ -24,14 +24,21 @@
 
             <Border x:Name="OutputFolderHost"
                     Classes="pm-inset"
-                    MinHeight="56">
+                    MinHeight="56"
+                    Cursor="Hand"
+                    PointerReleased="OnOutputFolderHostPointerReleased">
                 <StackPanel Spacing="2"
                             VerticalAlignment="Center"
                             HorizontalAlignment="Stretch">
                     <ToolTip.Tip>
-                        <TextBlock Text="{Binding OutputFolderDisplayWrapped}"
-                                   TextWrapping="Wrap"
-                                   MaxWidth="640"/>
+                        <StackPanel Spacing="4"
+                                    MaxWidth="640">
+                            <TextBlock Text="{Binding OutputFolderDisplayWrapped}"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="Click to open this folder in Explorer."
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
                     </ToolTip.Tip>
                     <TextBlock Text="{Binding OutputFolderDisplayWrapped}"
                                FontWeight="SemiBold"

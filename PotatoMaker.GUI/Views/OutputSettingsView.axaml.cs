@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using PotatoMaker.GUI.ViewModels;
@@ -58,6 +60,30 @@ public partial class OutputSettingsView : UserControl
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e) => AttachPickerHandler();
+
+    private void OnOutputFolderHostPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (e.InitialPressMouseButton != MouseButton.Left || Vm?.OutputFolderPath is not { } folderPath)
+            return;
+
+        if (!Directory.Exists(folderPath))
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"\"{folderPath}\"",
+                UseShellExecute = true
+            });
+            e.Handled = true;
+        }
+        catch
+        {
+            // Ignore shell launch failures so a bad click never crashes the UI.
+        }
+    }
 
     private void AttachPickerHandler()
     {
