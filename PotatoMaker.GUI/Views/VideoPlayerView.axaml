@@ -91,6 +91,18 @@
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Stretch"/>
 
+                    <StackPanel IsVisible="{Binding VideoPlayer.ShowStatusMessage}"
+                                Spacing="6"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                MaxWidth="280"
+                                Margin="16">
+                        <TextBlock Text="{Binding VideoPlayer.StatusMessage}"
+                                   Classes="pm-caption"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+
                     <StackPanel IsVisible="{Binding VideoPlayer.HasPlayerError}"
                                 Spacing="6"
                                 HorizontalAlignment="Center"

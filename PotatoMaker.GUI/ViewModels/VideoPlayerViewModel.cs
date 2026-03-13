@@ -42,7 +42,9 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private bool _resumePlaybackAfterSeek;
     private bool _startedPlaybackForSeekPreview;
     private bool _temporarilyMutedForSeekPreview;
+    private bool _hasAttemptedPlayerInitialization;
     private TimeSpan? _pendingSeekPreviewTarget;
+    private (string Path, TimeSpan Duration, VideoClipRange Selection)? _pendingSourceLoad;
     private string _statusMessage;
     private string? _playerErrorMessage;
     private string? _sourcePath;
@@ -74,12 +76,32 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         };
         _seekFinalizeTimer.Tick += OnSeekFinalizeTimerTick;
 
-        _statusMessage = initializePlayer
-            ? "Select a video to preview it."
-            : "Video playback is disabled in the previewer.";
+        _hasAttemptedPlayerInitialization = initializePlayer;
+        _statusMessage = "Select a video to preview it.";
 
         if (initializePlayer)
             TryInitializePlayer();
+    }
+
+    public void EnsureInitialized()
+    {
+        if (_hasAttemptedPlayerInitialization)
+            return;
+
+        _hasAttemptedPlayerInitialization = true;
+        TryInitializePlayer();
+
+        if (!IsPlayerAvailable)
+        {
+            _pendingSourceLoad = null;
+            return;
+        }
+
+        if (_pendingSourceLoad is { } pendingSourceLoad)
+        {
+            _pendingSourceLoad = null;
+            LoadSource(pendingSourceLoad.Path, pendingSourceLoad.Duration, pendingSourceLoad.Selection);
+        }
     }
 
     public MediaPlayer? MediaPlayer
@@ -152,6 +174,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             {
                 OnPropertyChanged(nameof(IsVideoSurfaceVisible));
                 OnPropertyChanged(nameof(IsVideoStatusVisible));
+                OnPropertyChanged(nameof(ShowStatusMessage));
                 OnPropertyChanged(nameof(CanControlPlayback));
                 OnPropertyChanged(nameof(CanSeek));
                 OnPropertyChanged(nameof(CanResetPlayback));
@@ -174,6 +197,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             {
                 OnPropertyChanged(nameof(IsVideoSurfaceVisible));
                 OnPropertyChanged(nameof(IsVideoStatusVisible));
+                OnPropertyChanged(nameof(ShowStatusMessage));
                 OnPropertyChanged(nameof(CanControlPlayback));
                 OnPropertyChanged(nameof(CanSeek));
                 OnPropertyChanged(nameof(CanResetPlayback));
@@ -212,6 +236,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     public bool IsVideoSurfaceVisible => CanControlPlayback && !SuppressVideoSurface;
 
     public bool IsVideoStatusVisible => !CanControlPlayback;
+
+    public bool ShowStatusMessage => IsVideoStatusVisible && !HasPlayerError;
 
     public bool SuppressVideoSurface
     {
@@ -262,7 +288,10 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         private set
         {
             if (SetProperty(ref _playerErrorMessage, value))
+            {
                 OnPropertyChanged(nameof(HasPlayerError));
+                OnPropertyChanged(nameof(ShowStatusMessage));
+            }
         }
     }
 
@@ -374,10 +403,20 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         if (!IsPlayerAvailable || MediaPlayer is null || _libVlc is null)
         {
-            StatusMessage = "Video player could not be initialized.";
+            _pendingSourceLoad = !_hasAttemptedPlayerInitialization
+                ? (_sourcePath, duration, selection)
+                : null;
+            PlayerErrorMessage = _hasAttemptedPlayerInitialization
+                ? PlayerErrorMessage
+                : null;
+            StatusMessage = _hasAttemptedPlayerInitialization
+                ? "Video player could not be initialized."
+                : "Preparing video preview...";
             OnPropertyChanged(nameof(LoadedFileName));
             return;
         }
+
+        _pendingSourceLoad = null;
 
         try
         {
@@ -404,6 +443,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     public void Clear()
     {
         CancelPendingSeekInteraction();
+        _pendingSourceLoad = null;
 
         DetachCurrentMedia();
         _sourcePath = null;
@@ -415,10 +455,11 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         SetTimelineFromPlayer(TimeSpan.Zero);
         _selectionStart = TimeSpan.Zero;
         _selectionEnd = TimeSpan.Zero;
-        PlayerErrorMessage = IsPlayerAvailable ? null : PlayerErrorMessage;
-        StatusMessage = IsPlayerAvailable
-            ? "Select a video to preview it."
-            : "Video player could not be initialized.";
+        bool hasInitializationFailure = _hasAttemptedPlayerInitialization && !IsPlayerAvailable;
+        PlayerErrorMessage = hasInitializationFailure ? PlayerErrorMessage : null;
+        StatusMessage = hasInitializationFailure
+            ? "Video player could not be initialized."
+            : "Select a video to preview it.";
         OnPropertyChanged(nameof(LoadedFileName));
         OnPropertyChanged(nameof(SelectedRangeDisplay));
     }

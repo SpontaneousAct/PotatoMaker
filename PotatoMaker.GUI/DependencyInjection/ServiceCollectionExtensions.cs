@@ -30,7 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IVideoEncodingService, VideoEncodingService>();
         services.AddSingleton<IEncoderCapabilityService, EncoderCapabilityService>();
 
-        services.AddTransient(_ => new VideoPlayerViewModel(initializePlayer: true));
+        services.AddTransient(_ => new VideoPlayerViewModel(initializePlayer: false));
         services.AddTransient<EncodeWorkspaceViewModel>();
         services.AddTransient<MainWindowViewModel>();
         services.AddTransient<MainWindow>();

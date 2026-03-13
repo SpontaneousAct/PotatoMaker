@@ -1,4 +1,5 @@
 using System.Reflection;
+using PotatoMaker.Core;
 using PotatoMaker.GUI.ViewModels;
 using Xunit;
 
@@ -100,5 +101,39 @@ public sealed class VideoPlayerViewModelTests
             [currentTimeMilliseconds, targetTimeMilliseconds, direction]));
 
         Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void LoadSource_BeforeInitialization_ShowsDeferredLoadingState()
+    {
+        var viewModel = new VideoPlayerViewModel(initializePlayer: false);
+
+        viewModel.LoadSource(
+            @"C:\videos\startup.mp4",
+            TimeSpan.FromSeconds(95),
+            VideoClipRange.Full(TimeSpan.FromSeconds(95)));
+
+        Assert.Equal("startup.mp4", viewModel.LoadedFileName);
+        Assert.Equal(95, viewModel.DurationSeconds);
+        Assert.False(viewModel.HasMedia);
+        Assert.Equal("Preparing video preview...", viewModel.StatusMessage);
+        Assert.Null(viewModel.PlayerErrorMessage);
+    }
+
+    [Fact]
+    public void Clear_BeforeInitialization_RestoresIdleStatus()
+    {
+        var viewModel = new VideoPlayerViewModel(initializePlayer: false);
+
+        viewModel.LoadSource(
+            @"C:\videos\startup.mp4",
+            TimeSpan.FromSeconds(95),
+            VideoClipRange.Full(TimeSpan.FromSeconds(95)));
+
+        viewModel.Clear();
+
+        Assert.Equal("No video selected", viewModel.LoadedFileName);
+        Assert.Equal("Select a video to preview it.", viewModel.StatusMessage);
+        Assert.Null(viewModel.PlayerErrorMessage);
     }
 }

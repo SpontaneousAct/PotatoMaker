@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using PotatoMaker.Core;
 using PotatoMaker.GUI.ViewModels;
 
@@ -27,6 +28,8 @@ public partial class VideoPlayerView : UserControl
     private readonly Border _trimEndHandle;
     private readonly Border _timelineThumb;
     private readonly Border _playerDropZone;
+    private bool _deferredPlayerInitializationQueued;
+    private bool _isLoaded;
     private DragTarget _activeDragTarget;
 
     public VideoPlayerView()
@@ -72,6 +75,7 @@ public partial class VideoPlayerView : UserControl
         _workspace = DataContext as EncodeWorkspaceViewModel;
         Subscribe(_workspace);
         AttachFilePickerHandler(_workspace);
+        RequestDeferredPlayerInitialization();
         UpdateTimelineVisuals();
         base.OnDataContextChanged(e);
     }
@@ -79,11 +83,14 @@ public partial class VideoPlayerView : UserControl
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
+        _isLoaded = true;
         AttachFilePickerHandler(_workspace);
+        RequestDeferredPlayerInitialization();
     }
 
     protected override void OnUnloaded(RoutedEventArgs e)
     {
+        _isLoaded = false;
         base.OnUnloaded(e);
         DetachFilePickerHandler(_workspace);
     }
@@ -191,6 +198,25 @@ public partial class VideoPlayerView : UserControl
     {
         if (workspace?.FileInput.FilePickerRequested == OpenFilePickerAsync)
             workspace.FileInput.FilePickerRequested = null;
+    }
+
+    private void RequestDeferredPlayerInitialization()
+    {
+        if (!_isLoaded || _workspace is null || _deferredPlayerInitializationQueued)
+            return;
+
+        _deferredPlayerInitializationQueued = true;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                _deferredPlayerInitializationQueued = false;
+
+                if (_isLoaded)
+                    _workspace?.VideoPlayer.EnsureInitialized();
+            }, DispatcherPriority.Render);
+        }, DispatcherPriority.Background);
     }
 
     private void OnObservedPropertyChanged(object? sender, PropertyChangedEventArgs e)
