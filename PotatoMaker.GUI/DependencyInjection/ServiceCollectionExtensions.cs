@@ -29,6 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IVideoAnalysisService, VideoAnalysisService>();
         services.AddSingleton<IVideoEncodingService, VideoEncodingService>();
         services.AddSingleton<IEncoderCapabilityService, EncoderCapabilityService>();
+        services.AddSingleton<IEncodeCompletionNotifier, WindowsEncodeCompletionNotifier>();
 
         services.AddTransient(_ => new VideoPlayerViewModel(initializePlayer: false));
         services.AddTransient<EncodeWorkspaceViewModel>();

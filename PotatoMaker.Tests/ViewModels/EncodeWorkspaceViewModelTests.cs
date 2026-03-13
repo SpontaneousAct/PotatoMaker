@@ -211,6 +211,103 @@ public sealed class EncodeWorkspaceViewModelTests
     }
 
     [Fact]
+    public async Task SuccessfulEncode_NotifiesCompletion()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var notifier = new RecordingEncodeCompletionNotifier();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false,
+                notifier);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            await workspace.StartEncodeCommand.ExecuteAsync(null);
+
+            Assert.Equal(1, notifier.NotificationCount);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task CancelledEncode_DoesNotNotifyCompletion()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var notifier = new RecordingEncodeCompletionNotifier();
+            var encodingService = new BlockingEncodingService();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                encodingService,
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false,
+                notifier);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            Task encodeTask = workspace.StartEncodeCommand.ExecuteAsync(null);
+            await encodingService.WaitForStartAsync();
+            workspace.CancelEncodeCommand.Execute(null);
+            await encodeTask;
+
+            Assert.Equal(0, notifier.NotificationCount);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task FailedEncode_DoesNotNotifyCompletion()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var notifier = new RecordingEncodeCompletionNotifier();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new ThrowingEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false,
+                notifier);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            await workspace.StartEncodeCommand.ExecuteAsync(null);
+
+            Assert.Equal(0, notifier.NotificationCount);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task TrimCommands_UseCurrentPlaybackPosition()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
@@ -810,9 +907,29 @@ public sealed class EncodeWorkspaceViewModelTests
         public Task WaitForStartAsync() => _startTcs.Task;
     }
 
+    private sealed class ThrowingEncodingService : IVideoEncodingService
+    {
+        public Task RunAsync(
+            EncodeRequest request,
+            Microsoft.Extensions.Logging.ILogger<ProcessingPipeline> logger,
+            IProgress<EncodeProgress>? progress = null,
+            CancellationToken ct = default) =>
+            Task.FromException(new InvalidOperationException("Encode failed."));
+    }
+
     private sealed class StaticEncoderCapabilityService : IEncoderCapabilityService
     {
         public Task<bool> IsAv1NvencSupportedAsync(CancellationToken ct = default) => Task.FromResult(true);
+    }
+
+    private sealed class RecordingEncodeCompletionNotifier : IEncodeCompletionNotifier
+    {
+        public int NotificationCount { get; private set; }
+
+        public void NotifyEncodeSucceeded()
+        {
+            NotificationCount++;
+        }
     }
 
     private sealed class RecordingSettingsCoordinator : IAppSettingsCoordinator

@@ -15,6 +15,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private readonly IVideoAnalysisService _analysisService;
     private readonly IVideoEncodingService _encodingService;
     private readonly IEncoderCapabilityService _encoderCapabilityService;
+    private readonly IEncodeCompletionNotifier _encodeCompletionNotifier;
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
     private readonly bool _initializeEncoderSupport;
     private CancellationTokenSource? _encodeCts;
@@ -31,7 +32,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             new VideoPlayerViewModel(initializePlayer: false),
             new EncoderCapabilityService(),
             null,
-            initializeEncoderSupport: true)
+            initializeEncoderSupport: true,
+            NoOpEncodeCompletionNotifier.Instance)
     {
     }
 
@@ -40,14 +42,16 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         IVideoEncodingService encodingService,
         IEncoderCapabilityService encoderCapabilityService,
         IAppSettingsCoordinator? settingsCoordinator,
-        bool initializeEncoderSupport = true)
+        bool initializeEncoderSupport = true,
+        IEncodeCompletionNotifier? encodeCompletionNotifier = null)
         : this(
             analysisService,
             encodingService,
             new VideoPlayerViewModel(initializePlayer: false),
             encoderCapabilityService,
             settingsCoordinator,
-            initializeEncoderSupport)
+            initializeEncoderSupport,
+            encodeCompletionNotifier)
     {
     }
 
@@ -57,12 +61,14 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         VideoPlayerViewModel videoPlayer,
         IEncoderCapabilityService encoderCapabilityService,
         IAppSettingsCoordinator? settingsCoordinator,
-        bool initializeEncoderSupport = true)
+        bool initializeEncoderSupport = true,
+        IEncodeCompletionNotifier? encodeCompletionNotifier = null)
     {
         _analysisService = analysisService;
         _encodingService = encodingService;
         VideoPlayer = videoPlayer;
         _encoderCapabilityService = encoderCapabilityService;
+        _encodeCompletionNotifier = encodeCompletionNotifier ?? NoOpEncodeCompletionNotifier.Instance;
         _settingsCoordinator = settingsCoordinator;
         _initializeEncoderSupport = initializeEncoderSupport;
 
@@ -141,6 +147,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 encodeCts.Token);
 
             ConversionLog.AddLog("Done!");
+            _encodeCompletionNotifier.NotifyEncodeSucceeded();
         }
         catch (OperationCanceledException)
         {
