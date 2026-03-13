@@ -63,6 +63,8 @@ namespace PotatoMaker.GUI
 
     internal sealed class Program
     {
+        internal static WindowsSingleInstanceManager? SingleInstanceManager { get; private set; }
+
         // Initialization code. Don't use any Avalonia, third-party APIs or any
         // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
         // yet and stuff might break.
@@ -76,8 +78,26 @@ namespace PotatoMaker.GUI
                 .OnAfterUpdateFastCallback(_ => WindowsFileContextMenuRegistration.RegisterForInstalledApp())
                 .OnBeforeUninstallFastCallback(_ => WindowsFileContextMenuRegistration.RemoveForInstalledApp())
                 .Run();
+
+            SingleInstanceManager = WindowsSingleInstanceManager.Create(args);
+            if (SingleInstanceManager is { IsPrimaryInstance: false })
+            {
+                SingleInstanceManager.Dispose();
+                SingleInstanceManager = null;
+                return;
+            }
+
             FFmpegBinaries.EnsureConfigured();
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+
+            try
+            {
+                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            }
+            finally
+            {
+                SingleInstanceManager?.Dispose();
+                SingleInstanceManager = null;
+            }
         }
 
         // Avalonia configuration, don't remove; also used by visual designer.

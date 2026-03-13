@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using PotatoMaker.GUI.DependencyInjection;
 using PotatoMaker.GUI.Services;
@@ -41,7 +42,23 @@ public partial class App : Application
 
             if (mainWindow.DataContext is MainWindowViewModel viewModel)
             {
-                viewModel.TryLoadStartupFiles(desktop.Args ?? []);
+                viewModel.OpenExternalFiles(desktop.Args ?? []);
+
+                if (Program.SingleInstanceManager is { IsPrimaryInstance: true } singleInstanceManager)
+                {
+                    singleInstanceManager.RegisterActivationHandler(args =>
+                    {
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            if (mainWindow.DataContext is not MainWindowViewModel currentViewModel)
+                                return;
+
+                            currentViewModel.OpenExternalFiles(args);
+                            WindowsWindowActivation.Activate(mainWindow);
+                        });
+                    });
+                }
+
                 _ = viewModel.InitializeAsync();
             }
         }

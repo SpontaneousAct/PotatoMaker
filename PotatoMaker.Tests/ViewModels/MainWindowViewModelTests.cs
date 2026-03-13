@@ -77,6 +77,63 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void OpeningExternalFiles_LoadsVideoAndReturnsToMainView()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var workspace = new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            var viewModel = new MainWindowViewModel(
+                workspace,
+                new RecordingThemeService(),
+                null,
+                null);
+
+            viewModel.ShowSettingsViewCommand.Execute(null);
+
+            bool loaded = viewModel.OpenExternalFiles(["--flag", inputPath]);
+
+            Assert.True(loaded);
+            Assert.True(viewModel.IsMainViewSelected);
+            Assert.Equal(Path.GetFullPath(inputPath), workspace.FileInput.InputFilePath);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public void OpeningExternalFiles_WithoutArguments_DoesNotChangeCurrentView()
+    {
+        var viewModel = new MainWindowViewModel(
+            new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false),
+            new RecordingThemeService(),
+            null,
+            null);
+
+        viewModel.ShowHelpViewCommand.Execute(null);
+
+        bool loaded = viewModel.OpenExternalFiles([]);
+
+        Assert.False(loaded);
+        Assert.True(viewModel.IsHelpViewSelected);
+    }
+
+    [Fact]
     public async Task SpaceShortcut_IsIgnoredWhenPlaybackCommandIsUnavailable()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");

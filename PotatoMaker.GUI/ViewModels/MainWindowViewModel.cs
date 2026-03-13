@@ -176,6 +176,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         return false;
     }
 
+    public bool OpenExternalFiles(IEnumerable<string> args)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+
+        string[] candidates = args
+            .Where(argument => !string.IsNullOrWhiteSpace(argument))
+            .ToArray();
+
+        bool loaded = TryLoadStartupFiles(candidates);
+        if (loaded || candidates.Length > 0)
+            SelectedView = ShellViewKind.Main;
+
+        return loaded;
+    }
+
     public async Task InitializeAsync()
     {
         try
