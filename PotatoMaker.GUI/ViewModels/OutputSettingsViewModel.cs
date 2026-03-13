@@ -19,6 +19,21 @@ public sealed class CpuEncodePresetOption
     public override string ToString() => Label;
 }
 
+public sealed class FrameRateOption
+{
+    public FrameRateOption(EncodeFrameRateMode value, string label)
+    {
+        Value = value;
+        Label = label;
+    }
+
+    public EncodeFrameRateMode Value { get; }
+
+    public string Label { get; }
+
+    public override string ToString() => Label;
+}
+
 /// <summary>
 /// Stores output folder, file naming, and encoder preferences.
 /// </summary>
@@ -34,6 +49,7 @@ public partial class OutputSettingsViewModel : ViewModelBase
     public OutputSettingsViewModel()
     {
         SelectedCpuEncodePreset = CpuEncodePresetOptions.First(option => option.Value == EncodeSettings.DefaultSvtAv1Preset);
+        SelectedFrameRateOption = FrameRateOptions.First(option => option.Value == EncodeSettings.DefaultFrameRateMode);
     }
 
     [ObservableProperty]
@@ -42,6 +58,10 @@ public partial class OutputSettingsViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CpuEncodePreset))]
     private CpuEncodePresetOption? _selectedCpuEncodePreset;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FrameRateMode))]
+    private FrameRateOption? _selectedFrameRateOption;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanUseNvenc))]
@@ -95,7 +115,11 @@ public partial class OutputSettingsViewModel : ViewModelBase
 
     public IReadOnlyList<CpuEncodePresetOption> CpuEncodePresetOptions { get; } = CreateCpuEncodePresetOptions();
 
+    public IReadOnlyList<FrameRateOption> FrameRateOptions { get; } = CreateFrameRateOptions();
+
     public int CpuEncodePreset => SelectedCpuEncodePreset?.Value ?? EncodeSettings.DefaultSvtAv1Preset;
+
+    public EncodeFrameRateMode FrameRateMode => SelectedFrameRateOption?.Value ?? EncodeSettings.DefaultFrameRateMode;
 
     public bool CanResetOutputFolder =>
         !string.IsNullOrWhiteSpace(CustomOutputFolder) &&
@@ -159,6 +183,12 @@ public partial class OutputSettingsViewModel : ViewModelBase
             .First();
     }
 
+    public void SetFrameRateMode(EncodeFrameRateMode mode)
+    {
+        SelectedFrameRateOption = FrameRateOptions.FirstOrDefault(option => option.Value == mode)
+            ?? FrameRateOptions[0];
+    }
+
     private static string? NormalizeFolderPath(string? folder)
     {
         if (string.IsNullOrWhiteSpace(folder))
@@ -185,6 +215,13 @@ public partial class OutputSettingsViewModel : ViewModelBase
         AvailableCpuPresets
             .Select(CreateCpuEncodePresetOption)
             .ToArray();
+
+    private static IReadOnlyList<FrameRateOption> CreateFrameRateOptions() =>
+    [
+        new FrameRateOption(EncodeFrameRateMode.Fps30, "30 FPS"),
+        new FrameRateOption(EncodeFrameRateMode.Fps60, "60 FPS"),
+        new FrameRateOption(EncodeFrameRateMode.Original, "Leave As Original")
+    ];
 
     private static CpuEncodePresetOption CreateCpuEncodePresetOption(int preset)
     {

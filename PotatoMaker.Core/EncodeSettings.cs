@@ -9,6 +9,8 @@ public record EncodeSettings
 
     public const string DefaultOutputNameSuffix = "_discord";
 
+    public const EncodeFrameRateMode DefaultFrameRateMode = EncodeFrameRateMode.Original;
+
     public const int MinSvtAv1Preset = 0;
 
     public const int MaxSvtAv1Preset = 13;
@@ -20,6 +22,8 @@ public record EncodeSettings
     public string OutputNamePrefix { get; init; } = DefaultOutputNamePrefix;
 
     public string OutputNameSuffix { get; init; } = DefaultOutputNameSuffix;
+
+    public EncodeFrameRateMode FrameRateMode { get; init; } = DefaultFrameRateMode;
 
     public double TargetSizeMb { get; init; } = 9.5;
 

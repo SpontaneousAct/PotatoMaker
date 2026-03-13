@@ -362,6 +362,8 @@ public sealed class MainWindowViewModelTests
             Task.FromResult(new PotatoMaker.Core.StrategyAnalysis(
                 inputPath,
                 null,
+                null,
+                0,
                 new PotatoMaker.Core.EncodePlanner.EncodePlan(1000, 1, null, "original")));
     }
 
@@ -382,6 +384,8 @@ public sealed class MainWindowViewModelTests
             var strategy = new PotatoMaker.Core.StrategyAnalysis(
                 Path.GetFullPath(inputPath),
                 "crop=1920:800:0:140",
+                PotatoMaker.Core.EncodePlanner.BuildFrameRateFilter(info.FrameRate, settings),
+                PotatoMaker.Core.EncodePlanner.ResolveOutputFrameRate(info.FrameRate, settings),
                 new PotatoMaker.Core.EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)"));
 
             lock (_strategies)

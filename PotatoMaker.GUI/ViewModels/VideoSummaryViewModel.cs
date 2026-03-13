@@ -20,6 +20,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
     [ObservableProperty] private string? _strategyResolution;
     [ObservableProperty] private string? _strategyBitrate;
     [ObservableProperty] private string? _strategyParts;
+    [ObservableProperty] private string? _strategyOutputFrameRate;
     [ObservableProperty] private string? _strategyCrop;
     [ObservableProperty] private string? _strategyFilter;
     [ObservableProperty] private bool _hasStrategy;
@@ -79,6 +80,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
             ? $"{plan.VideoBitrateKbps} kbps (per part)"
             : $"{plan.VideoBitrateKbps} kbps";
         StrategyParts = plan.Parts == 1 ? "Single file" : $"{plan.Parts} parts";
+        StrategyOutputFrameRate = analysis.OutputFrameRate > 0 ? $"{analysis.OutputFrameRate:0.##} fps" : "Original";
         StrategyCrop = string.IsNullOrWhiteSpace(analysis.CropFilter) ? "No crop detected" : analysis.CropFilter;
         StrategyFilter = analysis.VideoFilter ?? "None";
         HasStrategy = true;
@@ -92,6 +94,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
         StrategyResolution = null;
         StrategyBitrate = null;
         StrategyParts = null;
+        StrategyOutputFrameRate = null;
         StrategyCrop = null;
         StrategyFilter = null;
     }

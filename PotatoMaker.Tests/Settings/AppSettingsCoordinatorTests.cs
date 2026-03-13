@@ -17,6 +17,7 @@ public sealed class AppSettingsCoordinatorTests
                 UseNvencEncoder = true,
                 OutputNamePrefix = "",
                 OutputNameSuffix = "_discord",
+                FrameRateMode = PotatoMaker.Core.EncodeFrameRateMode.Original,
                 PreviewVolumePercent = 100,
                 SvtAv1Preset = 6,
                 LastOutputFolder = null
@@ -27,6 +28,7 @@ public sealed class AppSettingsCoordinatorTests
             IsDarkMode = true,
             OutputNamePrefix = "clip_",
             OutputNameSuffix = "_mobile",
+            FrameRateMode = PotatoMaker.Core.EncodeFrameRateMode.Fps30,
             PreviewVolumePercent = 42,
             SvtAv1Preset = 8,
             LastOutputFolder = "C:\\out"
@@ -35,6 +37,7 @@ public sealed class AppSettingsCoordinatorTests
         Assert.True(coordinator.Current.IsDarkMode);
         Assert.Equal("clip_", coordinator.Current.OutputNamePrefix);
         Assert.Equal("_mobile", coordinator.Current.OutputNameSuffix);
+        Assert.Equal(PotatoMaker.Core.EncodeFrameRateMode.Fps30, coordinator.Current.FrameRateMode);
         Assert.Equal(42, coordinator.Current.PreviewVolumePercent);
         Assert.Equal(8, coordinator.Current.SvtAv1Preset);
         Assert.Equal("C:\\out", coordinator.Current.LastOutputFolder);

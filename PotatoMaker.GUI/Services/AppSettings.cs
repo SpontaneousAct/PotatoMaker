@@ -15,6 +15,8 @@ public sealed record AppSettings
 
     public string OutputNameSuffix { get; init; } = EncodeSettings.DefaultOutputNameSuffix;
 
+    public EncodeFrameRateMode FrameRateMode { get; init; } = EncodeSettings.DefaultFrameRateMode;
+
     public double PreviewVolumePercent { get; init; } = 100;
 
     public int SvtAv1Preset { get; init; } = EncodeSettings.DefaultSvtAv1Preset;

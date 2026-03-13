@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Diagnostics;
 
 namespace PotatoMaker.GUI.Services;
@@ -25,6 +26,11 @@ public sealed class JsonAppSettingsService : IAppSettingsService
     {
         WriteIndented = true
     };
+
+    static JsonAppSettingsService()
+    {
+        JsonOptions.Converters.Add(new JsonStringEnumConverter());
+    }
 
     private readonly string _settingsPath;
     private readonly string _legacySettingsPath;

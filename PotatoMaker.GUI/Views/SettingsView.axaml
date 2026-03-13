@@ -70,6 +70,24 @@
                           ColumnDefinitions="*,220"
                           ColumnSpacing="16">
                         <StackPanel Spacing="2">
+                            <TextBlock Text="Encoded frame rate"
+                                       Classes="pm-settings-label"/>
+                            <TextBlock Text="Cap the output at 30 FPS, 60 FPS, or keep the source cadence. Lower caps help the planner spend the same upload budget more efficiently."
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding OutputSettings.FrameRateOptions}"
+                                  SelectedItem="{Binding OutputSettings.SelectedFrameRateOption}"
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Classes="pm-settings-row"
+                          ColumnDefinitions="*,220"
+                          ColumnSpacing="16">
+                        <StackPanel Spacing="2">
                             <TextBlock Text="CPU preset"
                                        Classes="pm-settings-label"/>
                             <TextBlock Text="Controls CPU encode speed when NVENC is unavailable or turned off."

@@ -270,34 +270,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             return;
 
         VideoPlayer.SetSelection(ClipRange.Selection);
-
-        CancelPendingPreview();
-        var previewCts = new CancellationTokenSource();
-        _previewCts = previewCts;
-        int previewVersion = Interlocked.Increment(ref _previewVersion);
-
-        try
-        {
-            await RefreshStrategyPreviewAsync(path, info, previewCts, previewVersion);
-        }
-        catch (OperationCanceledException) when (previewCts.IsCancellationRequested)
-        {
-        }
-        catch (Exception ex)
-        {
-            if (previewVersion != _previewVersion)
-                return;
-
-            VideoSummary.ClearStrategy();
-            ConversionLog.AddLog($"Error building strategy preview: {ex.Message}");
-        }
-        finally
-        {
-            if (ReferenceEquals(_previewCts, previewCts))
-                _previewCts = null;
-
-            previewCts.Dispose();
-        }
+        await RefreshStrategyPreviewForCurrentStateAsync(path, info);
     }
 
     private void OnTrimBoundaryRequested(ClipBoundary boundary)
@@ -395,10 +368,19 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         if (e.PropertyName is nameof(OutputSettingsViewModel.UseNvencEncoder)
             or nameof(OutputSettingsViewModel.CustomOutputFolder)
             or nameof(OutputSettingsViewModel.SelectedCpuEncodePreset)
+            or nameof(OutputSettingsViewModel.SelectedFrameRateOption)
             or nameof(OutputSettingsViewModel.OutputNamePrefix)
             or nameof(OutputSettingsViewModel.OutputNameSuffix))
         {
             PersistWorkspaceSettingsSafely();
+        }
+
+        if (!_isApplyingSettings &&
+            e.PropertyName == nameof(OutputSettingsViewModel.SelectedFrameRateOption) &&
+            FileInput.InputFilePath is { } path &&
+            VideoSummary.Info is { } info)
+        {
+            _ = RefreshStrategyPreviewForCurrentStateAsync(path, info);
         }
     }
 
@@ -419,6 +401,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             OutputSettings.UseNvencEncoder = settings.UseNvencEncoder;
             OutputSettings.OutputNamePrefix = settings.OutputNamePrefix;
             OutputSettings.OutputNameSuffix = settings.OutputNameSuffix;
+            OutputSettings.SetFrameRateMode(settings.FrameRateMode);
             OutputSettings.SetCpuEncodePreset(settings.SvtAv1Preset);
             VideoPlayer.VolumePercent = settings.PreviewVolumePercent;
         }
@@ -435,6 +418,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             : EncoderChoice.SvtAv1,
         OutputNamePrefix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNamePrefix),
         OutputNameSuffix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNameSuffix),
+        FrameRateMode = OutputSettings.FrameRateMode,
         SvtAv1Preset = OutputSettings.CpuEncodePreset
     };
 
@@ -478,6 +462,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 UseNvencEncoder = OutputSettings.UseNvencEncoder,
                 OutputNamePrefix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNamePrefix),
                 OutputNameSuffix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNameSuffix),
+                FrameRateMode = OutputSettings.FrameRateMode,
                 PreviewVolumePercent = VideoPlayer.VolumePercent,
                 SvtAv1Preset = OutputSettings.CpuEncodePreset,
                 LastOutputFolder = OutputSettings.CustomOutputFolder
@@ -503,6 +488,37 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private void UpdateSourceSelectionState()
     {
         FileInput.IsSourceSelectionLocked = ConversionLog.IsProcessing;
+    }
+
+    private async Task RefreshStrategyPreviewForCurrentStateAsync(string path, VideoInfo info)
+    {
+        CancelPendingPreview();
+        var previewCts = new CancellationTokenSource();
+        _previewCts = previewCts;
+        int previewVersion = Interlocked.Increment(ref _previewVersion);
+
+        try
+        {
+            await RefreshStrategyPreviewAsync(path, info, previewCts, previewVersion);
+        }
+        catch (OperationCanceledException) when (previewCts.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (previewVersion != _previewVersion)
+                return;
+
+            VideoSummary.ClearStrategy();
+            ConversionLog.AddLog($"Error building strategy preview: {ex.Message}");
+        }
+        finally
+        {
+            if (ReferenceEquals(_previewCts, previewCts))
+                _previewCts = null;
+
+            previewCts.Dispose();
+        }
     }
 
     public void Dispose()

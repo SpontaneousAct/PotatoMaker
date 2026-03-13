@@ -53,6 +53,7 @@ public sealed class JsonAppSettingsServiceTests
                 UseNvencEncoder = false,
                 OutputNamePrefix = "potato_",
                 OutputNameSuffix = "_share",
+                FrameRateMode = PotatoMaker.Core.EncodeFrameRateMode.Fps30,
                 PreviewVolumePercent = 42,
                 SvtAv1Preset = 8,
                 LastOutputFolder = "C:\\encoded"
@@ -67,6 +68,7 @@ public sealed class JsonAppSettingsServiceTests
             Assert.False(settings.UseNvencEncoder);
             Assert.Equal("potato_", settings.OutputNamePrefix);
             Assert.Equal("_share", settings.OutputNameSuffix);
+            Assert.Equal(PotatoMaker.Core.EncodeFrameRateMode.Fps30, settings.FrameRateMode);
             Assert.Equal(42, settings.PreviewVolumePercent);
             Assert.Equal(8, settings.SvtAv1Preset);
             Assert.Equal("C:\\encoded", settings.LastOutputFolder);

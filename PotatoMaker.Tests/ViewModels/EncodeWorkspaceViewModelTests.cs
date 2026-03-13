@@ -33,6 +33,7 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal("1920x1080", workspace.VideoSummary.Resolution);
             Assert.Equal("0:00.0 - 1:35.0", workspace.VideoSummary.SelectedRange);
             Assert.Equal("1:35.0", workspace.VideoSummary.SelectedDuration);
+            Assert.Equal("59.94 fps", workspace.VideoSummary.StrategyOutputFrameRate);
             Assert.Equal("crop=1920:800:0:140", workspace.VideoSummary.StrategyCrop);
             Assert.Equal("crop=1920:800:0:140,scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
         }
@@ -105,6 +106,7 @@ public sealed class EncodeWorkspaceViewModelTests
 
             workspace.OutputSettings.UseNvencEncoder = false;
             workspace.OutputSettings.SetCpuEncodePreset(10);
+            workspace.OutputSettings.SetFrameRateMode(EncodeFrameRateMode.Fps30);
             workspace.OutputSettings.OutputNamePrefix = "share_";
             workspace.OutputSettings.OutputNameSuffix = "_mobile";
 
@@ -116,6 +118,7 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal(EncoderChoice.SvtAv1, request.Settings.Encoder);
             Assert.Equal("share_", request.Settings.OutputNamePrefix);
             Assert.Equal("_mobile", request.Settings.OutputNameSuffix);
+            Assert.Equal(EncodeFrameRateMode.Fps30, request.Settings.FrameRateMode);
             Assert.Equal(10, request.Settings.SvtAv1Preset);
         }
         finally
@@ -261,6 +264,7 @@ public sealed class EncodeWorkspaceViewModelTests
                 UseNvencEncoder = true,
                 OutputNamePrefix = "",
                 OutputNameSuffix = "_discord",
+                FrameRateMode = EncodeFrameRateMode.Original,
                 PreviewVolumePercent = 100,
                 SvtAv1Preset = 6,
                 LastOutputFolder = null
@@ -293,6 +297,7 @@ public sealed class EncodeWorkspaceViewModelTests
             UseNvencEncoder = true,
             OutputNamePrefix = "",
             OutputNameSuffix = "_discord",
+            FrameRateMode = EncodeFrameRateMode.Original,
             PreviewVolumePercent = 100,
             SvtAv1Preset = 6
         });
@@ -316,6 +321,7 @@ public sealed class EncodeWorkspaceViewModelTests
     {
         const double initialVolume = 37;
         const int initialPreset = 10;
+        const EncodeFrameRateMode initialFrameRateMode = EncodeFrameRateMode.Fps30;
         var player = new VideoPlayerViewModel(initializePlayer: false);
         var workspace = new EncodeWorkspaceViewModel(
             new RecordingAnalysisService(),
@@ -328,6 +334,7 @@ public sealed class EncodeWorkspaceViewModelTests
                 UseNvencEncoder = false,
                 OutputNamePrefix = "clip_",
                 OutputNameSuffix = "_mobile",
+                FrameRateMode = initialFrameRateMode,
                 PreviewVolumePercent = initialVolume,
                 SvtAv1Preset = initialPreset,
                 LastOutputFolder = "C:\\encoded"
@@ -339,6 +346,7 @@ public sealed class EncodeWorkspaceViewModelTests
         Assert.False(workspace.OutputSettings.UseNvencEncoder);
         Assert.Equal("clip_", workspace.OutputSettings.OutputNamePrefix);
         Assert.Equal("_mobile", workspace.OutputSettings.OutputNameSuffix);
+        Assert.Equal(initialFrameRateMode, workspace.OutputSettings.FrameRateMode);
         Assert.Equal("C:\\encoded", workspace.OutputSettings.CustomOutputFolder);
     }
 
@@ -351,6 +359,7 @@ public sealed class EncodeWorkspaceViewModelTests
             UseNvencEncoder = true,
             OutputNamePrefix = "",
             OutputNameSuffix = "_discord",
+            FrameRateMode = EncodeFrameRateMode.Original,
             PreviewVolumePercent = 100,
             SvtAv1Preset = 6
         });
@@ -378,6 +387,7 @@ public sealed class EncodeWorkspaceViewModelTests
             UseNvencEncoder = true,
             OutputNamePrefix = "",
             OutputNameSuffix = "_discord",
+            FrameRateMode = EncodeFrameRateMode.Original,
             PreviewVolumePercent = 100,
             SvtAv1Preset = 6
         });
@@ -393,6 +403,50 @@ public sealed class EncodeWorkspaceViewModelTests
         AppSettings persisted = await settingsCoordinator.WaitForUpdateAsync();
 
         Assert.Equal(10, persisted.SvtAv1Preset);
+    }
+
+    [Fact]
+    public async Task ChangingFrameRateMode_RebuildsStrategyAndPersistsThroughCoordinator()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
+            {
+                IsDarkMode = false,
+                UseNvencEncoder = true,
+                OutputNamePrefix = "",
+                OutputNameSuffix = "_discord",
+                FrameRateMode = EncodeFrameRateMode.Original,
+                PreviewVolumePercent = 100,
+                SvtAv1Preset = 6
+            });
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                settingsCoordinator,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            workspace.OutputSettings.SetFrameRateMode(EncodeFrameRateMode.Fps30);
+
+            await analysisService.WaitForStrategyCountAsync(2);
+            AppSettings persisted = await settingsCoordinator.WaitForUpdateAsync();
+
+            Assert.Equal(EncodeFrameRateMode.Fps30, analysisService.LastRequestedSettings?.FrameRateMode);
+            Assert.Equal(EncodeFrameRateMode.Fps30, persisted.FrameRateMode);
+            Assert.Equal("30 fps", workspace.VideoSummary.StrategyOutputFrameRate);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
     }
 
     [Fact]
@@ -490,6 +544,8 @@ public sealed class EncodeWorkspaceViewModelTests
 
         public VideoClipRange? LastRequestedClipRange { get; private set; }
 
+        public EncodeSettings? LastRequestedSettings { get; private set; }
+
         public Task<StrategyAnalysis> AnalyzeStrategyAsync(
             string inputPath,
             VideoInfo info,
@@ -498,9 +554,12 @@ public sealed class EncodeWorkspaceViewModelTests
             CancellationToken ct = default)
         {
             LastRequestedClipRange = clipRange;
+            LastRequestedSettings = settings;
             var strategy = new StrategyAnalysis(
                 Path.GetFullPath(inputPath),
                 "crop=1920:800:0:140",
+                EncodePlanner.BuildFrameRateFilter(info.FrameRate, settings),
+                EncodePlanner.ResolveOutputFrameRate(info.FrameRate, settings),
                 new EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)"));
 
             lock (_strategies)
@@ -578,7 +637,7 @@ public sealed class EncodeWorkspaceViewModelTests
 
     private sealed class RecordingSettingsCoordinator : IAppSettingsCoordinator
     {
-        private readonly TaskCompletionSource<AppSettings> _updateTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private TaskCompletionSource<AppSettings> _updateTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public RecordingSettingsCoordinator(AppSettings initialSettings)
         {
@@ -594,6 +653,11 @@ public sealed class EncodeWorkspaceViewModelTests
             return Task.CompletedTask;
         }
 
-        public Task<AppSettings> WaitForUpdateAsync() => _updateTcs.Task;
+        public async Task<AppSettings> WaitForUpdateAsync()
+        {
+            AppSettings settings = await _updateTcs.Task;
+            _updateTcs = new TaskCompletionSource<AppSettings>(TaskCreationOptions.RunContinuationsAsynchronously);
+            return settings;
+        }
     }
 }

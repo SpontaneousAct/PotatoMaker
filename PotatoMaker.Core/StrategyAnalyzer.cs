@@ -8,9 +8,11 @@ namespace PotatoMaker.Core;
 public sealed record StrategyAnalysis(
     string InputPath,
     string? CropFilter,
+    string? FrameRateFilter,
+    double OutputFrameRate,
     EncodePlanner.EncodePlan Plan)
 {
-    public string? VideoFilter => EncodePlanner.BuildVideoFilter(CropFilter, Plan.ScaleFilter);
+    public string? VideoFilter => EncodePlanner.BuildVideoFilter(CropFilter, Plan.ScaleFilter, FrameRateFilter);
 }
 
 /// <summary>
@@ -46,8 +48,10 @@ public static class StrategyAnalyzer
                 ct);
 
         int sourceHeightForPlan = EncodePlanner.ResolveSourceHeightForPlan(info.Height, cropFilter);
-        var plan = EncodePlanner.PlanStrategy(effectiveDuration.TotalSeconds, sourceHeightForPlan, settings);
+        double outputFrameRate = EncodePlanner.ResolveOutputFrameRate(info.FrameRate, settings);
+        string? frameRateFilter = EncodePlanner.BuildFrameRateFilter(info.FrameRate, settings);
+        var plan = EncodePlanner.PlanStrategy(effectiveDuration.TotalSeconds, sourceHeightForPlan, info.FrameRate, settings);
 
-        return new StrategyAnalysis(fullPath, cropFilter, plan);
+        return new StrategyAnalysis(fullPath, cropFilter, frameRateFilter, outputFrameRate, plan);
     }
 }

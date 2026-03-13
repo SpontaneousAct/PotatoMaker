@@ -98,7 +98,7 @@
 
             <Grid Grid.Row="3"
                   ColumnDefinitions="*,*"
-                  RowDefinitions="Auto,Auto,Auto"
+                  RowDefinitions="Auto,Auto,Auto,Auto"
                   RowSpacing="6"
                   ColumnSpacing="6">
                 <StackPanel Grid.Row="0"
@@ -128,12 +128,20 @@
                 <StackPanel Grid.Row="1"
                             Grid.Column="1"
                             Spacing="1">
+                    <TextBlock Text="Output FPS" Classes="pm-summary-caption"/>
+                    <TextBlock Text="{Binding StrategyOutputFrameRate, TargetNullValue=--}"
+                               Classes="pm-summary-value"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2"
+                            Grid.ColumnSpan="2"
+                            Spacing="1">
                     <TextBlock Text="Crop" Classes="pm-summary-caption"/>
                     <TextBlock Text="{Binding StrategyCrop, TargetNullValue=--}"
                                Classes="pm-summary-value"/>
                 </StackPanel>
 
-                <StackPanel Grid.Row="2"
+                <StackPanel Grid.Row="3"
                             Grid.ColumnSpan="2"
                             Spacing="1">
                     <TextBlock Text="FFmpeg filter" Classes="pm-summary-caption"/>
