@@ -41,6 +41,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private int _volumeBeforeInitialFramePrime;
     private bool _resumePlaybackAfterSeek;
     private bool _startedPlaybackForSeekPreview;
+    private bool _isSeekPreviewPausePending;
     private bool _temporarilyMutedForSeekPreview;
     private bool _hasAttemptedPlayerInitialization;
     private TimeSpan? _pendingSeekPreviewTarget;
@@ -508,16 +509,11 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         TimeSpan clampedPosition = ClampPosition(position);
         _pendingSeekPreviewTarget = clampedPosition;
 
-        if (_resumePlaybackAfterSeek)
-            PreparePlayerForSeekPreview(wasPlaying: true);
-        else
-            CancelPendingSeekFinalization();
+        PreparePlayerForSeekPreview(_resumePlaybackAfterSeek);
 
         SetTimelineFromPlayer(clampedPosition);
         QueueSeekDuringInteraction(clampedPosition);
-
-        if (!_resumePlaybackAfterSeek)
-            ScheduleSeekFinalization(clampedPosition);
+        ScheduleSeekFinalization(clampedPosition);
     }
 
     public void PreviewTrimPosition(TimeSpan position)
@@ -577,6 +573,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         {
             mediaPlayer.Playing -= OnMediaPlayerPlaying;
             mediaPlayer.EndReached -= OnMediaPlayerEndReached;
+            mediaPlayer.Paused -= OnMediaPlayerPaused;
         }
 
         try
@@ -623,6 +620,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             MediaPlayer = new MediaPlayer(_libVlc);
             MediaPlayer.Playing += OnMediaPlayerPlaying;
             MediaPlayer.EndReached += OnMediaPlayerEndReached;
+            MediaPlayer.Paused += OnMediaPlayerPaused;
             ApplyAudioSettings();
             IsPlayerAvailable = true;
             PlayerErrorMessage = null;
@@ -641,7 +639,10 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         if (MediaPlayer is null)
             return;
 
-        UpdatePlaybackState();
+        if (_isSeekPreviewPausePending && !MediaPlayer.IsPlaying)
+            FinalizeSeekPreviewPause();
+        else
+            UpdatePlaybackState();
 
         if (DurationSeconds <= 0 && MediaPlayer.Length > 0)
             DurationSeconds = MediaPlayer.Length / 1000d;
@@ -681,8 +682,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             mediaPlayerIsPlaying,
             _isPrimingInitialFrame,
             _isResettingToFirstFrame,
-            _startedPlaybackForSeekPreview,
-            _isSeekFinalizationPending);
+            IsSeekPreviewPlaybackManaged(),
+            _resumePlaybackAfterSeek);
     }
 
     private void SetMutedCore(bool value, bool applyAudio = true)
@@ -749,6 +750,14 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private void OnMediaPlayerEndReached(object? sender, EventArgs e)
     {
         Dispatcher.UIThread.Post(ResetAfterPlaybackEnded);
+    }
+
+    private void OnMediaPlayerPaused(object? sender, EventArgs e)
+    {
+        if (!_isSeekPreviewPausePending)
+            return;
+
+        Dispatcher.UIThread.Post(FinalizeSeekPreviewPause);
     }
 
     private void CompleteInitialFramePrime()
@@ -940,6 +949,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             return;
 
         CancelPendingSeekFinalization();
+        _isSeekPreviewPausePending = false;
 
         if (_isPrimingInitialFrame)
         {
@@ -948,7 +958,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             ApplyAudioSettings();
         }
 
-        if (wasPlaying && !_temporarilyMutedForSeekPreview)
+        if (!_temporarilyMutedForSeekPreview)
         {
             try
             {
@@ -960,9 +970,9 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             }
         }
 
-        _startedPlaybackForSeekPreview = false;
+        _startedPlaybackForSeekPreview = !wasPlaying;
 
-        if (wasPlaying && !MediaPlayer.IsPlaying)
+        if (!MediaPlayer.IsPlaying)
         {
             try
             {
@@ -979,6 +989,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private void RestorePlayerStateAfterSeekPreview()
     {
         _startedPlaybackForSeekPreview = false;
+        _isSeekPreviewPausePending = false;
         _pendingSeekPreviewTarget = null;
         _isSeekFinalizationPending = false;
 
@@ -1019,21 +1030,6 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             catch
             {
             }
-
-            try
-            {
-                MediaPlayer.SetPause(true);
-            }
-            catch
-            {
-                try
-                {
-                    MediaPlayer.Pause();
-                }
-                catch
-                {
-                }
-            }
         }
 
         CompleteSeekPreview(targetPosition, resumePlayback: false);
@@ -1044,6 +1040,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         _seekRequestThrottler.PendingSeek is not null ||
         _pendingSeekPreviewTarget is not null ||
         _isSeekFinalizationPending ||
+        _isSeekPreviewPausePending ||
         _startedPlaybackForSeekPreview;
 
     private void CompleteSeekPreview(TimeSpan targetPosition, bool resumePlayback)
@@ -1052,26 +1049,69 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         _pendingSeekPreviewTarget = targetPosition;
         SetTimelineFromPlayer(targetPosition);
 
-        if (!resumePlayback && MediaPlayer is not null)
+        if (resumePlayback && MediaPlayer is not null)
         {
+            _isSeekPreviewPausePending = false;
+
             try
             {
-                MediaPlayer.SetPause(true);
+                if (!MediaPlayer.IsPlaying)
+                    MediaPlayer.Play();
             }
             catch
             {
-                try
-                {
-                    MediaPlayer.Pause();
-                }
-                catch
-                {
-                }
+            }
+        }
+        else if (MediaPlayer is not null)
+        {
+            _isSeekPreviewPausePending = RequestPlayerPauseForSeekPreview();
+            if (_isSeekPreviewPausePending)
+            {
+                UpdatePlaybackState();
+                return;
             }
         }
 
         RestorePlayerStateAfterSeekPreview();
     }
+
+    private void FinalizeSeekPreviewPause()
+    {
+        if (!_isSeekPreviewPausePending)
+            return;
+
+        RestorePlayerStateAfterSeekPreview();
+    }
+
+    private bool RequestPlayerPauseForSeekPreview()
+    {
+        if (MediaPlayer is null)
+            return false;
+
+        try
+        {
+            MediaPlayer.SetPause(true);
+            return MediaPlayer.IsPlaying || _startedPlaybackForSeekPreview;
+        }
+        catch
+        {
+            try
+            {
+                MediaPlayer.Pause();
+                return MediaPlayer.IsPlaying || _startedPlaybackForSeekPreview;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    private bool IsSeekPreviewPlaybackManaged() =>
+        _isSeekInteractionActive ||
+        _startedPlaybackForSeekPreview ||
+        _isSeekPreviewPausePending ||
+        _isSeekFinalizationPending;
 
     private static bool ShouldIgnorePlayerTimelineUpdate(
         bool isSeekInteractionActive,
@@ -1103,13 +1143,17 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         bool mediaPlayerIsPlaying,
         bool isPrimingInitialFrame,
         bool isResettingToFirstFrame,
-        bool startedPlaybackForSeekPreview,
-        bool pauseAfterSeekPauseInFlight) =>
-        mediaPlayerIsPlaying &&
-        !isPrimingInitialFrame &&
-        !isResettingToFirstFrame &&
-        !startedPlaybackForSeekPreview &&
-        !pauseAfterSeekPauseInFlight;
+        bool isSeekPreviewPlaybackManaged,
+        bool resumePlaybackAfterSeek)
+    {
+        if (isPrimingInitialFrame || isResettingToFirstFrame)
+            return false;
+
+        if (isSeekPreviewPlaybackManaged)
+            return resumePlaybackAfterSeek;
+
+        return mediaPlayerIsPlaying;
+    }
 
     private static bool IsAtPlaybackEndPosition(double timelineSeconds, double durationSeconds) =>
         durationSeconds > 0 &&
