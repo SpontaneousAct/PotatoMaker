@@ -81,6 +81,89 @@ public sealed class EncodeWorkspaceViewModelTests
     }
 
     [Fact]
+    public async Task ChangingClipRange_UpdatesSummaryImmediatelyAndCoalescesStrategyRefresh()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            workspace.ClipRange.StartSeconds = 5;
+            workspace.ClipRange.EndSeconds = 80;
+            workspace.ClipRange.StartSeconds = 15;
+            workspace.ClipRange.EndSeconds = 45;
+
+            Assert.Equal("0:15.0 - 0:45.0", workspace.VideoSummary.SelectedRange);
+            Assert.Equal("0:30.0", workspace.VideoSummary.SelectedDuration);
+            await analysisService.WaitForStrategyCountAsync(5);
+
+            Assert.Equal(5, analysisService.StrategyCount);
+            Assert.Equal(TimeSpan.FromSeconds(15), analysisService.LastRequestedClipRange?.Start);
+            Assert.Equal(TimeSpan.FromSeconds(45), analysisService.LastRequestedClipRange?.End);
+            Assert.Equal(1, analysisService.DetectCropCallCount);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task ChangingClipRange_DuringCropDetection_KeepsPendingStateUntilCropCompletes()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new DelayedCropAnalysisService();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForCropDetectionRequestAsync();
+
+            workspace.ClipRange.StartSeconds = 15;
+            workspace.ClipRange.EndSeconds = 45;
+
+            Assert.Equal("0:15.0 - 0:45.0", workspace.VideoSummary.SelectedRange);
+            Assert.Equal("0:30.0", workspace.VideoSummary.SelectedDuration);
+            Assert.False(workspace.VideoSummary.HasStrategy);
+            Assert.Equal("Analyzing crop and strategy...", workspace.VideoSummary.StrategyStatus);
+            Assert.Null(workspace.VideoSummary.StrategyCrop);
+
+            analysisService.CompleteCropDetection("crop=1920:800:0:140");
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            Assert.True(workspace.VideoSummary.HasStrategy);
+            Assert.Equal("crop=1920:800:0:140", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal(TimeSpan.FromSeconds(15), analysisService.LastRequestedClipRange?.Start);
+            Assert.Equal(TimeSpan.FromSeconds(45), analysisService.LastRequestedClipRange?.End);
+            Assert.Equal(1, analysisService.DetectCropCallCount);
+            Assert.Equal(1, analysisService.StrategyCount);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task StartingEncode_ForwardsSelectedClipRange()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
@@ -542,14 +625,34 @@ public sealed class EncodeWorkspaceViewModelTests
         public Task<VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default) =>
             Task.FromResult(new VideoInfo(TimeSpan.FromSeconds(95), 1920, 1080, 59.94));
 
+        public int StrategyCount
+        {
+            get
+            {
+                lock (_strategies)
+                {
+                    return _strategies.Count;
+                }
+            }
+        }
+
+        public int DetectCropCallCount { get; private set; }
+
         public VideoClipRange? LastRequestedClipRange { get; private set; }
 
         public EncodeSettings? LastRequestedSettings { get; private set; }
+
+        public Task<string?> DetectCropAsync(string inputPath, VideoInfo info, CancellationToken ct = default)
+        {
+            DetectCropCallCount++;
+            return Task.FromResult<string?>("crop=1920:800:0:140");
+        }
 
         public Task<StrategyAnalysis> AnalyzeStrategyAsync(
             string inputPath,
             VideoInfo info,
             EncodeSettings settings,
+            string? cropFilter = null,
             VideoClipRange? clipRange = null,
             CancellationToken ct = default)
         {
@@ -557,7 +660,7 @@ public sealed class EncodeWorkspaceViewModelTests
             LastRequestedSettings = settings;
             var strategy = new StrategyAnalysis(
                 Path.GetFullPath(inputPath),
-                "crop=1920:800:0:140",
+                cropFilter,
                 EncodePlanner.BuildFrameRateFilter(info.FrameRate, settings),
                 EncodePlanner.ResolveOutputFrameRate(info.FrameRate, settings),
                 new EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)"));
@@ -569,6 +672,83 @@ public sealed class EncodeWorkspaceViewModelTests
 
             return Task.FromResult(strategy);
         }
+
+        public async Task<StrategyAnalysis> WaitForStrategyCountAsync(int expectedCount)
+        {
+            for (int attempt = 0; attempt < 200; attempt++)
+            {
+                lock (_strategies)
+                {
+                    if (_strategies.Count >= expectedCount)
+                        return _strategies[expectedCount - 1];
+                }
+
+                await Task.Delay(10);
+            }
+
+            throw new TimeoutException($"Timed out waiting for {expectedCount} strategy calls.");
+        }
+    }
+
+    private sealed class DelayedCropAnalysisService : IVideoAnalysisService
+    {
+        private readonly TaskCompletionSource _cropRequestedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<string?> _cropResultTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly List<StrategyAnalysis> _strategies = [];
+
+        public int DetectCropCallCount { get; private set; }
+
+        public int StrategyCount
+        {
+            get
+            {
+                lock (_strategies)
+                {
+                    return _strategies.Count;
+                }
+            }
+        }
+
+        public VideoClipRange? LastRequestedClipRange { get; private set; }
+
+        public Task<VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default) =>
+            Task.FromResult(new VideoInfo(TimeSpan.FromSeconds(95), 1920, 1080, 59.94));
+
+        public Task<string?> DetectCropAsync(string inputPath, VideoInfo info, CancellationToken ct = default)
+        {
+            DetectCropCallCount++;
+            _cropRequestedTcs.TrySetResult();
+            ct.Register(() => _cropResultTcs.TrySetCanceled(ct));
+            return _cropResultTcs.Task;
+        }
+
+        public Task<StrategyAnalysis> AnalyzeStrategyAsync(
+            string inputPath,
+            VideoInfo info,
+            EncodeSettings settings,
+            string? cropFilter = null,
+            VideoClipRange? clipRange = null,
+            CancellationToken ct = default)
+        {
+            LastRequestedClipRange = clipRange;
+            var strategy = new StrategyAnalysis(
+                Path.GetFullPath(inputPath),
+                cropFilter,
+                EncodePlanner.BuildFrameRateFilter(info.FrameRate, settings),
+                EncodePlanner.ResolveOutputFrameRate(info.FrameRate, settings),
+                new EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)"));
+
+            lock (_strategies)
+            {
+                _strategies.Add(strategy);
+            }
+
+            return Task.FromResult(strategy);
+        }
+
+        public void CompleteCropDetection(string? cropFilter) => _cropResultTcs.TrySetResult(cropFilter);
+
+        public Task WaitForCropDetectionRequestAsync() => _cropRequestedTcs.Task;
 
         public async Task<StrategyAnalysis> WaitForStrategyCountAsync(int expectedCount)
         {

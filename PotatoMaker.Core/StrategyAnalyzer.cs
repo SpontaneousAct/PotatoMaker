@@ -20,10 +20,9 @@ public sealed record StrategyAnalysis(
 /// </summary>
 public static class StrategyAnalyzer
 {
-    public static async Task<StrategyAnalysis> AnalyzeAsync(
+    public static async Task<string?> DetectCropAsync(
         string inputPath,
         VideoInfo info,
-        EncodeSettings settings,
         ILogger logger,
         VideoClipRange? clipRange = null,
         CancellationToken ct = default)
@@ -36,16 +35,30 @@ public static class StrategyAnalyzer
         if (effectiveDuration <= TimeSpan.Zero)
             throw new InvalidOperationException(EncodePlanner.InvalidDurationMessage);
 
-        string? cropFilter = settings.SkipCropDetect
-            ? null
-            : await CropDetector.DetectAsync(
-                fullPath,
-                effectiveDuration,
-                info.Width,
-                info.Height,
-                logger,
-                effectiveRange.Start,
-                ct);
+        return await CropDetector.DetectAsync(
+            fullPath,
+            effectiveDuration,
+            info.Width,
+            info.Height,
+            logger,
+            effectiveRange.Start,
+            ct);
+    }
+
+    public static StrategyAnalysis BuildAnalysis(
+        string inputPath,
+        VideoInfo info,
+        EncodeSettings settings,
+        string? cropFilter,
+        VideoClipRange? clipRange = null)
+    {
+        string fullPath = Path.GetFullPath(inputPath);
+        InputMediaSupport.ThrowIfInvalidPath(fullPath);
+
+        VideoClipRange effectiveRange = (clipRange ?? VideoClipRange.Full(info.Duration)).Normalize(info.Duration);
+        TimeSpan effectiveDuration = effectiveRange.Duration;
+        if (effectiveDuration <= TimeSpan.Zero)
+            throw new InvalidOperationException(EncodePlanner.InvalidDurationMessage);
 
         int sourceHeightForPlan = EncodePlanner.ResolveSourceHeightForPlan(info.Height, cropFilter);
         double outputFrameRate = EncodePlanner.ResolveOutputFrameRate(info.FrameRate, settings);
@@ -53,5 +66,20 @@ public static class StrategyAnalyzer
         var plan = EncodePlanner.PlanStrategy(effectiveDuration.TotalSeconds, sourceHeightForPlan, info.FrameRate, settings);
 
         return new StrategyAnalysis(fullPath, cropFilter, frameRateFilter, outputFrameRate, plan);
+    }
+
+    public static async Task<StrategyAnalysis> AnalyzeAsync(
+        string inputPath,
+        VideoInfo info,
+        EncodeSettings settings,
+        ILogger logger,
+        VideoClipRange? clipRange = null,
+        CancellationToken ct = default)
+    {
+        string? cropFilter = settings.SkipCropDetect
+            ? null
+            : await DetectCropAsync(inputPath, info, logger, clipRange, ct);
+
+        return BuildAnalysis(inputPath, info, settings, cropFilter, clipRange);
     }
 }

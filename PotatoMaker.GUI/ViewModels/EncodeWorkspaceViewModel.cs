@@ -21,6 +21,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private CancellationTokenSource? _previewCts;
     private int _previewVersion;
     private bool _isApplyingSettings;
+    private bool _isCropDetectionPending;
+    private string? _detectedCropFilter;
 
     public EncodeWorkspaceViewModel()
         : this(
@@ -206,6 +208,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         {
             OutputSettings.SetSourceFolder(Path.GetDirectoryName(Path.GetFullPath(path)));
 
+            _detectedCropFilter = null;
+            _isCropDetectionPending = false;
             VideoSummary.Clear();
             VideoPlayer.Clear();
             ClipRange.Clear();
@@ -219,7 +223,14 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
             ResetPreviewCommand.NotifyCanExecuteChanged();
 
-            await RefreshStrategyPreviewAsync(path, info, previewCts, previewVersion);
+            VideoSummary.SetStrategyPending();
+            _isCropDetectionPending = true;
+            _detectedCropFilter = await _analysisService.DetectCropAsync(path, info, previewCts.Token);
+            if (ShouldIgnorePreviewResult(previewCts, previewVersion, path))
+                return;
+
+            _isCropDetectionPending = false;
+            await RefreshStrategyPreviewAsync(path, info, _detectedCropFilter, previewCts, previewVersion, showPendingState: false);
         }
         catch (OperationCanceledException) when (previewCts.IsCancellationRequested)
         {
@@ -236,6 +247,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             }
             else
             {
+                _isCropDetectionPending = false;
                 VideoSummary.ClearStrategy();
                 ConversionLog.AddLog($"Error building strategy preview: {ex.Message}");
             }
@@ -252,6 +264,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private void OnFileCleared()
     {
         CancelPendingPreview();
+        _detectedCropFilter = null;
+        _isCropDetectionPending = false;
         OutputSettings.SetSourceFolder(null);
         ClipRange.Clear();
         VideoPlayer.Clear();
@@ -261,7 +275,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         NotifyEncodeStateChanged();
     }
 
-    private async void OnClipRangeSelectionChanged()
+    private void OnClipRangeSelectionChanged()
     {
         string? path = FileInput.InputFilePath;
         VideoInfo? info = VideoSummary.Info;
@@ -270,7 +284,11 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             return;
 
         VideoPlayer.SetSelection(ClipRange.Selection);
-        await RefreshStrategyPreviewForCurrentStateAsync(path, info);
+        VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
+        if (_isCropDetectionPending)
+            return;
+
+        _ = RefreshStrategyPreviewForCurrentStateAsync(path, info, showPendingState: false);
     }
 
     private void OnTrimBoundaryRequested(ClipBoundary boundary)
@@ -333,16 +351,20 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private async Task RefreshStrategyPreviewAsync(
         string path,
         VideoInfo info,
+        string? cropFilter,
         CancellationTokenSource previewCts,
-        int previewVersion)
+        int previewVersion,
+        bool showPendingState)
     {
         VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
-        VideoSummary.SetStrategyPending();
+        if (showPendingState)
+            VideoSummary.SetStrategyPending();
 
         StrategyAnalysis strategy = await _analysisService.AnalyzeStrategyAsync(
             path,
             info,
             BuildEncodeSettings(),
+            cropFilter,
             ClipRange.Selection,
             previewCts.Token);
 
@@ -378,9 +400,10 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         if (!_isApplyingSettings &&
             e.PropertyName == nameof(OutputSettingsViewModel.SelectedFrameRateOption) &&
             FileInput.InputFilePath is { } path &&
-            VideoSummary.Info is { } info)
+            VideoSummary.Info is { } info &&
+            !_isCropDetectionPending)
         {
-            _ = RefreshStrategyPreviewForCurrentStateAsync(path, info);
+            _ = RefreshStrategyPreviewForCurrentStateAsync(path, info, showPendingState: false);
         }
     }
 
@@ -491,33 +514,35 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     }
 
     private async Task RefreshStrategyPreviewForCurrentStateAsync(string path, VideoInfo info)
-    {
-        CancelPendingPreview();
-        var previewCts = new CancellationTokenSource();
-        _previewCts = previewCts;
-        int previewVersion = Interlocked.Increment(ref _previewVersion);
+        => await RefreshStrategyPreviewForCurrentStateAsync(path, info, showPendingState: true);
 
+    private async Task RefreshStrategyPreviewForCurrentStateAsync(string path, VideoInfo info, bool showPendingState)
+    {
         try
         {
-            await RefreshStrategyPreviewAsync(path, info, previewCts, previewVersion);
-        }
-        catch (OperationCanceledException) when (previewCts.IsCancellationRequested)
-        {
+            VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
+            if (showPendingState)
+                VideoSummary.SetStrategyPending();
+
+            StrategyAnalysis strategy = await _analysisService.AnalyzeStrategyAsync(
+                path,
+                info,
+                BuildEncodeSettings(),
+                _detectedCropFilter,
+                ClipRange.Selection);
+
+            if (!string.Equals(FileInput.InputFilePath, path, StringComparison.OrdinalIgnoreCase) ||
+                !ReferenceEquals(VideoSummary.Info, info))
+            {
+                return;
+            }
+
+            VideoSummary.SetStrategyResult(strategy);
         }
         catch (Exception ex)
         {
-            if (previewVersion != _previewVersion)
-                return;
-
             VideoSummary.ClearStrategy();
             ConversionLog.AddLog($"Error building strategy preview: {ex.Message}");
-        }
-        finally
-        {
-            if (ReferenceEquals(_previewCts, previewCts))
-                _previewCts = null;
-
-            previewCts.Dispose();
         }
     }
 

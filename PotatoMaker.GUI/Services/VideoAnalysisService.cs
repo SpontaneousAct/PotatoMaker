@@ -10,10 +10,16 @@ public interface IVideoAnalysisService
 {
     Task<VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default);
 
+    Task<string?> DetectCropAsync(
+        string inputPath,
+        VideoInfo info,
+        CancellationToken ct = default);
+
     Task<StrategyAnalysis> AnalyzeStrategyAsync(
         string inputPath,
         VideoInfo info,
         EncodeSettings settings,
+        string? cropFilter = null,
         VideoClipRange? clipRange = null,
         CancellationToken ct = default);
 }
@@ -26,11 +32,18 @@ public sealed class VideoAnalysisService : IVideoAnalysisService
     public Task<VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default) =>
         VideoInfo.ProbeAsync(inputPath, ct);
 
+    public Task<string?> DetectCropAsync(
+        string inputPath,
+        VideoInfo info,
+        CancellationToken ct = default) =>
+        StrategyAnalyzer.DetectCropAsync(inputPath, info, NullLogger.Instance, ct: ct);
+
     public Task<StrategyAnalysis> AnalyzeStrategyAsync(
         string inputPath,
         VideoInfo info,
         EncodeSettings settings,
+        string? cropFilter = null,
         VideoClipRange? clipRange = null,
         CancellationToken ct = default) =>
-        StrategyAnalyzer.AnalyzeAsync(inputPath, info, settings, NullLogger.Instance, clipRange, ct);
+        Task.FromResult(StrategyAnalyzer.BuildAnalysis(inputPath, info, settings, cropFilter, clipRange));
 }

@@ -353,15 +353,22 @@ public sealed class MainWindowViewModelTests
         public Task<PotatoMaker.Core.VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default) =>
             Task.FromResult(new PotatoMaker.Core.VideoInfo(TimeSpan.Zero, 0, 0, 0));
 
+        public Task<string?> DetectCropAsync(
+            string inputPath,
+            PotatoMaker.Core.VideoInfo info,
+            CancellationToken ct = default) =>
+            Task.FromResult<string?>(null);
+
         public Task<PotatoMaker.Core.StrategyAnalysis> AnalyzeStrategyAsync(
             string inputPath,
             PotatoMaker.Core.VideoInfo info,
             PotatoMaker.Core.EncodeSettings settings,
+            string? cropFilter = null,
             PotatoMaker.Core.VideoClipRange? clipRange = null,
             CancellationToken ct = default) =>
             Task.FromResult(new PotatoMaker.Core.StrategyAnalysis(
                 inputPath,
-                null,
+                cropFilter,
                 null,
                 0,
                 new PotatoMaker.Core.EncodePlanner.EncodePlan(1000, 1, null, "original")));
@@ -374,16 +381,23 @@ public sealed class MainWindowViewModelTests
         public Task<PotatoMaker.Core.VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default) =>
             Task.FromResult(new PotatoMaker.Core.VideoInfo(TimeSpan.FromSeconds(95), 1920, 1080, 59.94));
 
+        public Task<string?> DetectCropAsync(
+            string inputPath,
+            PotatoMaker.Core.VideoInfo info,
+            CancellationToken ct = default) =>
+            Task.FromResult<string?>("crop=1920:800:0:140");
+
         public Task<PotatoMaker.Core.StrategyAnalysis> AnalyzeStrategyAsync(
             string inputPath,
             PotatoMaker.Core.VideoInfo info,
             PotatoMaker.Core.EncodeSettings settings,
+            string? cropFilter = null,
             PotatoMaker.Core.VideoClipRange? clipRange = null,
             CancellationToken ct = default)
         {
             var strategy = new PotatoMaker.Core.StrategyAnalysis(
                 Path.GetFullPath(inputPath),
-                "crop=1920:800:0:140",
+                cropFilter,
                 PotatoMaker.Core.EncodePlanner.BuildFrameRateFilter(info.FrameRate, settings),
                 PotatoMaker.Core.EncodePlanner.ResolveOutputFrameRate(info.FrameRate, settings),
                 new PotatoMaker.Core.EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)"));
