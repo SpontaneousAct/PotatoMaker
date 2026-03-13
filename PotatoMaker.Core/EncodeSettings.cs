@@ -5,6 +5,8 @@ namespace PotatoMaker.Core;
 /// </summary>
 public record EncodeSettings
 {
+    public const int MaxOutputNameAffixLength = 64;
+
     public const string DefaultOutputNamePrefix = "";
 
     public const string DefaultOutputNameSuffix = "_discord";
@@ -45,8 +47,12 @@ public record EncodeSettings
 
     public static int NormalizeSvtAv1Preset(int preset) => Math.Clamp(preset, MinSvtAv1Preset, MaxSvtAv1Preset);
 
-    public static string NormalizeOutputNameAffix(string? affix) =>
-        string.IsNullOrWhiteSpace(affix)
-            ? string.Empty
-            : affix.Trim();
+    public static string NormalizeOutputNameAffix(string? affix)
+    {
+        if (string.IsNullOrWhiteSpace(affix))
+            return string.Empty;
+
+        string trimmedAffix = affix.Trim();
+        return trimmedAffix[..Math.Min(trimmedAffix.Length, MaxOutputNameAffixLength)];
+    }
 }

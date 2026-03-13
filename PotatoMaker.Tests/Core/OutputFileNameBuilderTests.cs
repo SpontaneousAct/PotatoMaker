@@ -35,4 +35,23 @@ public sealed class OutputFileNameBuilderTests
 
         Assert.Equal(Path.Combine("C:\\encoded", "share_clip_mobile_part2.mp4"), outputPath);
     }
+
+    [Fact]
+    public void BuildOutputPath_ClampsOverlongAffixes()
+    {
+        string outputPath = OutputFileNameBuilder.BuildOutputPath(
+            "C:\\encoded",
+            "clip",
+            new EncodeSettings
+            {
+                OutputNamePrefix = new string('p', EncodeSettings.MaxOutputNameAffixLength + 8),
+                OutputNameSuffix = new string('s', EncodeSettings.MaxOutputNameAffixLength + 9)
+            });
+
+        Assert.Equal(
+            Path.Combine(
+                "C:\\encoded",
+                $"{new string('p', EncodeSettings.MaxOutputNameAffixLength)}clip{new string('s', EncodeSettings.MaxOutputNameAffixLength)}.mp4"),
+            outputPath);
+    }
 }

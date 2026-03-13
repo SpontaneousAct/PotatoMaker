@@ -50,4 +50,26 @@ public sealed class OutputSettingsViewModelTests
 
         Assert.Equal(EncodeFrameRateMode.Fps60, viewModel.FrameRateMode);
     }
+
+    [Fact]
+    public void OutputNamePrefix_IsClampedToMaxLength()
+    {
+        var viewModel = new OutputSettingsViewModel();
+        string value = new('p', EncodeSettings.MaxOutputNameAffixLength + 10);
+
+        viewModel.OutputNamePrefix = value;
+
+        Assert.Equal(EncodeSettings.MaxOutputNameAffixLength, viewModel.OutputNamePrefix.Length);
+    }
+
+    [Fact]
+    public void OutputNameSuffix_TrimmedValue_IsClampedToMaxLength()
+    {
+        var viewModel = new OutputSettingsViewModel();
+        string value = $"  {new string('s', EncodeSettings.MaxOutputNameAffixLength + 5)}  ";
+
+        viewModel.OutputNameSuffix = value;
+
+        Assert.Equal(new string('s', EncodeSettings.MaxOutputNameAffixLength), viewModel.OutputNameSuffix);
+    }
 }

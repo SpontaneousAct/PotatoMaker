@@ -106,6 +106,8 @@ public partial class OutputSettingsViewModel : ViewModelBase
     public string OutputFileNamePreview =>
         $"{EncodeSettings.NormalizeOutputNameAffix(OutputNamePrefix)}example-video{EncodeSettings.NormalizeOutputNameAffix(OutputNameSuffix)}.mp4";
 
+    public int OutputNameAffixMaxLength => EncodeSettings.MaxOutputNameAffixLength;
+
     public string NvencSupportSummary =>
         !IsNvencSupportKnown
             ? "Checking NVENC AV1 support..."
@@ -139,6 +141,20 @@ public partial class OutputSettingsViewModel : ViewModelBase
     partial void OnCustomOutputFolderChanged(string? value) => ResetOutputFolderCommand.NotifyCanExecuteChanged();
 
     partial void OnSourceFolderChanged(string? value) => ResetOutputFolderCommand.NotifyCanExecuteChanged();
+
+    partial void OnOutputNamePrefixChanged(string value)
+    {
+        string normalizedValue = EncodeSettings.NormalizeOutputNameAffix(value);
+        if (!string.Equals(value, normalizedValue, StringComparison.Ordinal))
+            OutputNamePrefix = normalizedValue;
+    }
+
+    partial void OnOutputNameSuffixChanged(string value)
+    {
+        string normalizedValue = EncodeSettings.NormalizeOutputNameAffix(value);
+        if (!string.Equals(value, normalizedValue, StringComparison.Ordinal))
+            OutputNameSuffix = normalizedValue;
+    }
 
     public void SetSourceFolder(string? folder)
     {

@@ -25,6 +25,11 @@
                             Spacing="0">
                     <TextBlock Text="Video Preview"
                                Classes="pm-section-title"/>
+                    <TextBlock Text="{Binding FileInput.FileName}"
+                               IsVisible="{Binding FileInput.HasFile}"
+                               Classes="pm-caption"
+                               TextTrimming="CharacterEllipsis"
+                               MaxLines="1"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1"

@@ -123,6 +123,7 @@
 
                         <TextBox Grid.Column="1"
                                  Text="{Binding OutputSettings.OutputNamePrefix}"
+                                 MaxLength="{Binding OutputSettings.OutputNameAffixMaxLength}"
                                  Watermark="Optional"
                                  HorizontalAlignment="Stretch"
                                  VerticalAlignment="Center"/>
@@ -141,6 +142,7 @@
 
                         <TextBox Grid.Column="1"
                                  Text="{Binding OutputSettings.OutputNameSuffix}"
+                                 MaxLength="{Binding OutputSettings.OutputNameAffixMaxLength}"
                                  Watermark="_discord"
                                  HorizontalAlignment="Stretch"
                                  VerticalAlignment="Center"/>
