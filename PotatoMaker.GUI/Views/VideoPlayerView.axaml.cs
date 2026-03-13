@@ -6,7 +6,6 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using PotatoMaker.Core;
-using PotatoMaker.GUI.Diagnostics;
 using PotatoMaker.GUI.ViewModels;
 
 namespace PotatoMaker.GUI.Views;
@@ -69,7 +68,6 @@ public partial class VideoPlayerView : UserControl
         _playerDropZone.AddHandler(DragDrop.DragOverEvent, OnDragOver);
         _playerDropZone.AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
 
-        Trace($"ctor logPath={VideoPlayerDiagnostics.LogPath}");
         UpdateTimelineVisuals();
     }
 
@@ -106,7 +104,6 @@ public partial class VideoPlayerView : UserControl
             return;
 
         double pointerX = e.GetPosition(_timelineCanvas).X;
-        Trace($"OnTimelineCanvasPressed x={pointerX:F1}");
         _activeDragTarget = DragTarget.Playback;
         _playbackPointerPressedX = pointerX;
         _playbackSeekMovedDuringInteraction = false;
@@ -122,7 +119,6 @@ public partial class VideoPlayerView : UserControl
             return;
 
         double pointerX = e.GetPosition(_timelineCanvas).X;
-        Trace($"OnTimelineThumbPressed x={pointerX:F1}");
         _activeDragTarget = DragTarget.Playback;
         _playbackPointerPressedX = pointerX;
         _playbackSeekMovedDuringInteraction = false;
@@ -148,7 +144,6 @@ public partial class VideoPlayerView : UserControl
             return;
 
         double pointerX = e.GetPosition(_timelineCanvas).X;
-        Trace($"BeginTrimDrag target={target} x={pointerX:F1}");
         _activeDragTarget = target;
         _workspace.BeginTrimBoundaryPreview();
         e.Pointer.Capture(captureTarget);
@@ -179,14 +174,12 @@ public partial class VideoPlayerView : UserControl
 
     private void OnTimelinePointerReleased(object? sender, PointerReleasedEventArgs e)
     {
-        Trace($"OnTimelinePointerReleased target={_activeDragTarget}");
         EndActiveDrag(e.Pointer);
         e.Handled = true;
     }
 
     private void OnTimelinePointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
-        Trace($"OnTimelinePointerCaptureLost target={_activeDragTarget}");
         EndActiveDrag(e.Pointer);
     }
 
@@ -358,7 +351,6 @@ public partial class VideoPlayerView : UserControl
             return;
 
         _activeDragTarget = DragTarget.None;
-        Trace($"EndActiveDrag target={dragTarget}");
         pointer.Capture(null);
 
         if (dragTarget == DragTarget.Playback)
@@ -372,9 +364,6 @@ public partial class VideoPlayerView : UserControl
             _workspace?.EndTrimBoundaryPreview();
         }
     }
-
-    private static void Trace(string message) =>
-        VideoPlayerDiagnostics.Log("VideoPlayerView", message);
 
     private async void OpenFilePickerAsync()
     {
