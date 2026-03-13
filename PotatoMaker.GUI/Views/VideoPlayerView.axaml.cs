@@ -17,7 +17,7 @@ namespace PotatoMaker.GUI.Views;
 public partial class VideoPlayerView : UserControl
 {
     private const double TrackInset = 14;
-    private static readonly TimeSpan PointerTraceInterval = TimeSpan.FromMilliseconds(40);
+    private const double PlaybackClickMovementThreshold = 1.5d;
 
     private EncodeWorkspaceViewModel? _workspace;
     private readonly Canvas _timelineCanvas;
@@ -33,7 +33,8 @@ public partial class VideoPlayerView : UserControl
     private bool _deferredPlayerInitializationQueued;
     private bool _isLoaded;
     private DragTarget _activeDragTarget;
-    private DateTimeOffset _lastPointerTraceAt;
+    private double _playbackPointerPressedX;
+    private bool _playbackSeekMovedDuringInteraction;
 
     public VideoPlayerView()
     {
@@ -107,6 +108,8 @@ public partial class VideoPlayerView : UserControl
         double pointerX = e.GetPosition(_timelineCanvas).X;
         Trace($"OnTimelineCanvasPressed x={pointerX:F1}");
         _activeDragTarget = DragTarget.Playback;
+        _playbackPointerPressedX = pointerX;
+        _playbackSeekMovedDuringInteraction = false;
         _workspace.VideoPlayer.BeginSeekInteraction();
         e.Pointer.Capture(_timelineCanvas);
         SeekPlaybackToPointer(pointerX);
@@ -121,6 +124,8 @@ public partial class VideoPlayerView : UserControl
         double pointerX = e.GetPosition(_timelineCanvas).X;
         Trace($"OnTimelineThumbPressed x={pointerX:F1}");
         _activeDragTarget = DragTarget.Playback;
+        _playbackPointerPressedX = pointerX;
+        _playbackSeekMovedDuringInteraction = false;
         _workspace.VideoPlayer.BeginSeekInteraction();
         e.Pointer.Capture(_timelineThumb);
         SeekPlaybackToPointer(pointerX);
@@ -157,15 +162,11 @@ public partial class VideoPlayerView : UserControl
             return;
 
         double pointerX = e.GetPosition(_timelineCanvas).X;
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        if (now - _lastPointerTraceAt >= PointerTraceInterval)
-        {
-            _lastPointerTraceAt = now;
-            Trace($"OnTimelineCanvasPointerMoved target={_activeDragTarget} x={pointerX:F1}");
-        }
-
         if (_activeDragTarget == DragTarget.Playback)
         {
+            if (Math.Abs(pointerX - _playbackPointerPressedX) >= PlaybackClickMovementThreshold)
+                _playbackSeekMovedDuringInteraction = true;
+
             SeekPlaybackToPointer(pointerX);
         }
         else
@@ -320,7 +321,6 @@ public partial class VideoPlayerView : UserControl
             return;
 
         double seconds = duration * NormalizePointer(pointerX);
-        Trace($"SeekPlaybackToPointer x={pointerX:F1} sec={seconds:F3}");
         _workspace.VideoPlayer.SeekDuringInteraction(TimeSpan.FromSeconds(seconds));
     }
 
@@ -363,7 +363,9 @@ public partial class VideoPlayerView : UserControl
 
         if (dragTarget == DragTarget.Playback)
         {
-            _workspace?.VideoPlayer.EndSeekInteraction();
+            _workspace?.VideoPlayer.EndSeekInteraction(
+                preferCurrentPreviewTarget: !_playbackSeekMovedDuringInteraction);
+            _playbackSeekMovedDuringInteraction = false;
         }
         else if (dragTarget is DragTarget.TrimStart or DragTarget.TrimEnd)
         {

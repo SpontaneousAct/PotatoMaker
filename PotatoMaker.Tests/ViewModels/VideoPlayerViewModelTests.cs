@@ -58,13 +58,11 @@ public sealed class VideoPlayerViewModelTests
     }
 
     [Theory]
-    [InlineData(true, false, false, true)]
-    [InlineData(false, true, false, true)]
-    [InlineData(false, false, true, true)]
-    [InlineData(false, false, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(false, false, false)]
     public void ShouldIgnorePlayerTimelineUpdate_SuppressesStalePlayerPositions(
         bool isSeekInteractionActive,
-        bool hasPendingQueuedSeek,
         bool pendingSeekPreviewTarget,
         bool expected)
     {
@@ -76,7 +74,32 @@ public sealed class VideoPlayerViewModelTests
 
         bool result = Assert.IsType<bool>(method!.Invoke(
             null,
-            [isSeekInteractionActive, hasPendingQueuedSeek, pendingSeekPreviewTarget]));
+            [isSeekInteractionActive, pendingSeekPreviewTarget]));
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(0, 0, true)]
+    [InlineData(1, 8, true)]
+    [InlineData(1, 10, false)]
+    public void AreSeekPositionsEquivalent_UsesConfiguredTolerance(
+        int leftMilliseconds,
+        int rightMilliseconds,
+        bool expected)
+    {
+        MethodInfo? method = typeof(VideoPlayerViewModel).GetMethod(
+            "AreSeekPositionsEquivalent",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.NotNull(method);
+
+        bool result = Assert.IsType<bool>(method!.Invoke(
+            null,
+            [
+                TimeSpan.FromMilliseconds(leftMilliseconds),
+                TimeSpan.FromMilliseconds(rightMilliseconds)
+            ]));
 
         Assert.Equal(expected, result);
     }
