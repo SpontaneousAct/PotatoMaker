@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using PotatoMaker.Core;
+using PotatoMaker.GUI.Diagnostics;
 using PotatoMaker.GUI.ViewModels;
 
 namespace PotatoMaker.GUI.Views;
@@ -16,6 +17,7 @@ namespace PotatoMaker.GUI.Views;
 public partial class VideoPlayerView : UserControl
 {
     private const double TrackInset = 14;
+    private static readonly TimeSpan PointerTraceInterval = TimeSpan.FromMilliseconds(40);
 
     private EncodeWorkspaceViewModel? _workspace;
     private readonly Canvas _timelineCanvas;
@@ -31,6 +33,7 @@ public partial class VideoPlayerView : UserControl
     private bool _deferredPlayerInitializationQueued;
     private bool _isLoaded;
     private DragTarget _activeDragTarget;
+    private DateTimeOffset _lastPointerTraceAt;
 
     public VideoPlayerView()
     {
@@ -65,6 +68,7 @@ public partial class VideoPlayerView : UserControl
         _playerDropZone.AddHandler(DragDrop.DragOverEvent, OnDragOver);
         _playerDropZone.AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
 
+        Trace($"ctor logPath={VideoPlayerDiagnostics.LogPath}");
         UpdateTimelineVisuals();
     }
 
@@ -100,10 +104,12 @@ public partial class VideoPlayerView : UserControl
         if (_workspace?.VideoPlayer.CanSeek != true)
             return;
 
+        double pointerX = e.GetPosition(_timelineCanvas).X;
+        Trace($"OnTimelineCanvasPressed x={pointerX:F1}");
         _activeDragTarget = DragTarget.Playback;
         _workspace.VideoPlayer.BeginSeekInteraction();
         e.Pointer.Capture(_timelineCanvas);
-        SeekPlaybackToPointer(e.GetPosition(_timelineCanvas).X);
+        SeekPlaybackToPointer(pointerX);
         e.Handled = true;
     }
 
@@ -112,10 +118,12 @@ public partial class VideoPlayerView : UserControl
         if (_workspace?.VideoPlayer.CanSeek != true)
             return;
 
+        double pointerX = e.GetPosition(_timelineCanvas).X;
+        Trace($"OnTimelineThumbPressed x={pointerX:F1}");
         _activeDragTarget = DragTarget.Playback;
         _workspace.VideoPlayer.BeginSeekInteraction();
         e.Pointer.Capture(_timelineThumb);
-        SeekPlaybackToPointer(e.GetPosition(_timelineCanvas).X);
+        SeekPlaybackToPointer(pointerX);
         e.Handled = true;
     }
 
@@ -134,10 +142,12 @@ public partial class VideoPlayerView : UserControl
         if (_workspace?.ClipRange.HasDuration != true)
             return;
 
+        double pointerX = e.GetPosition(_timelineCanvas).X;
+        Trace($"BeginTrimDrag target={target} x={pointerX:F1}");
         _activeDragTarget = target;
         _workspace.BeginTrimBoundaryPreview();
         e.Pointer.Capture(captureTarget);
-        UpdateTrimBoundaryFromPointer(e.GetPosition(_timelineCanvas).X);
+        UpdateTrimBoundaryFromPointer(pointerX);
         e.Handled = true;
     }
 
@@ -147,6 +157,13 @@ public partial class VideoPlayerView : UserControl
             return;
 
         double pointerX = e.GetPosition(_timelineCanvas).X;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        if (now - _lastPointerTraceAt >= PointerTraceInterval)
+        {
+            _lastPointerTraceAt = now;
+            Trace($"OnTimelineCanvasPointerMoved target={_activeDragTarget} x={pointerX:F1}");
+        }
+
         if (_activeDragTarget == DragTarget.Playback)
         {
             SeekPlaybackToPointer(pointerX);
@@ -161,12 +178,14 @@ public partial class VideoPlayerView : UserControl
 
     private void OnTimelinePointerReleased(object? sender, PointerReleasedEventArgs e)
     {
+        Trace($"OnTimelinePointerReleased target={_activeDragTarget}");
         EndActiveDrag(e.Pointer);
         e.Handled = true;
     }
 
     private void OnTimelinePointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
+        Trace($"OnTimelinePointerCaptureLost target={_activeDragTarget}");
         EndActiveDrag(e.Pointer);
     }
 
@@ -301,6 +320,7 @@ public partial class VideoPlayerView : UserControl
             return;
 
         double seconds = duration * NormalizePointer(pointerX);
+        Trace($"SeekPlaybackToPointer x={pointerX:F1} sec={seconds:F3}");
         _workspace.VideoPlayer.SeekDuringInteraction(TimeSpan.FromSeconds(seconds));
     }
 
@@ -333,19 +353,26 @@ public partial class VideoPlayerView : UserControl
 
     private void EndActiveDrag(IPointer pointer)
     {
+        DragTarget dragTarget = _activeDragTarget;
+        if (dragTarget == DragTarget.None)
+            return;
+
+        _activeDragTarget = DragTarget.None;
+        Trace($"EndActiveDrag target={dragTarget}");
         pointer.Capture(null);
 
-        if (_activeDragTarget == DragTarget.Playback)
+        if (dragTarget == DragTarget.Playback)
         {
             _workspace?.VideoPlayer.EndSeekInteraction();
         }
-        else if (_activeDragTarget is DragTarget.TrimStart or DragTarget.TrimEnd)
+        else if (dragTarget is DragTarget.TrimStart or DragTarget.TrimEnd)
         {
             _workspace?.EndTrimBoundaryPreview();
         }
-
-        _activeDragTarget = DragTarget.None;
     }
+
+    private static void Trace(string message) =>
+        VideoPlayerDiagnostics.Log("VideoPlayerView", message);
 
     private async void OpenFilePickerAsync()
     {

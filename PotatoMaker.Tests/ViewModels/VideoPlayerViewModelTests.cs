@@ -58,16 +58,14 @@ public sealed class VideoPlayerViewModelTests
     }
 
     [Theory]
-    [InlineData(true, false, false, false, true)]
-    [InlineData(false, true, false, false, true)]
-    [InlineData(false, false, true, false, true)]
-    [InlineData(false, false, false, true, true)]
-    [InlineData(false, false, false, false, false)]
+    [InlineData(true, false, false, true)]
+    [InlineData(false, true, false, true)]
+    [InlineData(false, false, true, true)]
+    [InlineData(false, false, false, false)]
     public void ShouldIgnorePlayerTimelineUpdate_SuppressesStalePlayerPositions(
         bool isSeekInteractionActive,
         bool hasPendingQueuedSeek,
-        bool pauseAfterSeekTargetPending,
-        bool pauseAfterSeekPauseInFlight,
+        bool pendingSeekPreviewTarget,
         bool expected)
     {
         MethodInfo? method = typeof(VideoPlayerViewModel).GetMethod(
@@ -78,33 +76,7 @@ public sealed class VideoPlayerViewModelTests
 
         bool result = Assert.IsType<bool>(method!.Invoke(
             null,
-            [isSeekInteractionActive, hasPendingQueuedSeek, pauseAfterSeekTargetPending, pauseAfterSeekPauseInFlight]));
-
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(4_900, 5_000, 1, true)]
-    [InlineData(4_700, 5_000, 1, false)]
-    [InlineData(5_080, 5_000, 0, true)]
-    [InlineData(5_220, 5_000, 0, false)]
-    [InlineData(5_120, 5_000, -1, true)]
-    [InlineData(5_260, 5_000, -1, false)]
-    public void HasReachedPauseAfterSeekTarget_UsesDirectionAwareTolerance(
-        long currentTimeMilliseconds,
-        long targetTimeMilliseconds,
-        int direction,
-        bool expected)
-    {
-        MethodInfo? method = typeof(VideoPlayerViewModel).GetMethod(
-            "HasReachedPauseAfterSeekTarget",
-            BindingFlags.NonPublic | BindingFlags.Static);
-
-        Assert.NotNull(method);
-
-        bool result = Assert.IsType<bool>(method!.Invoke(
-            null,
-            [currentTimeMilliseconds, targetTimeMilliseconds, direction]));
+            [isSeekInteractionActive, hasPendingQueuedSeek, pendingSeekPreviewTarget]));
 
         Assert.Equal(expected, result);
     }
