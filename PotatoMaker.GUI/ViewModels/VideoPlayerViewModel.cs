@@ -11,7 +11,9 @@ namespace PotatoMaker.GUI.ViewModels;
 public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 {
     private const long SeekPreviewNoOpToleranceMilliseconds = 8;
-    private static readonly TimeSpan SeekPreviewDispatchInterval = TimeSpan.FromMilliseconds(16);
+    private static readonly TimeSpan SeekPreviewTimerInterval = TimeSpan.FromMilliseconds(16);
+    private static readonly TimeSpan SeekPreviewPlayingDispatchInterval = TimeSpan.FromMilliseconds(33);
+    private static readonly TimeSpan SeekPreviewPausedDispatchInterval = TimeSpan.FromMilliseconds(75);
     private const double PlaybackEndRestartThresholdSeconds = 0.05;
 
     private readonly DispatcherTimer _positionTimer;
@@ -38,9 +40,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private bool _resumePlaybackAfterSeek;
     private bool _isSeekPlaybackRestorePending;
     private bool _hasAttemptedPlayerInitialization;
-    private bool _preferCurrentPreviewTargetOnCommit;
     private TimeSpan? _pendingSeekPreviewTarget;
-    private TimeSpan? _lastAppliedSeekPreviewTarget;
+    private TimeSpan? _lastRequestedSeekPreviewTarget;
     private DateTimeOffset _lastSeekPreviewDispatchAt;
     private (string Path, TimeSpan Duration, VideoClipRange Selection)? _pendingSourceLoad;
     private string _statusMessage;
@@ -66,7 +67,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         _positionTimer.Start();
         _seekPreviewTimer = new DispatcherTimer(DispatcherPriority.Render)
         {
-            Interval = SeekPreviewDispatchInterval
+            Interval = SeekPreviewTimerInterval
         };
         _seekPreviewTimer.Tick += OnSeekPreviewTimerTick;
 
@@ -476,9 +477,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         _isSeekInteractionActive = true;
         _isSeekPlaybackRestorePending = false;
-        _preferCurrentPreviewTargetOnCommit = false;
         _resumePlaybackAfterSeek = ShouldResumePlaybackAfterSeekInteraction();
-        _lastAppliedSeekPreviewTarget = null;
+        _lastRequestedSeekPreviewTarget = null;
         _lastSeekPreviewDispatchAt = DateTimeOffset.MinValue;
         _pendingSeekPreviewTarget = CurrentPosition;
         _seekPreviewTimer.Start();
@@ -523,7 +523,6 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         if (!_isSeekInteractionActive)
             return;
 
-        _preferCurrentPreviewTargetOnCommit = preferCurrentPreviewTarget;
         CommitPendingSeekInteraction();
     }
 
@@ -837,10 +836,9 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         _seekPreviewTimer.Stop();
         _isSeekInteractionActive = false;
         _isSeekPlaybackRestorePending = false;
-        _preferCurrentPreviewTargetOnCommit = false;
         _resumePlaybackAfterSeek = false;
         _pendingSeekPreviewTarget = null;
-        _lastAppliedSeekPreviewTarget = null;
+        _lastRequestedSeekPreviewTarget = null;
         _lastSeekPreviewDispatchAt = DateTimeOffset.MinValue;
         UpdatePlaybackState();
     }
@@ -855,23 +853,15 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         bool shouldResumePlayback = _resumePlaybackAfterSeek;
         TimeSpan targetPosition = ClampPosition(_pendingSeekPreviewTarget ?? CurrentPosition);
-        bool preferCurrentPreviewTarget = _preferCurrentPreviewTargetOnCommit;
-        bool previewTargetMatchesLastApplied =
-            _lastAppliedSeekPreviewTarget is { } lastPreviewTarget &&
-            AreSeekPositionsEquivalent(lastPreviewTarget, targetPosition);
-        bool previewAlreadyAtTarget =
-            previewTargetMatchesLastApplied &&
-            (preferCurrentPreviewTarget || !shouldResumePlayback);
 
         _isSeekPlaybackRestorePending = shouldResumePlayback;
         _isSeekInteractionActive = false;
         _seekPreviewTimer.Stop();
         _pendingSeekPreviewTarget = null;
 
-        if (!previewAlreadyAtTarget)
-            SeekToPlayerCore(targetPosition);
-        else
-            SetTimelineFromPlayer(targetPosition);
+        // Always finish a drag with one exact seek so the displayed frame
+        // catches up even if preview-mode seeks were dropped by LibVLC.
+        SeekToPlayerCore(targetPosition);
 
         if (shouldResumePlayback)
         {
@@ -886,8 +876,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
                 TryPause();
         }
 
-        _lastAppliedSeekPreviewTarget = null;
-        _preferCurrentPreviewTargetOnCommit = false;
+        _lastRequestedSeekPreviewTarget = null;
         UpdatePlaybackState();
     }
 
@@ -968,16 +957,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         }
 
         long afterTime = MediaPlayer.Time;
-        bool targetAlreadyCurrent =
-            beforeTime >= 0 &&
-            Math.Abs(beforeTime - targetTimeMilliseconds) <= SeekPreviewNoOpToleranceMilliseconds;
-
-        bool positionSeekMovedPlayback =
-            afterTime < 0 ||
-            Math.Abs(afterTime - beforeTime) > SeekPreviewNoOpToleranceMilliseconds ||
-            targetAlreadyCurrent;
-
-        if (!positionSeekMovedPlayback)
+        if (!IsPreviewSeekConfirmed(beforeTime, afterTime, targetTimeMilliseconds))
             return false;
 
         SetTimelineFromPlayer(targetPosition);
@@ -999,8 +979,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        if (_lastAppliedSeekPreviewTarget is { } appliedTarget &&
-            AreSeekPositionsEquivalent(appliedTarget, pendingTarget))
+        if (_lastRequestedSeekPreviewTarget is { } requestedTarget &&
+            AreSeekPositionsEquivalent(requestedTarget, pendingTarget))
             _seekPreviewTimer.Stop();
     }
 
@@ -1013,19 +993,19 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        if (_lastAppliedSeekPreviewTarget is { } lastTarget &&
+        if (_lastRequestedSeekPreviewTarget is { } lastTarget &&
             AreSeekPositionsEquivalent(lastTarget, targetPosition))
         {
             return;
         }
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        if (now - _lastSeekPreviewDispatchAt < SeekPreviewDispatchInterval)
+        if (now - _lastSeekPreviewDispatchAt < GetSeekPreviewDispatchInterval(_resumePlaybackAfterSeek))
             return;
 
         _lastSeekPreviewDispatchAt = now;
         SeekPreviewToPlayerCore(targetPosition);
-        _lastAppliedSeekPreviewTarget = targetPosition;
+        _lastRequestedSeekPreviewTarget = targetPosition;
     }
 
     private void TryFinalizeSeekPlaybackRestoreIfReady()
@@ -1095,6 +1075,29 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     private static bool AreSeekPositionsEquivalent(TimeSpan left, TimeSpan right) =>
         Math.Abs((left - right).TotalMilliseconds) <= SeekPreviewNoOpToleranceMilliseconds;
+
+    private static TimeSpan GetSeekPreviewDispatchInterval(bool resumePlaybackAfterSeek) =>
+        resumePlaybackAfterSeek
+            ? SeekPreviewPlayingDispatchInterval
+            : SeekPreviewPausedDispatchInterval;
+
+    private static bool IsPreviewSeekConfirmed(
+        long beforeTime,
+        long afterTime,
+        long targetTimeMilliseconds)
+    {
+        bool targetAlreadyCurrent =
+            beforeTime >= 0 &&
+            Math.Abs(beforeTime - targetTimeMilliseconds) <= SeekPreviewNoOpToleranceMilliseconds;
+
+        if (targetAlreadyCurrent)
+            return true;
+
+        if (afterTime < 0)
+            return false;
+
+        return Math.Abs(afterTime - beforeTime) > SeekPreviewNoOpToleranceMilliseconds;
+    }
 
     private static bool ShouldIgnorePlayerTimelineUpdate(
         bool isSeekInteractionActive,

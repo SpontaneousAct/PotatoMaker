@@ -104,6 +104,48 @@ public sealed class VideoPlayerViewModelTests
         Assert.Equal(expected, result);
     }
 
+    [Theory]
+    [InlineData(3000, 3000, 3004, true)]
+    [InlineData(1000, 2995, 3000, true)]
+    [InlineData(1000, -1, 3000, false)]
+    [InlineData(1000, 1004, 3000, false)]
+    public void IsPreviewSeekConfirmed_RequiresANonStalePlayerResult(
+        long beforeTimeMilliseconds,
+        long afterTimeMilliseconds,
+        long targetTimeMilliseconds,
+        bool expected)
+    {
+        MethodInfo? method = typeof(VideoPlayerViewModel).GetMethod(
+            "IsPreviewSeekConfirmed",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.NotNull(method);
+
+        bool result = Assert.IsType<bool>(method!.Invoke(
+            null,
+            [beforeTimeMilliseconds, afterTimeMilliseconds, targetTimeMilliseconds]));
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(true, 33)]
+    [InlineData(false, 75)]
+    public void GetSeekPreviewDispatchInterval_UsesPlaybackAwareThrottle(
+        bool resumePlaybackAfterSeek,
+        int expectedMilliseconds)
+    {
+        MethodInfo? method = typeof(VideoPlayerViewModel).GetMethod(
+            "GetSeekPreviewDispatchInterval",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.NotNull(method);
+
+        TimeSpan result = Assert.IsType<TimeSpan>(method!.Invoke(null, [resumePlaybackAfterSeek]));
+
+        Assert.Equal(TimeSpan.FromMilliseconds(expectedMilliseconds), result);
+    }
+
     [Fact]
     public void LoadSource_BeforeInitialization_ShowsDeferredLoadingState()
     {
