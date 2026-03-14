@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -18,8 +19,11 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private readonly IEncodeCompletionNotifier _encodeCompletionNotifier;
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
     private readonly bool _initializeEncoderSupport;
+    private readonly TimeSpan _cancelledStatusDuration;
     private CancellationTokenSource? _encodeCts;
     private CancellationTokenSource? _previewCts;
+    private CancellationTokenSource? _statusResetCts;
+    private Stopwatch? _encodeStopwatch;
     private int _previewVersion;
     private bool _isApplyingSettings;
     private bool _isCropDetectionPending;
@@ -33,7 +37,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             new EncoderCapabilityService(),
             null,
             initializeEncoderSupport: true,
-            NoOpEncodeCompletionNotifier.Instance)
+            NoOpEncodeCompletionNotifier.Instance,
+            null)
     {
     }
 
@@ -43,7 +48,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         IEncoderCapabilityService encoderCapabilityService,
         IAppSettingsCoordinator? settingsCoordinator,
         bool initializeEncoderSupport = true,
-        IEncodeCompletionNotifier? encodeCompletionNotifier = null)
+        IEncodeCompletionNotifier? encodeCompletionNotifier = null,
+        TimeSpan? cancelledStatusDuration = null)
         : this(
             analysisService,
             encodingService,
@@ -51,7 +57,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             encoderCapabilityService,
             settingsCoordinator,
             initializeEncoderSupport,
-            encodeCompletionNotifier)
+            encodeCompletionNotifier,
+            cancelledStatusDuration)
     {
     }
 
@@ -62,7 +69,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         IEncoderCapabilityService encoderCapabilityService,
         IAppSettingsCoordinator? settingsCoordinator,
         bool initializeEncoderSupport = true,
-        IEncodeCompletionNotifier? encodeCompletionNotifier = null)
+        IEncodeCompletionNotifier? encodeCompletionNotifier = null,
+        TimeSpan? cancelledStatusDuration = null)
     {
         _analysisService = analysisService;
         _encodingService = encodingService;
@@ -71,6 +79,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         _encodeCompletionNotifier = encodeCompletionNotifier ?? NoOpEncodeCompletionNotifier.Instance;
         _settingsCoordinator = settingsCoordinator;
         _initializeEncoderSupport = initializeEncoderSupport;
+        _cancelledStatusDuration = cancelledStatusDuration ?? TimeSpan.FromSeconds(5);
 
         FileInput.FileSelected += OnFileSelected;
         FileInput.FileCleared += OnFileCleared;
@@ -87,6 +96,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
         ApplyInitialSettings();
         UpdateSourceSelectionState();
+        UpdateConversionIdlePrompt();
         if (_initializeEncoderSupport)
             _ = InitializeEncoderSupportAsync();
     }
@@ -120,10 +130,14 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         if (info is null || path is null || strategy is null)
             return;
 
+        EncodeSettings settings = BuildEncodeSettings();
         var encodeCts = new CancellationTokenSource();
         _encodeCts = encodeCts;
-        ConversionLog.Clear();
-        ConversionLog.IsProcessing = true;
+        _encodeStopwatch = Stopwatch.StartNew();
+        CancelPendingStatusReset();
+        ConversionLog.BeginEncoding(
+            settings.Encoder == EncoderChoice.SvtAv1 ? ConversionStatus.Analysing : ConversionStatus.Encoding,
+            settings.Encoder == EncoderChoice.SvtAv1 ? "1/2" : null);
         NotifyEncodeStateChanged();
 
         try
@@ -137,7 +151,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 outputFolder,
                 info,
                 strategy,
-                BuildEncodeSettings(),
+                settings,
                 ClipRange.Selection);
 
             await _encodingService.RunAsync(
@@ -146,22 +160,25 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 new ViewModelProgressHandler(ConversionLog),
                 encodeCts.Token);
 
-            ConversionLog.AddLog("Done!");
+            _encodeStopwatch?.Stop();
+            ConversionLog.MarkDone(_encodeStopwatch?.Elapsed);
             _encodeCompletionNotifier.NotifyEncodeSucceeded();
         }
         catch (OperationCanceledException)
         {
-            ConversionLog.AddLog("Cancelled by user.");
+            _encodeStopwatch?.Stop();
+            ConversionLog.MarkCancelled();
+            ScheduleCancelledStatusReset();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            ConversionLog.AddLog($"Error: {ex.Message}");
+            _encodeStopwatch?.Stop();
+            CancelPendingStatusReset();
+            ConversionLog.MarkError();
         }
         finally
         {
-            ConversionLog.IsProcessing = false;
-            ConversionLog.ProgressPercent = 0;
-            ConversionLog.ProgressLabel = null;
+            _encodeStopwatch = null;
             if (ReferenceEquals(_encodeCts, encodeCts))
                 _encodeCts = null;
 
@@ -180,7 +197,6 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         if (encodeCts is null || encodeCts.IsCancellationRequested)
             return;
 
-        ConversionLog.AddLog("Cancellation requested...");
         encodeCts.Cancel();
         NotifyEncodeStateChanged();
     }
@@ -207,9 +223,11 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private async Task LoadSelectedFileAsync(string path)
     {
         CancelPendingPreview();
+        CancelPendingStatusReset();
         var previewCts = new CancellationTokenSource();
         _previewCts = previewCts;
         int previewVersion = Interlocked.Increment(ref _previewVersion);
+        ConversionLog.BeginAnalysis();
 
         try
         {
@@ -242,7 +260,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         catch (OperationCanceledException) when (previewCts.IsCancellationRequested)
         {
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             if (previewVersion != _previewVersion)
                 return;
@@ -250,13 +268,13 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             if (VideoSummary.Info is null)
             {
                 VideoSummary.Clear();
-                ConversionLog.AddLog($"Error probing file: {ex.Message}");
+                ConversionLog.MarkAnalysisError();
             }
             else
             {
                 _isCropDetectionPending = false;
                 VideoSummary.ClearStrategy();
-                ConversionLog.AddLog($"Error building strategy preview: {ex.Message}");
+                ConversionLog.MarkAnalysisError();
             }
         }
         finally
@@ -271,6 +289,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private void OnFileCleared()
     {
         CancelPendingPreview();
+        CancelPendingStatusReset();
         _detectedCropFilter = null;
         _isCropDetectionPending = false;
         OutputSettings.SetSourceFolder(null);
@@ -350,6 +369,13 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         _previewCts = null;
     }
 
+    private void CancelPendingStatusReset()
+    {
+        _statusResetCts?.Cancel();
+        _statusResetCts?.Dispose();
+        _statusResetCts = null;
+    }
+
     private bool ShouldIgnorePreviewResult(CancellationTokenSource previewCts, int previewVersion, string path) =>
         previewCts.IsCancellationRequested ||
         previewVersion != _previewVersion ||
@@ -363,6 +389,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         int previewVersion,
         bool showPendingState)
     {
+        ConversionLog.BeginAnalysis();
         VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
         if (showPendingState)
             VideoSummary.SetStrategyPending();
@@ -379,6 +406,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             return;
 
         VideoSummary.SetStrategyResult(strategy);
+        ConversionLog.CompleteAnalysis();
+        NotifyEncodeStateChanged();
     }
 
     private void OnEncodePrerequisiteChanged(object? sender, PropertyChangedEventArgs e)
@@ -507,6 +536,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private void NotifyEncodeStateChanged()
     {
         UpdateSourceSelectionState();
+        UpdateConversionIdlePrompt();
         StartEncodeCommand.NotifyCanExecuteChanged();
         CancelEncodeCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(IsEncodeInProgress));
@@ -520,6 +550,79 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         FileInput.IsSourceSelectionLocked = ConversionLog.IsProcessing;
     }
 
+    private void ScheduleCancelledStatusReset()
+    {
+        CancelPendingStatusReset();
+
+        if (_cancelledStatusDuration <= TimeSpan.Zero)
+        {
+            ResetTerminalStatusIfCurrent(ConversionStatus.Cancelled, null);
+            return;
+        }
+
+        var resetCts = new CancellationTokenSource();
+        _statusResetCts = resetCts;
+        _ = ReturnTerminalStatusToIdleAsync(ConversionStatus.Cancelled, resetCts);
+    }
+
+    private async Task ReturnTerminalStatusToIdleAsync(ConversionStatus expectedStatus, CancellationTokenSource resetCts)
+    {
+        try
+        {
+            await Task.Delay(_cancelledStatusDuration, resetCts.Token);
+            if (resetCts.IsCancellationRequested)
+                return;
+
+            if (Avalonia.Application.Current is null)
+            {
+                ResetTerminalStatusIfCurrent(expectedStatus, resetCts);
+                return;
+            }
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                ResetTerminalStatusIfCurrent(expectedStatus, resetCts));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            if (ReferenceEquals(_statusResetCts, resetCts))
+                _statusResetCts = null;
+
+            resetCts.Dispose();
+        }
+    }
+
+    private void ResetTerminalStatusIfCurrent(ConversionStatus expectedStatus, CancellationTokenSource? resetCts)
+    {
+        if ((resetCts is not null && resetCts.IsCancellationRequested) ||
+            (resetCts is not null && !ReferenceEquals(_statusResetCts, resetCts)) ||
+            ConversionLog.Status != expectedStatus ||
+            ConversionLog.IsProcessing)
+        {
+            return;
+        }
+
+        ConversionLog.ReturnToIdle();
+        UpdateConversionIdlePrompt();
+        NotifyEncodeStateChanged();
+    }
+
+    private void UpdateConversionIdlePrompt()
+    {
+        if (ConversionLog.Status != ConversionStatus.Idle)
+            return;
+
+        if (!FileInput.HasFile)
+        {
+            ConversionLog.SetIdleText("Choose a video");
+            return;
+        }
+
+        ConversionLog.SetIdleText(CanStartEncode() ? "Ready" : "Getting ready");
+    }
+
     private async Task RefreshStrategyPreviewForCurrentStateAsync(string path, VideoInfo info)
         => await RefreshStrategyPreviewForCurrentStateAsync(path, info, showPendingState: true);
 
@@ -527,6 +630,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            ConversionLog.BeginAnalysis();
             VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
             if (showPendingState)
                 VideoSummary.SetStrategyPending();
@@ -545,17 +649,20 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             }
 
             VideoSummary.SetStrategyResult(strategy);
+            ConversionLog.CompleteAnalysis();
+            NotifyEncodeStateChanged();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             VideoSummary.ClearStrategy();
-            ConversionLog.AddLog($"Error building strategy preview: {ex.Message}");
+            ConversionLog.MarkAnalysisError();
         }
     }
 
     public void Dispose()
     {
         CancelPendingPreview();
+        CancelPendingStatusReset();
         CancellationTokenSource? encodeCts = _encodeCts;
         _encodeCts = null;
         encodeCts?.Cancel();

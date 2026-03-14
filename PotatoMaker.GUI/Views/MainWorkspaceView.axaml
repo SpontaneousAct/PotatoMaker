@@ -13,43 +13,46 @@
     </Design.DataContext>
 
     <Grid ColumnDefinitions="*,252"
-          RowDefinitions="1.95*,0.82*,Auto"
-          RowSpacing="12"
           ColumnSpacing="12">
-        <views:VideoPlayerView Grid.Column="0"
-                               Grid.Row="0"
-                               DataContext="{Binding}"
-                               HorizontalAlignment="Stretch"
-                               VerticalAlignment="Stretch"/>
+        <Grid Grid.Column="0"
+              RowDefinitions="*,Auto"
+              RowSpacing="12">
+            <views:VideoPlayerView Grid.Row="0"
+                                   DataContext="{Binding}"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch"/>
 
-        <ContentControl Grid.Column="0"
-                        Grid.Row="1"
-                        Grid.RowSpan="2"
-                        Content="{Binding ConversionLog}"
+            <ContentControl Grid.Row="1"
+                            Content="{Binding ConversionLog}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Bottom"/>
+        </Grid>
+
+        <Grid Grid.Column="1"
+              RowDefinitions="*,Auto"
+              RowSpacing="12">
+            <ContentControl Grid.Row="0"
+                            Content="{Binding VideoSummary}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"/>
+
+            <StackPanel Grid.Row="1"
+                        Spacing="12"
                         HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"/>
+                        VerticalAlignment="Bottom">
+                <ContentControl Content="{Binding OutputSettings}"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Top"/>
 
-        <ContentControl Grid.Column="1"
-                        Grid.Row="0"
-                        Content="{Binding VideoSummary}"
+                <Button Content="{Binding EncodeButtonText}"
+                        Command="{Binding EncodeButtonCommand}"
                         HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"/>
-
-        <ContentControl Grid.Column="1"
-                        Grid.Row="1"
-                        Content="{Binding OutputSettings}"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Top"/>
-
-        <Button Grid.Column="1"
-                Grid.Row="2"
-                Content="{Binding EncodeButtonText}"
-                Command="{Binding EncodeButtonCommand}"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Bottom"
-                MinHeight="34"
-                Padding="10,6"
-                Classes.pm-primary="{Binding IsEncodeIdle}"
-                Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
+                        VerticalAlignment="Bottom"
+                        MinHeight="34"
+                        Padding="10,6"
+                        Classes.pm-primary="{Binding IsEncodeIdle}"
+                        Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

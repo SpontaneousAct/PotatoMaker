@@ -36,6 +36,7 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal("59.94 fps", workspace.VideoSummary.StrategyOutputFrameRate);
             Assert.Equal("crop=1920:800:0:140", workspace.VideoSummary.StrategyCrop);
             Assert.Equal("crop=1920:800:0:140,scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
+            Assert.Equal("Ready", workspace.ConversionLog.StatusText);
         }
         finally
         {
@@ -138,6 +139,8 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.True(workspace.FileInput.SetFile(inputPath));
             await analysisService.WaitForCropDetectionRequestAsync();
 
+            Assert.Equal(ConversionStatus.Analysing, workspace.ConversionLog.Status);
+
             workspace.ClipRange.StartSeconds = 15;
             workspace.ClipRange.EndSeconds = 45;
 
@@ -156,6 +159,7 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal(TimeSpan.FromSeconds(45), analysisService.LastRequestedClipRange?.End);
             Assert.Equal(1, analysisService.DetectCropCallCount);
             Assert.Equal(1, analysisService.StrategyCount);
+            Assert.Equal(ConversionStatus.Idle, workspace.ConversionLog.Status);
         }
         finally
         {
@@ -226,7 +230,8 @@ public sealed class EncodeWorkspaceViewModelTests
                 new StaticEncoderCapabilityService(),
                 null,
                 initializeEncoderSupport: false,
-                notifier);
+                notifier,
+                TimeSpan.FromMilliseconds(100));
 
             Assert.True(workspace.FileInput.SetFile(inputPath));
             await analysisService.WaitForStrategyCountAsync(1);
@@ -234,6 +239,16 @@ public sealed class EncodeWorkspaceViewModelTests
             await workspace.StartEncodeCommand.ExecuteAsync(null);
 
             Assert.Equal(1, notifier.NotificationCount);
+            Assert.Equal(ConversionStatus.Done, workspace.ConversionLog.Status);
+            Assert.Equal(100, workspace.ConversionLog.ProgressPercent);
+            Assert.StartsWith("Done in ", workspace.ConversionLog.StatusText);
+            Assert.True(workspace.StartEncodeCommand.CanExecute(null));
+            Assert.False(workspace.CancelEncodeCommand.CanExecute(null));
+
+            await Task.Delay(200);
+
+            Assert.Equal(ConversionStatus.Done, workspace.ConversionLog.Status);
+            Assert.StartsWith("Done in ", workspace.ConversionLog.StatusText);
         }
         finally
         {
@@ -258,7 +273,8 @@ public sealed class EncodeWorkspaceViewModelTests
                 new StaticEncoderCapabilityService(),
                 null,
                 initializeEncoderSupport: false,
-                notifier);
+                notifier,
+                TimeSpan.FromMilliseconds(100));
 
             Assert.True(workspace.FileInput.SetFile(inputPath));
             await analysisService.WaitForStrategyCountAsync(1);
@@ -269,6 +285,12 @@ public sealed class EncodeWorkspaceViewModelTests
             await encodeTask;
 
             Assert.Equal(0, notifier.NotificationCount);
+            Assert.Equal(ConversionStatus.Cancelled, workspace.ConversionLog.Status);
+
+            await Task.Delay(200);
+
+            Assert.Equal(ConversionStatus.Idle, workspace.ConversionLog.Status);
+            Assert.Equal("Ready", workspace.ConversionLog.StatusText);
         }
         finally
         {
@@ -300,6 +322,7 @@ public sealed class EncodeWorkspaceViewModelTests
             await workspace.StartEncodeCommand.ExecuteAsync(null);
 
             Assert.Equal(0, notifier.NotificationCount);
+            Assert.Equal(ConversionStatus.Error, workspace.ConversionLog.Status);
         }
         finally
         {

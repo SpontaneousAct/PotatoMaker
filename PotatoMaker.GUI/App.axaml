@@ -82,6 +82,12 @@
                     <SolidColorBrush x:Key="PmStatBorderBrush">#FFD6DEE9</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBackground">#FFF4F7FB</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FFD6DEE8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusIdleForeground">#FF334257</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusAnalysingForeground">#FF245B9A</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusEncodingForeground">#FF1E6A45</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusCancelledForeground">#FF8C5B15</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusErrorForeground">#FFA83A3A</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusDoneForeground">#FF1E6A45</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBackground">#FF0B0E14</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBorderBrush">#FF2B3340</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoEmptyBackground">#FFE8EEF6</SolidColorBrush>
@@ -138,6 +144,12 @@
                     <SolidColorBrush x:Key="PmStatBorderBrush">#FF273143</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBackground">#FF0F141C</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FF273143</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusIdleForeground">#FFD6DFED</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusAnalysingForeground">#FF9BC4FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusEncodingForeground">#FF98E0B7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusCancelledForeground">#FFF0C27C</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusErrorForeground">#FFFFA5A5</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusDoneForeground">#FF9BE1B8</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBackground">#FF05070B</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBorderBrush">#FF2A3342</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoEmptyBackground">#FF0B1017</SolidColorBrush>
@@ -257,6 +269,30 @@
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Opacity" Value="0.82"/>
             <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusIdleForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-analysing">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusAnalysingForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-encoding">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusEncodingForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-cancelled">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusCancelledForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-error">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusErrorForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-done">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusDoneForeground}"/>
         </Style>
 
         <Style Selector="Button">

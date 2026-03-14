@@ -7,7 +7,7 @@ namespace PotatoMaker.GUI.Services;
 
 /// <summary>
 /// Bridges <see cref="IProgress{EncodeProgress}"/> from the pipeline to the
-/// <see cref="ConversionLogViewModel"/> progress bar and label.
+/// <see cref="ConversionLogViewModel"/> progress state.
 /// </summary>
 sealed class ViewModelProgressHandler : IProgress<EncodeProgress>
 {
@@ -19,8 +19,7 @@ sealed class ViewModelProgressHandler : IProgress<EncodeProgress>
     {
         Dispatcher.UIThread.Post(() =>
         {
-            _log.ProgressPercent = Math.Clamp(value.Percent, 0, 100);
-            _log.ProgressLabel = $"{value.Label}  {value.Percent}%";
+            _log.UpdateProgress(value);
         });
     }
 }
