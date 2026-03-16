@@ -18,72 +18,147 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid Margin="12"
-          ColumnDefinitions="Auto,*"
-          ColumnSpacing="14">
-        <Border Grid.Column="0"
-                x:Name="NavigationPane"
-                Classes="pm-nav-surface"
-                Width="72"
-                Padding="10">
-            <Grid RowDefinitions="Auto,Auto,*,Auto"
-                  RowSpacing="14">
-                <StackPanel Grid.Row="1"
-                            Spacing="8">
-                    <Button Classes="pm-nav-button"
-                            Classes.pm-nav-active="{Binding IsMainViewSelected}"
-                            Command="{Binding ShowMainViewCommand}"
-                            ToolTip.Tip="Main">
-                        <TextBlock Text="&#xE80F;"
-                                   Classes="pm-nav-icon"/>
-                    </Button>
-
-                    <Button Classes="pm-nav-button"
-                            Classes.pm-nav-active="{Binding IsSettingsViewSelected}"
-                            Command="{Binding ShowSettingsViewCommand}"
-                            ToolTip.Tip="Settings">
-                        <Grid Width="46"
-                              Height="46">
-                            <TextBlock Text="&#xE713;"
+        <Grid Margin="12"
+              ColumnDefinitions="Auto,*"
+              ColumnSpacing="14">
+            <Border Grid.Column="0"
+                    x:Name="NavigationPane"
+                    Classes="pm-nav-surface"
+                    Width="72"
+                    Padding="10">
+                <Grid RowDefinitions="Auto,Auto,*,Auto"
+                      RowSpacing="14">
+                    <StackPanel Grid.Row="1"
+                                Spacing="8">
+                        <Button Classes="pm-nav-button"
+                                Classes.pm-nav-active="{Binding IsMainViewSelected}"
+                                Command="{Binding ShowMainViewCommand}"
+                                ToolTip.Tip="Main">
+                            <TextBlock Text="&#xE80F;"
                                        Classes="pm-nav-icon"/>
-                            <Border Classes="pm-update-dot"
-                                    IsVisible="{Binding IsUpdateBadgeVisible}"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Top"
-                                    Margin="0,5,5,0"/>
-                        </Grid>
-                    </Button>
+                        </Button>
 
-                    <Button Classes="pm-nav-button"
-                            Classes.pm-nav-active="{Binding IsHelpViewSelected}"
-                            Command="{Binding ShowHelpViewCommand}"
-                            ToolTip.Tip="Help">
-                        <TextBlock Text="&#xE897;"
-                                   Classes="pm-nav-icon"/>
-                    </Button>
-                </StackPanel>
+                        <Button x:Name="RecentVideosButton"
+                                Classes="pm-nav-button"
+                                Classes.pm-nav-active="{Binding IsRecentVideosPanelOpen}"
+                                Command="{Binding ToggleRecentVideosPanelCommand}"
+                                ToolTip.Tip="Recent videos">
+                            <Viewbox Width="24"
+                                     Height="24">
+                                <Canvas Width="24"
+                                        Height="24">
+                                    <Path Classes="pm-nav-icon-path"
+                                          StrokeThickness="1.6"
+                                          StrokeJoin="Round"
+                                          Data="M4,6 C4,4.9 4.9,4 6,4 H18 C19.1,4 20,4.9 20,6 V18 C20,19.1 19.1,20 18,20 H6 C4.9,20 4,19.1 4,18 Z"/>
+                                    <Path Classes="pm-nav-icon-fill"
+                                          Data="M10.2,9.2 L15.4,12 L10.2,14.8 Z"/>
+                                    <Path Classes="pm-nav-icon-path"
+                                          StrokeThickness="1.2"
+                                          StrokeLineCap="Round"
+                                          Data="M6.8,7.2 H8.6 M10.7,7.2 H12.5 M14.6,7.2 H16.4 M6.8,16.8 H8.6 M10.7,16.8 H12.5 M14.6,16.8 H16.4"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
 
-                <StackPanel Grid.Row="3"
-                            Spacing="10"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Bottom">
-                    <Border Classes="pm-sidebar-version"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Bottom">
-                        <TextBlock Text="{Binding VersionText}"
-                                   Classes="pm-sidebar-version-text"/>
-                    </Border>
-                </StackPanel>
+                        <Button Classes="pm-nav-button"
+                                Classes.pm-nav-active="{Binding IsSettingsViewSelected}"
+                                Command="{Binding ShowSettingsViewCommand}"
+                                ToolTip.Tip="Settings">
+                            <Grid Width="46"
+                                  Height="46">
+                                <TextBlock Text="&#xE713;"
+                                           Classes="pm-nav-icon"/>
+                                <Border Classes="pm-update-dot"
+                                        IsVisible="{Binding IsUpdateBadgeVisible}"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Margin="0,5,5,0"/>
+                            </Grid>
+                        </Button>
+
+                        <Button Classes="pm-nav-button"
+                                Classes.pm-nav-active="{Binding IsHelpViewSelected}"
+                                Command="{Binding ShowHelpViewCommand}"
+                                ToolTip.Tip="Help">
+                            <TextBlock Text="&#xE897;"
+                                       Classes="pm-nav-icon"/>
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="3"
+                                Spacing="10"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Bottom">
+                        <Border Classes="pm-sidebar-version"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Bottom">
+                            <TextBlock Text="{Binding VersionText}"
+                                       Classes="pm-sidebar-version-text"/>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="1">
+                <ContentControl Content="{Binding Workspace}"
+                                IsVisible="{Binding IsMainViewSelected}"/>
+                <ContentControl Content="{Binding Settings}"
+                                IsVisible="{Binding IsSettingsViewSelected}"/>
+                <ContentControl Content="{Binding Help}"
+                                IsVisible="{Binding IsHelpViewSelected}"/>
             </Grid>
-        </Border>
 
-        <Grid Grid.Column="1">
-            <ContentControl Content="{Binding Workspace}"
-                            IsVisible="{Binding IsMainViewSelected}"/>
-            <ContentControl Content="{Binding Settings}"
-                            IsVisible="{Binding IsSettingsViewSelected}"/>
-            <ContentControl Content="{Binding Help}"
-                            IsVisible="{Binding IsHelpViewSelected}"/>
-        </Grid>
+        <Popup x:Name="RecentVideosPopup"
+               IsOpen="{Binding IsRecentVideosPanelOpen, Mode=TwoWay}"
+               PlacementTarget="{Binding #RecentVideosButton}"
+               Placement="RightEdgeAlignedTop"
+               HorizontalOffset="12"
+               VerticalOffset="0"
+               IsLightDismissEnabled="True"
+               Topmost="True"
+               Closed="OnRecentVideosPopupClosed">
+            <Border Classes="pm-card pm-recent-panel"
+                    Width="286"
+                    Padding="12">
+                <StackPanel Spacing="10">
+                    <StackPanel Spacing="3">
+                        <TextBlock Text="Recent videos"
+                                   Classes="pm-section-title"/>
+                        <TextBlock Text="{Binding RecentVideosDirectory}"
+                                   Classes="pm-caption"
+                                   MaxLines="1"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <Border Classes="pm-inset"
+                            IsVisible="{Binding IsRecentVideosEmpty}">
+                        <TextBlock Text="No recent supported videos found."
+                                   Classes="pm-caption"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+
+                    <ItemsControl ItemsSource="{Binding RecentVideos}"
+                                  IsVisible="{Binding HasRecentVideos}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:RecentVideoItemViewModel">
+                                <Button Classes="pm-recent-item"
+                                        Command="{Binding SelectCommand}"
+                                        HorizontalAlignment="Stretch"
+                                        ToolTip.Tip="{Binding FullPath}">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="{Binding FileName}"
+                                                   Classes="pm-recent-item-title"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding ModifiedText}"
+                                                   Classes="pm-caption"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </Popup>
     </Grid>
 </Window>

@@ -20,7 +20,8 @@ public sealed class AppSettingsCoordinatorTests
                 FrameRateMode = PotatoMaker.Core.EncodeFrameRateMode.Original,
                 PreviewVolumePercent = 100,
                 SvtAv1Preset = 6,
-                LastOutputFolder = null
+                LastOutputFolder = null,
+                RecentVideosDirectory = AppSettings.DefaultRecentVideosDirectory
             });
 
         await coordinator.UpdateAsync(settings => settings with
@@ -31,7 +32,8 @@ public sealed class AppSettingsCoordinatorTests
             FrameRateMode = PotatoMaker.Core.EncodeFrameRateMode.Fps30,
             PreviewVolumePercent = 42,
             SvtAv1Preset = 8,
-            LastOutputFolder = "C:\\out"
+            LastOutputFolder = "C:\\out",
+            RecentVideosDirectory = "D:\\Captures"
         });
 
         Assert.True(coordinator.Current.IsDarkMode);
@@ -41,6 +43,7 @@ public sealed class AppSettingsCoordinatorTests
         Assert.Equal(42, coordinator.Current.PreviewVolumePercent);
         Assert.Equal(8, coordinator.Current.SvtAv1Preset);
         Assert.Equal("C:\\out", coordinator.Current.LastOutputFolder);
+        Assert.Equal("D:\\Captures", coordinator.Current.RecentVideosDirectory);
         Assert.Single(persistence.SavedSettings);
         Assert.Equal(coordinator.Current, persistence.SavedSettings[0]);
     }

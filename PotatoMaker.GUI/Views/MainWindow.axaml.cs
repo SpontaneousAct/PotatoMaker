@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using PotatoMaker.GUI.ViewModels;
@@ -58,5 +59,11 @@ public partial class MainWindow : Window
 
         if (MainWindowViewModel.IsGlobalShortcut(e.Key, e.KeyModifiers))
             e.Handled = true;
+    }
+
+    private void OnRecentVideosPopupClosed(object? sender, EventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel && viewModel.IsRecentVideosPanelOpen)
+            viewModel.IsRecentVideosPanelOpen = false;
     }
 }

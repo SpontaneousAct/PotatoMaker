@@ -7,6 +7,8 @@ namespace PotatoMaker.GUI.Services;
 /// </summary>
 public sealed record AppSettings
 {
+    public const string DefaultRecentVideosDirectory = @"C:\Videos";
+
     public bool IsDarkMode { get; init; }
 
     public bool UseNvencEncoder { get; init; } = true;
@@ -22,4 +24,6 @@ public sealed record AppSettings
     public int SvtAv1Preset { get; init; } = EncodeSettings.DefaultSvtAv1Preset;
 
     public string? LastOutputFolder { get; init; }
+
+    public string RecentVideosDirectory { get; init; } = DefaultRecentVideosDirectory;
 }

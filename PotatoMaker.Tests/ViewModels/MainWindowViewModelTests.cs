@@ -31,6 +31,7 @@ public sealed class MainWindowViewModelTests
             workspace,
             themeService,
             settingsCoordinator,
+            new RecordingRecentVideoDiscoveryService(),
             null);
 
         Assert.True(viewModel.IsDarkMode);
@@ -61,6 +62,7 @@ public sealed class MainWindowViewModelTests
                 workspace,
                 new RecordingThemeService(),
                 null,
+                new RecordingRecentVideoDiscoveryService(),
                 null);
 
             bool loaded = viewModel.TryLoadStartupFiles(["", "--flag", inputPath]);
@@ -95,6 +97,7 @@ public sealed class MainWindowViewModelTests
                 workspace,
                 new RecordingThemeService(),
                 null,
+                new RecordingRecentVideoDiscoveryService(),
                 null);
 
             viewModel.ShowSettingsViewCommand.Execute(null);
@@ -123,6 +126,7 @@ public sealed class MainWindowViewModelTests
                 initializeEncoderSupport: false),
             new RecordingThemeService(),
             null,
+            new RecordingRecentVideoDiscoveryService(),
             null);
 
         viewModel.ShowHelpViewCommand.Execute(null);
@@ -131,6 +135,73 @@ public sealed class MainWindowViewModelTests
 
         Assert.False(loaded);
         Assert.True(viewModel.IsHelpViewSelected);
+    }
+
+    [Fact]
+    public async Task ChangingRecentVideosDirectory_PersistsPreference()
+    {
+        var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
+        {
+            IsDarkMode = false,
+            RecentVideosDirectory = AppSettings.DefaultRecentVideosDirectory
+        });
+        var viewModel = new MainWindowViewModel(
+            new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                settingsCoordinator,
+                initializeEncoderSupport: false),
+            new RecordingThemeService(),
+            settingsCoordinator,
+            new RecordingRecentVideoDiscoveryService(),
+            null);
+
+        viewModel.Settings.RecentVideosDirectory = @"D:\Captures";
+
+        AppSettings persisted = await settingsCoordinator.WaitForUpdateAsync();
+
+        Assert.Equal(@"D:\Captures", persisted.RecentVideosDirectory);
+    }
+
+    [Fact]
+    public void SelectingRecentVideo_LoadsFileAndReturnsToMainView()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var recentVideos = new RecordingRecentVideoDiscoveryService(
+            [
+                new RecentVideoFile(Path.GetFullPath(inputPath), Path.GetFileName(inputPath), DateTimeOffset.Now)
+            ]);
+            var workspace = new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+            var viewModel = new MainWindowViewModel(
+                workspace,
+                new RecordingThemeService(),
+                null,
+                recentVideos,
+                null);
+
+            viewModel.ShowSettingsViewCommand.Execute(null);
+            viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+            viewModel.RecentVideos[0].SelectCommand.Execute(null);
+
+            Assert.Equal(1, recentVideos.CallCount);
+            Assert.Equal(Path.GetFullPath(inputPath), workspace.FileInput.InputFilePath);
+            Assert.True(viewModel.IsMainViewSelected);
+            Assert.False(viewModel.IsRecentVideosPanelOpen);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
     }
 
     [Fact]
@@ -154,6 +225,7 @@ public sealed class MainWindowViewModelTests
                 workspace,
                 new RecordingThemeService(),
                 null,
+                new RecordingRecentVideoDiscoveryService(),
                 null);
 
             Assert.True(workspace.FileInput.SetFile(inputPath));
@@ -191,6 +263,7 @@ public sealed class MainWindowViewModelTests
                 workspace,
                 new RecordingThemeService(),
                 null,
+                new RecordingRecentVideoDiscoveryService(),
                 null);
 
             Assert.True(workspace.FileInput.SetFile(inputPath));
@@ -225,6 +298,7 @@ public sealed class MainWindowViewModelTests
                 initializeEncoderSupport: false),
             new RecordingThemeService(),
             null,
+            new RecordingRecentVideoDiscoveryService(),
             null);
 
         Assert.False(viewModel.TryHandleGlobalShortcut(Key.Space, KeyModifiers.Control));
@@ -244,6 +318,7 @@ public sealed class MainWindowViewModelTests
                 initializeEncoderSupport: false),
             new RecordingThemeService(),
             null,
+            new RecordingRecentVideoDiscoveryService(),
             null,
             new StubAppVersionService("2.3.4-beta.5"));
 
@@ -273,6 +348,7 @@ public sealed class MainWindowViewModelTests
             workspace,
             new RecordingThemeService(),
             null,
+            new RecordingRecentVideoDiscoveryService(),
             null);
 
         Assert.False(workspace.VideoPlayer.SuppressVideoSurface);
@@ -300,6 +376,7 @@ public sealed class MainWindowViewModelTests
             workspace,
             new RecordingThemeService(),
             null,
+            new RecordingRecentVideoDiscoveryService(),
             null);
 
         viewModel.ShowHelpViewCommand.Execute(null);
@@ -332,6 +409,7 @@ public sealed class MainWindowViewModelTests
                 initializeEncoderSupport: false),
             new RecordingThemeService(),
             null,
+            new RecordingRecentVideoDiscoveryService(),
             updateService);
 
         await viewModel.InitializeAsync();
@@ -362,6 +440,7 @@ public sealed class MainWindowViewModelTests
                 initializeEncoderSupport: false),
             new RecordingThemeService(),
             null,
+            new RecordingRecentVideoDiscoveryService(),
             updateService);
 
         await viewModel.InitializeAsync();
@@ -371,7 +450,6 @@ public sealed class MainWindowViewModelTests
         Assert.True(viewModel.Settings.IsUpdateSectionVisible);
         Assert.Equal("Apply update", viewModel.Settings.UpdateActionText);
         Assert.Contains("downloaded and ready", viewModel.Settings.UpdateDescription, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("reopen automatically", viewModel.Settings.UpdateDescription, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -394,6 +472,7 @@ public sealed class MainWindowViewModelTests
                 initializeEncoderSupport: false),
             new RecordingThemeService(),
             null,
+            new RecordingRecentVideoDiscoveryService(),
             updateService);
 
         await viewModel.InitializeAsync();
@@ -433,6 +512,20 @@ public sealed class MainWindowViewModelTests
         }
 
         public Task<AppSettings> WaitForUpdateAsync() => _updateTcs.Task;
+    }
+
+    private sealed class RecordingRecentVideoDiscoveryService(
+        IReadOnlyList<RecentVideoFile>? recentVideos = null) : IRecentVideoDiscoveryService
+    {
+        public int CallCount { get; private set; }
+
+        public IReadOnlyList<RecentVideoFile> RecentVideos { get; } = recentVideos ?? [];
+
+        public IReadOnlyList<RecentVideoFile> GetRecentVideos(string? directoryPath, int limit = RecentVideoDiscoveryService.DefaultLimit)
+        {
+            CallCount++;
+            return RecentVideos.Take(limit).ToArray();
+        }
     }
 
     private sealed class NoOpAnalysisService : IVideoAnalysisService

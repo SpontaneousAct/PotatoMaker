@@ -238,6 +238,14 @@
             <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
         </Style>
 
+        <Style Selector="Path.pm-nav-icon-path">
+            <Setter Property="Stroke" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="Path.pm-nav-icon-fill">
+            <Setter Property="Fill" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
         <Style Selector="Border.pm-sidebar-version">
             <Setter Property="Background" Value="{DynamicResource PmHelpBadgeBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmHelpBadgeBorderBrush}"/>
@@ -461,6 +469,33 @@
         </Style>
 
         <Style Selector="Button.pm-nav-button.pm-nav-active TextBlock.pm-nav-icon">
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button.pm-nav-active Path.pm-nav-icon-path">
+            <Setter Property="Stroke" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button.pm-nav-active Path.pm-nav-icon-fill">
+            <Setter Property="Fill" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-recent-item">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="8,7"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="MinHeight" Value="0"/>
+        </Style>
+
+        <Style Selector="Button.pm-recent-item:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-recent-item-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
 

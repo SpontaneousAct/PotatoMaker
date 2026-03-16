@@ -56,7 +56,8 @@ public sealed class JsonAppSettingsServiceTests
                 FrameRateMode = PotatoMaker.Core.EncodeFrameRateMode.Fps30,
                 PreviewVolumePercent = 42,
                 SvtAv1Preset = 8,
-                LastOutputFolder = "C:\\encoded"
+                LastOutputFolder = "C:\\encoded",
+                RecentVideosDirectory = "D:\\Captures"
             });
 
             Assert.True(File.Exists(settingsPath));
@@ -72,6 +73,7 @@ public sealed class JsonAppSettingsServiceTests
             Assert.Equal(42, settings.PreviewVolumePercent);
             Assert.Equal(8, settings.SvtAv1Preset);
             Assert.Equal("C:\\encoded", settings.LastOutputFolder);
+            Assert.Equal("D:\\Captures", settings.RecentVideosDirectory);
         }
         finally
         {
@@ -90,7 +92,8 @@ public sealed class JsonAppSettingsServiceTests
             {
               "UseNvencEncoder": false,
               "OutputNamePrefix": "legacy_",
-              "OutputNameSuffix": "_legacy"
+              "OutputNameSuffix": "_legacy",
+              "RecentVideosDirectory": "E:\\LegacyCaptures"
             }
             """);
 
@@ -103,6 +106,7 @@ public sealed class JsonAppSettingsServiceTests
             Assert.False(settings.UseNvencEncoder);
             Assert.Equal("legacy_", settings.OutputNamePrefix);
             Assert.Equal("_legacy", settings.OutputNameSuffix);
+            Assert.Equal("E:\\LegacyCaptures", settings.RecentVideosDirectory);
         }
         finally
         {

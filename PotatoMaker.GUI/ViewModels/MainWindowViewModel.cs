@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using PotatoMaker.GUI.Services;
 using Avalonia.Input;
 using Avalonia.Threading;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 
 namespace PotatoMaker.GUI.ViewModels;
 
@@ -14,6 +16,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly IThemeService _themeService;
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
     private readonly IAppUpdateService _updateService;
+    private readonly IRecentVideoDiscoveryService _recentVideoDiscoveryService;
     private readonly CancellationTokenSource _lifetimeCts = new();
     private bool _isApplyingSettings;
 
@@ -22,6 +25,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             new EncodeWorkspaceViewModel(),
             new AvaloniaThemeService(),
             null,
+            new RecentVideoDiscoveryService(),
             new DisabledAppUpdateService(),
             new AssemblyAppVersionService())
     {
@@ -31,11 +35,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         EncodeWorkspaceViewModel workspace,
         IThemeService themeService,
         IAppSettingsCoordinator? settingsCoordinator,
+        IRecentVideoDiscoveryService recentVideoDiscoveryService,
         IAppUpdateService? updateService,
         IAppVersionService? appVersionService = null)
     {
         ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(themeService);
+        ArgumentNullException.ThrowIfNull(recentVideoDiscoveryService);
 
         Workspace = workspace;
         Settings = new SettingsViewModel(
@@ -46,12 +52,16 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             () => SettingsUpdateTitle,
             () => SettingsUpdateDescription,
             () => SettingsUpdateActionText,
+            () => RecentVideosDirectory,
+            value => RecentVideosDirectory = value,
             ApplyUpdateCommand);
         Help = new HelpViewModel();
         VersionText = (appVersionService ?? new AssemblyAppVersionService()).DisplayVersion;
         _themeService = themeService;
         _settingsCoordinator = settingsCoordinator;
+        _recentVideoDiscoveryService = recentVideoDiscoveryService;
         _updateService = updateService ?? new DisabledAppUpdateService();
+        RecentVideos.CollectionChanged += OnRecentVideosCollectionChanged;
 
         ApplyInitialSettings();
     }
@@ -63,6 +73,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public HelpViewModel Help { get; }
 
     public string VersionText { get; }
+
+    public ObservableCollection<RecentVideoItemViewModel> RecentVideos { get; } = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsUpdateBadgeVisible))]
@@ -86,6 +98,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isDarkMode;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRecentVideos))]
+    [NotifyPropertyChangedFor(nameof(IsRecentVideosEmpty))]
+    private bool _isRecentVideosPanelOpen;
+
+    [ObservableProperty]
+    private string _recentVideosDirectory = AppSettings.DefaultRecentVideosDirectory;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentView))]
     [NotifyPropertyChangedFor(nameof(IsMainViewSelected))]
     [NotifyPropertyChangedFor(nameof(IsSettingsViewSelected))]
@@ -104,6 +124,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public bool IsSettingsViewSelected => SelectedView == ShellViewKind.Settings;
 
     public bool IsHelpViewSelected => SelectedView == ShellViewKind.Help;
+
+    public bool HasRecentVideos => RecentVideos.Count > 0;
+
+    public bool IsRecentVideosEmpty => RecentVideos.Count == 0;
 
     public bool IsUpdateBadgeVisible => UpdateButtonState is UpdateIndicatorState.Available or UpdateIndicatorState.PendingRestart;
 
@@ -187,7 +211,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         bool loaded = TryLoadStartupFiles(candidates);
         if (loaded || candidates.Length > 0)
+        {
+            IsRecentVideosPanelOpen = false;
             SelectedView = ShellViewKind.Main;
+        }
 
         return loaded;
     }
@@ -242,18 +269,56 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         };
     }
 
+    partial void OnRecentVideosDirectoryChanged(string value)
+    {
+        Settings.NotifyRecentVideosDirectoryChanged();
+
+        if (IsRecentVideosPanelOpen)
+            RefreshRecentVideos();
+
+        if (_isApplyingSettings || _settingsCoordinator is null)
+            return;
+
+        _ = PersistRecentVideosDirectoryAsync();
+    }
+
     public static bool IsGlobalShortcut(Key key, KeyModifiers modifiers) =>
         modifiers == KeyModifiers.None &&
         key is Key.Space or Key.Q or Key.A or Key.D or Key.E;
 
     [RelayCommand]
-    private void ShowMainView() => SelectedView = ShellViewKind.Main;
+    private void ShowMainView()
+    {
+        IsRecentVideosPanelOpen = false;
+        SelectedView = ShellViewKind.Main;
+    }
 
     [RelayCommand]
-    private void ShowSettingsView() => SelectedView = ShellViewKind.Settings;
+    private void ShowSettingsView()
+    {
+        IsRecentVideosPanelOpen = false;
+        SelectedView = ShellViewKind.Settings;
+    }
 
     [RelayCommand]
-    private void ShowHelpView() => SelectedView = ShellViewKind.Help;
+    private void ShowHelpView()
+    {
+        IsRecentVideosPanelOpen = false;
+        SelectedView = ShellViewKind.Help;
+    }
+
+    [RelayCommand]
+    private void ToggleRecentVideosPanel()
+    {
+        if (IsRecentVideosPanelOpen)
+        {
+            IsRecentVideosPanelOpen = false;
+            return;
+        }
+
+        RefreshRecentVideos();
+        IsRecentVideosPanelOpen = true;
+    }
 
     [RelayCommand(CanExecute = nameof(CanApplyUpdate), AllowConcurrentExecutions = false)]
     private async Task ApplyUpdateAsync()
@@ -308,11 +373,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         bool initialIsDarkMode = _settingsCoordinator?.Current.IsDarkMode
             ?? _themeService.IsDarkModeEnabled();
+        string initialRecentVideosDirectory = NormalizeRecentVideosDirectory(_settingsCoordinator?.Current.RecentVideosDirectory);
 
         _isApplyingSettings = true;
         try
         {
             IsDarkMode = initialIsDarkMode;
+            RecentVideosDirectory = initialRecentVideosDirectory;
         }
         finally
         {
@@ -335,6 +402,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private async Task PersistRecentVideosDirectoryAsync()
+    {
+        try
+        {
+            await _settingsCoordinator!.UpdateAsync(settings => settings with
+            {
+                RecentVideosDirectory = NormalizeRecentVideosDirectory(RecentVideosDirectory)
+            }).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Ignore persistence failures and keep the in-memory value.
+        }
+    }
+
     private static bool ExecuteShortcut(System.Windows.Input.ICommand command)
     {
         command.Execute(null);
@@ -343,6 +425,34 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private bool CanApplyUpdate() =>
         UpdateButtonState is UpdateIndicatorState.Available or UpdateIndicatorState.PendingRestart;
+
+    private void RefreshRecentVideos()
+    {
+        IReadOnlyList<RecentVideoFile> recentVideos = _recentVideoDiscoveryService.GetRecentVideos(RecentVideosDirectory);
+
+        RecentVideos.Clear();
+        foreach (RecentVideoFile video in recentVideos)
+        {
+            RecentVideos.Add(new RecentVideoItemViewModel(video.FullPath, video.FileName, video.LastModified, OpenRecentVideo));
+        }
+    }
+
+    private void OpenRecentVideo(string path)
+    {
+        if (!Workspace.FileInput.SetFile(path))
+        {
+            RefreshRecentVideos();
+            return;
+        }
+
+        SelectedView = ShellViewKind.Main;
+        IsRecentVideosPanelOpen = false;
+    }
+
+    private static string NormalizeRecentVideosDirectory(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? AppSettings.DefaultRecentVideosDirectory
+            : value.Trim();
 
     private void ApplyUpdateSnapshot(AppUpdateSnapshot snapshot)
     {
@@ -361,7 +471,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         _lifetimeCts.Cancel();
         _lifetimeCts.Dispose();
+        RecentVideos.CollectionChanged -= OnRecentVideosCollectionChanged;
         Workspace.Dispose();
+    }
+
+    private void OnRecentVideosCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(HasRecentVideos));
+        OnPropertyChanged(nameof(IsRecentVideosEmpty));
     }
 
     public enum UpdateIndicatorState

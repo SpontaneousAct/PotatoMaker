@@ -40,6 +40,36 @@
             <Border Classes="pm-card pm-settings-section"
                     Padding="16">
                 <StackPanel Spacing="14">
+                    <TextBlock Text="Recent Videos"
+                               Classes="pm-section-title"/>
+
+                    <Grid Classes="pm-settings-row"
+                          ColumnDefinitions="*,Auto"
+                          ColumnSpacing="16">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Quick-load folder"
+                                       Classes="pm-settings-label"/>
+                            <TextBlock Text="Used by the left-nav shortcut to show the 5 newest supported videos for fast loading."
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="1"
+                                Command="{Binding BrowseRecentVideosDirectoryCommand}"
+                                Content="Browse"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <TextBox Text="{Binding RecentVideosDirectory}"
+                             Watermark="C:\Videos"
+                             HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="pm-card pm-settings-section"
+                    Padding="16">
+                <StackPanel Spacing="14">
                     <TextBlock Text="Encoding Defaults"
                                Classes="pm-section-title"/>
 
