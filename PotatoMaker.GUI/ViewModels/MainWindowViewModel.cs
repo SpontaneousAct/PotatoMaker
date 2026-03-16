@@ -120,16 +120,16 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         UpdateIndicatorState.Downloading =>
             "Downloading update",
         UpdateIndicatorState.PendingRestart when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
-            $"Restart to finish v{AvailableUpdateVersion}",
+            $"Update ready: v{AvailableUpdateVersion}",
         UpdateIndicatorState.PendingRestart =>
-            "Restart to apply update",
+            "Update ready",
         _ => string.Empty
     };
 
     public string SettingsUpdateDescription => UpdateButtonState switch
     {
         UpdateIndicatorState.Available when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
-            $"PotatoMaker {AvailableUpdateVersion} is ready to download and install.",
+            $"PotatoMaker {AvailableUpdateVersion} is ready to download.",
         UpdateIndicatorState.Available =>
             "A newer packaged version of PotatoMaker is available.",
         UpdateIndicatorState.Downloading when UpdateProgressPercent > 0 =>
@@ -137,16 +137,17 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         UpdateIndicatorState.Downloading =>
             "Downloading the update package now.",
         UpdateIndicatorState.PendingRestart when !string.IsNullOrWhiteSpace(AvailableUpdateVersion) =>
-            $"The update package for PotatoMaker {AvailableUpdateVersion} has finished downloading. Restart the app to apply it.",
+            $"PotatoMaker {AvailableUpdateVersion} is downloaded and ready.",
         UpdateIndicatorState.PendingRestart =>
-            "The update has finished downloading. Restart the app to apply it.",
+            "The update is downloaded and ready.",
         _ => string.Empty
     };
 
     public string SettingsUpdateActionText => UpdateButtonState switch
     {
-        UpdateIndicatorState.PendingRestart => "Restart to update",
-        _ => "Install update"
+        UpdateIndicatorState.Downloading => "Downloading...",
+        UpdateIndicatorState.PendingRestart => "Apply update",
+        _ => "Download update"
     };
 
     partial void OnIsDarkModeChanged(bool value)
@@ -257,6 +258,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         try
         {
+            if (UpdateButtonState == UpdateIndicatorState.PendingRestart)
+            {
+                _updateService.ApplyPendingUpdateAndRestart();
+                return;
+            }
+
             if (UpdateButtonState == UpdateIndicatorState.Available)
             {
                 UpdateProgressPercent = 0;

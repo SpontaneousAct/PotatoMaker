@@ -339,7 +339,7 @@ public sealed class MainWindowViewModelTests
         Assert.True(viewModel.IsUpdateBadgeVisible);
         Assert.True(viewModel.Settings.IsUpdateSectionVisible);
         Assert.Equal("Update available: v9.9.9", viewModel.Settings.UpdateTitle);
-        Assert.Equal("Install update", viewModel.Settings.UpdateActionText);
+        Assert.Equal("Download update", viewModel.Settings.UpdateActionText);
     }
 
     [Fact]
@@ -364,12 +364,42 @@ public sealed class MainWindowViewModelTests
             null,
             updateService);
 
+        await viewModel.InitializeAsync();
         await ((IAsyncRelayCommand)viewModel.ApplyUpdateCommand).ExecuteAsync(null);
 
         Assert.Equal(1, updateService.ApplyCallCount);
         Assert.True(viewModel.Settings.IsUpdateSectionVisible);
-        Assert.Equal("Restart to update", viewModel.Settings.UpdateActionText);
-        Assert.Contains("finished downloading", viewModel.Settings.UpdateDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Apply update", viewModel.Settings.UpdateActionText);
+        Assert.Contains("downloaded and ready", viewModel.Settings.UpdateDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("reopen automatically", viewModel.Settings.UpdateDescription, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ApplyUpdateCommand_AppliesPendingUpdate_WhenUpdateIsPending()
+    {
+        var updateService = new StubAppUpdateService(
+            currentSnapshot: new AppUpdateSnapshot(
+                IsConfigured: true,
+                CanSelfUpdate: true,
+                IsUpdateAvailable: false,
+                IsUpdatePendingRestart: true,
+                AvailableVersion: "2.0.0"));
+
+        var viewModel = new MainWindowViewModel(
+            new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false),
+            new RecordingThemeService(),
+            null,
+            updateService);
+
+        await viewModel.InitializeAsync();
+        await ((IAsyncRelayCommand)viewModel.ApplyUpdateCommand).ExecuteAsync(null);
+
+        Assert.Equal(1, updateService.ApplyPendingAndRestartCallCount);
     }
 
     private sealed class RecordingThemeService : IThemeService
@@ -513,6 +543,8 @@ public sealed class MainWindowViewModelTests
     {
         public int ApplyCallCount { get; private set; }
 
+        public int ApplyPendingAndRestartCallCount { get; private set; }
+
         public bool ShouldCheckOnStartup => true;
 
         public TimeSpan StartupCheckDelay => TimeSpan.Zero;
@@ -541,6 +573,11 @@ public sealed class MainWindowViewModelTests
             };
 
             return Task.CompletedTask;
+        }
+
+        public void ApplyPendingUpdateAndRestart()
+        {
+            ApplyPendingAndRestartCallCount++;
         }
     }
 }

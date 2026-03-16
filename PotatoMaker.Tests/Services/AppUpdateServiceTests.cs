@@ -61,11 +61,11 @@ public sealed class AppUpdateServiceTests
         Assert.Equal(1, manager.DownloadCallCount);
         Assert.Equal(1, manager.CleanPackagesCallCount);
         Assert.Equal("PotatoMaker-3.4.5-full.nupkg", manager.KeptPackageFileName);
-        Assert.Equal("3.4.5", manager.AppliedVersion);
+        Assert.Null(manager.AppliedVersion);
     }
 
     [Fact]
-    public async Task ApplyUpdateAsync_CleansCachedPackagesBeforeApplyingPendingRestart()
+    public void ApplyPendingUpdateAndRestart_CleansCachedPackagesBeforeApplyingPendingRestart()
     {
         var manager = new StubVelopackUpdateManager
         {
@@ -79,11 +79,13 @@ public sealed class AppUpdateServiceTests
         };
         var service = CreateService(manager);
 
-        await service.ApplyUpdateAsync();
+        service.ApplyPendingUpdateAndRestart();
 
         Assert.Equal(1, manager.CleanPackagesCallCount);
         Assert.Equal("PotatoMaker-4.5.6-full.nupkg", manager.KeptPackageFileName);
         Assert.Equal("4.5.6", manager.AppliedVersion);
+        Assert.True(manager.AppliedAndRestarted);
+        Assert.Empty(manager.RestartArgs);
     }
 
     private static AppUpdateService CreateService(StubVelopackUpdateManager manager) =>
@@ -131,6 +133,10 @@ public sealed class AppUpdateServiceTests
 
         public string? AppliedVersion { get; private set; }
 
+        public bool AppliedAndRestarted { get; private set; }
+
+        public string[] RestartArgs { get; private set; } = [];
+
         public Task<UpdateInfo?> CheckForUpdatesAsync(CancellationToken ct = default) =>
             Task.FromResult(AvailableUpdate);
 
@@ -147,9 +153,16 @@ public sealed class AppUpdateServiceTests
             KeptPackageFileName = assetFileName;
         }
 
-        public void ApplyUpdatesAndRestart(VelopackAsset toApply, string[] restartArgs)
+        public void ApplyUpdatesAndExit(VelopackAsset toApply)
         {
             AppliedVersion = toApply.Version?.ToFullString() ?? toApply.Version?.ToString();
+        }
+
+        public void ApplyUpdatesAndRestart(VelopackAsset toApply, string[] restartArgs)
+        {
+            AppliedAndRestarted = true;
+            AppliedVersion = toApply.Version?.ToFullString() ?? toApply.Version?.ToString();
+            RestartArgs = restartArgs;
         }
     }
 }

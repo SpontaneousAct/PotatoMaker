@@ -9,7 +9,7 @@
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="12">
+        <StackPanel Spacing="10">
             <Border Classes="pm-card pm-settings-section"
                     Padding="16">
                 <StackPanel Spacing="14">
@@ -162,9 +162,9 @@
             </Border>
 
             <Border Classes="pm-card pm-settings-section pm-update-panel"
-                    Padding="16"
+                    Padding="12,10"
                     IsVisible="{Binding IsUpdateSectionVisible}">
-                <StackPanel Spacing="14">
+                <StackPanel Spacing="8">
                     <TextBlock Text="{Binding UpdateTitle}"
                                Classes="pm-section-title"/>
 

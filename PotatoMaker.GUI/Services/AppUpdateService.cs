@@ -16,6 +16,8 @@ public interface IAppUpdateService
     Task<AppUpdateSnapshot> CheckForUpdatesAsync(CancellationToken ct = default);
 
     Task ApplyUpdateAsync(Action<int>? progress = null, CancellationToken ct = default);
+
+    void ApplyPendingUpdateAndRestart();
 }
 
 /// <summary>
@@ -35,6 +37,10 @@ public sealed class DisabledAppUpdateService : IAppUpdateService
 
     public Task ApplyUpdateAsync(Action<int>? progress = null, CancellationToken ct = default) =>
         Task.CompletedTask;
+
+    public void ApplyPendingUpdateAndRestart()
+    {
+    }
 }
 
 public interface IVelopackUpdateManager
@@ -52,6 +58,8 @@ public interface IVelopackUpdateManager
     Task DownloadUpdatesAsync(UpdateInfo updates, Action<int> progress, CancellationToken ct = default);
 
     void CleanPackagesExcept(string? assetFileName);
+
+    void ApplyUpdatesAndExit(VelopackAsset toApply);
 
     void ApplyUpdatesAndRestart(VelopackAsset toApply, string[] restartArgs);
 }
@@ -145,6 +153,9 @@ public sealed class VelopackUpdateManagerFactory : IVelopackUpdateManagerFactory
             }
         }
 
+        public void ApplyUpdatesAndExit(VelopackAsset toApply) =>
+            inner.ApplyUpdatesAndExit(toApply);
+
         public void ApplyUpdatesAndRestart(VelopackAsset toApply, string[] restartArgs) =>
             inner.ApplyUpdatesAndRestart(toApply, restartArgs);
     }
@@ -213,15 +224,7 @@ public sealed class AppUpdateService : IAppUpdateService
             return;
 
         if (_updateManager.IsUpdatePendingRestart)
-        {
-            if (_updateManager.UpdatePendingRestart is { } pendingRestart)
-            {
-                TryCleanPackagesExcept(_updateManager, pendingRestart);
-                _updateManager.ApplyUpdatesAndRestart(pendingRestart, []);
-            }
-
             return;
-        }
 
         if (_availableUpdate is null)
             return;
@@ -229,7 +232,25 @@ public sealed class AppUpdateService : IAppUpdateService
         Action<int> progressCallback = progress ?? (_ => { });
         await _updateManager.DownloadUpdatesAsync(_availableUpdate, progressCallback, ct).ConfigureAwait(false);
         TryCleanPackagesExcept(_updateManager, _availableUpdate.TargetFullRelease);
-        _updateManager.ApplyUpdatesAndRestart(_availableUpdate.TargetFullRelease, []);
+    }
+
+    public void ApplyPendingUpdateAndRestart()
+    {
+        if (_updateManager is null || !CanSelfUpdate(_updateManager))
+            return;
+
+        if (_updateManager.UpdatePendingRestart is not { } pendingRestart)
+            return;
+
+        try
+        {
+            TryCleanPackagesExcept(_updateManager, pendingRestart);
+            _updateManager.ApplyUpdatesAndRestart(pendingRestart, []);
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceWarning("Failed to apply pending update. {0}", ex.Message);
+        }
     }
 
     private AppUpdateSnapshot BuildCurrentSnapshot()
