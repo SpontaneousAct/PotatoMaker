@@ -265,6 +265,38 @@ public sealed class VideoPlayerViewModelTests
     }
 
     [Fact]
+    public void LoadSource_DuringInitialization_KeepsDeferredLoadingState()
+    {
+        var viewModel = new VideoPlayerViewModel(initializePlayer: false);
+        FieldInfo? attemptedField = typeof(VideoPlayerViewModel).GetField(
+            "_hasAttemptedPlayerInitialization",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+        FieldInfo? initializingField = typeof(VideoPlayerViewModel).GetField(
+            "_isPlayerInitializationInProgress",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+        FieldInfo? pendingField = typeof(VideoPlayerViewModel).GetField(
+            "_pendingSourceLoad",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+
+        Assert.NotNull(attemptedField);
+        Assert.NotNull(initializingField);
+        Assert.NotNull(pendingField);
+
+        attemptedField!.SetValue(viewModel, true);
+        initializingField!.SetValue(viewModel, true);
+
+        viewModel.LoadSource(
+            @"C:\videos\startup.mp4",
+            TimeSpan.FromSeconds(95),
+            VideoClipRange.Full(TimeSpan.FromSeconds(95)));
+
+        Assert.Equal("startup.mp4", viewModel.LoadedFileName);
+        Assert.Equal("Preparing video preview...", viewModel.StatusMessage);
+        Assert.Null(viewModel.PlayerErrorMessage);
+        Assert.NotNull(pendingField!.GetValue(viewModel));
+    }
+
+    [Fact]
     public void Clear_BeforeInitialization_RestoresIdleStatus()
     {
         var viewModel = new VideoPlayerViewModel(initializePlayer: false);

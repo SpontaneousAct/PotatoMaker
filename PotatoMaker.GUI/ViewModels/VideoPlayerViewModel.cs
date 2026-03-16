@@ -21,6 +21,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private readonly DispatcherTimer _seekPreviewTimer;
     private readonly DispatcherTimer _pausedSeekRefreshTimer;
 
+    private Task<PlayerInitializationResult>? _playerInitializationTask;
     private LibVLC? _libVlc;
     private Media? _media;
     private MediaPlayer? _mediaPlayer;
@@ -42,6 +43,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private bool _resumePlaybackAfterSeek;
     private bool _isSeekPlaybackRestorePending;
     private bool _hasAttemptedPlayerInitialization;
+    private bool _isPlayerInitializationInProgress;
+    private bool _isDisposed;
     private TimeSpan? _pendingSeekPreviewTarget;
     private TimeSpan? _pendingPausedSeekRefreshTarget;
     private TimeSpan? _lastRequestedSeekPreviewTarget;
@@ -80,32 +83,23 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         };
         _pausedSeekRefreshTimer.Tick += OnPausedSeekRefreshTimerTick;
 
-        _hasAttemptedPlayerInitialization = initializePlayer;
+        _hasAttemptedPlayerInitialization = false;
         _statusMessage = "Select a video to preview it.";
 
         if (initializePlayer)
-            TryInitializePlayer();
+            EnsureInitialized();
     }
 
     public void EnsureInitialized()
     {
-        if (_hasAttemptedPlayerInitialization)
+        if (_isDisposed || _hasAttemptedPlayerInitialization)
             return;
 
         _hasAttemptedPlayerInitialization = true;
-        TryInitializePlayer();
-
-        if (!IsPlayerAvailable)
-        {
-            _pendingSourceLoad = null;
-            return;
-        }
-
-        if (_pendingSourceLoad is { } pendingSourceLoad)
-        {
-            _pendingSourceLoad = null;
-            LoadSource(pendingSourceLoad.Path, pendingSourceLoad.Duration, pendingSourceLoad.Selection);
-        }
+        _isPlayerInitializationInProgress = true;
+        var initializationTask = Task.Run(CreatePlayerInitializationResult);
+        _playerInitializationTask = initializationTask;
+        _ = CompletePlayerInitializationAsync(initializationTask);
     }
 
     public MediaPlayer? MediaPlayer
@@ -405,15 +399,18 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         if (!IsPlayerAvailable || MediaPlayer is null || _libVlc is null)
         {
-            _pendingSourceLoad = !_hasAttemptedPlayerInitialization
+            bool shouldDeferLoad =
+                !_hasAttemptedPlayerInitialization ||
+                _isPlayerInitializationInProgress;
+            _pendingSourceLoad = shouldDeferLoad
                 ? (_sourcePath, duration, selection)
                 : null;
-            PlayerErrorMessage = _hasAttemptedPlayerInitialization
-                ? PlayerErrorMessage
-                : null;
-            StatusMessage = _hasAttemptedPlayerInitialization
-                ? "Video player could not be initialized."
-                : "Preparing video preview...";
+            PlayerErrorMessage = shouldDeferLoad
+                ? null
+                : PlayerErrorMessage;
+            StatusMessage = shouldDeferLoad
+                ? "Preparing video preview..."
+                : "Video player could not be initialized.";
             OnPropertyChanged(nameof(LoadedFileName));
             return;
         }
@@ -458,7 +455,9 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         SetTimelineFromPlayer(TimeSpan.Zero);
         _selectionStart = TimeSpan.Zero;
         _selectionEnd = TimeSpan.Zero;
-        bool hasInitializationFailure = _hasAttemptedPlayerInitialization && !IsPlayerAvailable;
+        bool hasInitializationFailure = _hasAttemptedPlayerInitialization &&
+            !_isPlayerInitializationInProgress &&
+            !IsPlayerAvailable;
         PlayerErrorMessage = hasInitializationFailure ? PlayerErrorMessage : null;
         StatusMessage = hasInitializationFailure
             ? "Video player could not be initialized."
@@ -546,6 +545,10 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        _isDisposed = true;
+        _playerInitializationTask = null;
+        _isPlayerInitializationInProgress = false;
+
         _positionTimer.Stop();
         _positionTimer.Tick -= OnPositionTimerTick;
         _seekPreviewTimer.Stop();
@@ -557,15 +560,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         _mediaPlayer = null;
 
         if (mediaPlayer is not null)
-        {
-            mediaPlayer.Playing -= OnMediaPlayerPlaying;
-            mediaPlayer.EndReached -= OnMediaPlayerEndReached;
-            mediaPlayer.Paused -= OnMediaPlayerPaused;
-            mediaPlayer.Stopped -= OnMediaPlayerStopped;
-            mediaPlayer.EncounteredError -= OnMediaPlayerEncounteredError;
-            mediaPlayer.TimeChanged -= OnMediaPlayerTimeChanged;
-            mediaPlayer.PositionChanged -= OnMediaPlayerPositionChanged;
-        }
+            DetachMediaPlayerEventHandlers(mediaPlayer);
 
         try
         {
@@ -600,32 +595,136 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void TryInitializePlayer()
+    private static PlayerInitializationResult CreatePlayerInitializationResult()
     {
+        LibVLC? libVlc = null;
+        MediaPlayer? mediaPlayer = null;
+
         try
         {
             LibVlcRuntime.EnsureInitialized();
-            _libVlc = new LibVLC("--quiet");
-            MediaPlayer = new MediaPlayer(_libVlc);
-            MediaPlayer.Playing += OnMediaPlayerPlaying;
-            MediaPlayer.EndReached += OnMediaPlayerEndReached;
-            MediaPlayer.Paused += OnMediaPlayerPaused;
-            MediaPlayer.Stopped += OnMediaPlayerStopped;
-            MediaPlayer.EncounteredError += OnMediaPlayerEncounteredError;
-            MediaPlayer.TimeChanged += OnMediaPlayerTimeChanged;
-            MediaPlayer.PositionChanged += OnMediaPlayerPositionChanged;
-            ApplyAudioSettings();
-            IsPlayerAvailable = true;
-            PlayerErrorMessage = null;
-            StatusMessage = "Select a video to preview it.";
+            libVlc = new LibVLC("--quiet");
+            mediaPlayer = new MediaPlayer(libVlc);
+            return new PlayerInitializationResult(libVlc, mediaPlayer, null);
         }
         catch (Exception ex)
         {
-            IsPlayerAvailable = false;
-            PlayerErrorMessage = ex.Message;
-            StatusMessage = "Video player could not be initialized.";
+            try
+            {
+                mediaPlayer?.Dispose();
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                libVlc?.Dispose();
+            }
+            catch
+            {
+            }
+
+            return new PlayerInitializationResult(null, null, ex);
         }
     }
+
+    private async Task CompletePlayerInitializationAsync(Task<PlayerInitializationResult> initializationTask)
+    {
+        PlayerInitializationResult result = await initializationTask.ConfigureAwait(false);
+        await Dispatcher.UIThread.InvokeAsync(() => ApplyPlayerInitializationResult(initializationTask, result));
+    }
+
+    private void ApplyPlayerInitializationResult(
+        Task<PlayerInitializationResult> initializationTask,
+        PlayerInitializationResult result)
+    {
+        if (!ReferenceEquals(_playerInitializationTask, initializationTask))
+        {
+            DisposePlayerInitializationResources(result);
+            return;
+        }
+
+        _playerInitializationTask = null;
+        _isPlayerInitializationInProgress = false;
+
+        if (_isDisposed)
+        {
+            DisposePlayerInitializationResources(result);
+            return;
+        }
+
+        if (result.Error is not null || result.LibVlc is null || result.MediaPlayer is null)
+        {
+            IsPlayerAvailable = false;
+            PlayerErrorMessage = result.Error?.Message ?? "Unable to initialize the video player.";
+            StatusMessage = "Video player could not be initialized.";
+            _pendingSourceLoad = null;
+            return;
+        }
+
+        _libVlc = result.LibVlc;
+        AttachMediaPlayerEventHandlers(result.MediaPlayer);
+        MediaPlayer = result.MediaPlayer;
+        ApplyAudioSettings();
+        IsPlayerAvailable = true;
+        PlayerErrorMessage = null;
+
+        if (_pendingSourceLoad is { } pendingSourceLoad)
+        {
+            _pendingSourceLoad = null;
+            LoadSource(pendingSourceLoad.Path, pendingSourceLoad.Duration, pendingSourceLoad.Selection);
+            return;
+        }
+
+        StatusMessage = "Select a video to preview it.";
+    }
+
+    private static void DisposePlayerInitializationResources(PlayerInitializationResult result)
+    {
+        try
+        {
+            result.MediaPlayer?.Dispose();
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            result.LibVlc?.Dispose();
+        }
+        catch
+        {
+        }
+    }
+
+    private void AttachMediaPlayerEventHandlers(MediaPlayer mediaPlayer)
+    {
+        mediaPlayer.Playing += OnMediaPlayerPlaying;
+        mediaPlayer.EndReached += OnMediaPlayerEndReached;
+        mediaPlayer.Paused += OnMediaPlayerPaused;
+        mediaPlayer.Stopped += OnMediaPlayerStopped;
+        mediaPlayer.EncounteredError += OnMediaPlayerEncounteredError;
+        mediaPlayer.TimeChanged += OnMediaPlayerTimeChanged;
+        mediaPlayer.PositionChanged += OnMediaPlayerPositionChanged;
+    }
+
+    private void DetachMediaPlayerEventHandlers(MediaPlayer mediaPlayer)
+    {
+        mediaPlayer.Playing -= OnMediaPlayerPlaying;
+        mediaPlayer.EndReached -= OnMediaPlayerEndReached;
+        mediaPlayer.Paused -= OnMediaPlayerPaused;
+        mediaPlayer.Stopped -= OnMediaPlayerStopped;
+        mediaPlayer.EncounteredError -= OnMediaPlayerEncounteredError;
+        mediaPlayer.TimeChanged -= OnMediaPlayerTimeChanged;
+        mediaPlayer.PositionChanged -= OnMediaPlayerPositionChanged;
+    }
+
+    private readonly record struct PlayerInitializationResult(
+        LibVLC? LibVlc,
+        MediaPlayer? MediaPlayer,
+        Exception? Error);
 
     private void OnPositionTimerTick(object? sender, EventArgs e)
     {
