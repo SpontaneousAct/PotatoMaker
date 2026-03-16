@@ -15,6 +15,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private static readonly TimeSpan SeekPreviewTimerInterval = TimeSpan.FromMilliseconds(16);
     private static readonly TimeSpan SeekPreviewPlayingDispatchInterval = TimeSpan.FromMilliseconds(33);
     private static readonly TimeSpan SeekPreviewPausedDispatchInterval = TimeSpan.FromMilliseconds(75);
+    private static readonly TimeSpan SkipStep = TimeSpan.FromSeconds(10);
     private const double PlaybackEndRestartThresholdSeconds = 0.05;
 
     private readonly DispatcherTimer _positionTimer;
@@ -120,6 +121,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(CanSeek));
                 SetTrimStartCommand.NotifyCanExecuteChanged();
                 SetTrimEndCommand.NotifyCanExecuteChanged();
+                SeekBackwardTenSecondsCommand.NotifyCanExecuteChanged();
+                SeekForwardTenSecondsCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -179,6 +182,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(CanAdjustVolume));
                 TogglePlaybackCommand.NotifyCanExecuteChanged();
                 StopPlaybackCommand.NotifyCanExecuteChanged();
+                SeekBackwardTenSecondsCommand.NotifyCanExecuteChanged();
+                SeekForwardTenSecondsCommand.NotifyCanExecuteChanged();
                 ToggleMuteCommand.NotifyCanExecuteChanged();
                 SetTrimStartCommand.NotifyCanExecuteChanged();
                 SetTrimEndCommand.NotifyCanExecuteChanged();
@@ -202,6 +207,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
                 OnPropertyChanged(nameof(CanAdjustVolume));
                 TogglePlaybackCommand.NotifyCanExecuteChanged();
                 StopPlaybackCommand.NotifyCanExecuteChanged();
+                SeekBackwardTenSecondsCommand.NotifyCanExecuteChanged();
+                SeekForwardTenSecondsCommand.NotifyCanExecuteChanged();
                 ToggleMuteCommand.NotifyCanExecuteChanged();
                 SetTrimStartCommand.NotifyCanExecuteChanged();
                 SetTrimEndCommand.NotifyCanExecuteChanged();
@@ -326,6 +333,12 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     private bool CanTogglePlayback() => CanControlPlayback;
 
+    [RelayCommand(CanExecute = nameof(CanSeekByStep))]
+    private void SeekBackwardTenSeconds() => SeekBy(-SkipStep);
+
+    [RelayCommand(CanExecute = nameof(CanSeekByStep))]
+    private void SeekForwardTenSeconds() => SeekBy(SkipStep);
+
     [RelayCommand(CanExecute = nameof(CanToggleMute))]
     private void ToggleMute()
     {
@@ -386,6 +399,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private void SetTrimEnd() => TrimBoundaryRequested?.Invoke(ClipBoundary.End);
 
     private bool CanSetTrimBoundary() => DurationSeconds > 0;
+
+    private bool CanSeekByStep() => CanSeek;
 
     public void LoadSource(string path, TimeSpan duration, VideoClipRange selection)
     {
@@ -952,6 +967,17 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             return;
 
         SeekToPlayerCore(ClampPosition(position));
+    }
+
+    private void SeekBy(TimeSpan delta)
+    {
+        if (!CanSeek)
+            return;
+
+        if (HasPendingSeekPreviewState())
+            CommitPendingSeekInteraction();
+
+        SeekTo(ClampPosition(CurrentPosition + delta));
     }
 
     private void ReleaseMedia()

@@ -304,6 +304,137 @@
             <Setter Property="MinHeight" Value="30"/>
         </Style>
 
+        <Style Selector="Border.pm-control-cluster">
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="8"/>
+        </Style>
+
+        <Style Selector="Border.pm-audio-cluster">
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="6,5"/>
+        </Style>
+
+        <Style Selector="Button.pm-control-pill">
+            <Setter Property="MinWidth" Value="88"/>
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Padding" Value="12,5"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style Selector="Button.pm-control-pill:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+
+        <Style Selector="Button.pm-control-pill:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="MinWidth" Value="34"/>
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="17"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action Path.pm-control-icon">
+            <Setter Property="Fill" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action:disabled Path.pm-control-icon">
+            <Setter Property="Fill" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action.pm-primary Path.pm-control-icon">
+            <Setter Property="Fill" Value="White"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action.pm-cancel Path.pm-control-icon">
+            <Setter Property="Fill" Value="White"/>
+        </Style>
+
+        <Style Selector="Button.pm-audio-action">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="MinWidth" Value="28"/>
+            <Setter Property="MinHeight" Value="28"/>
+            <Setter Property="CornerRadius" Value="14"/>
+        </Style>
+
+        <Style Selector="Button.pm-audio-action Path.pm-control-icon">
+            <Setter Property="Width" Value="13"/>
+            <Setter Property="Height" Value="13"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-control-symbol">
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons,Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider">
+            <Setter Property="Width" Value="84"/>
+            <Setter Property="MinWidth" Value="84"/>
+        </Style>
+
+        <Style Selector="Path.pm-icon-pause">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-playing Path.pm-icon-play">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-playing Path.pm-icon-pause">
+            <Setter Property="IsVisible" Value="True"/>
+        </Style>
+
+        <Style Selector="Grid.pm-icon-muted">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-muted Grid.pm-icon-unmuted">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-muted Grid.pm-icon-muted">
+            <Setter Property="IsVisible" Value="True"/>
+        </Style>
+
         <Style Selector="Button.pm-nav-button">
             <Setter Property="Background" Value="{DynamicResource PmNavItemBackground}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
