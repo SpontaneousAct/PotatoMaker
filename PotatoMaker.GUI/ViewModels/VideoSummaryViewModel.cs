@@ -76,9 +76,10 @@ public partial class VideoSummaryViewModel : ViewModelBase
 
         var plan = analysis.Plan;
         StrategyResolution = plan.ResolutionLabel;
-        StrategyBitrate = plan.Parts > 1
-            ? $"{plan.VideoBitrateKbps} kbps (per part)"
-            : $"{plan.VideoBitrateKbps} kbps";
+        string bitrateDetails = plan.Parts > 1
+            ? plan.IsBitrateCappedToSource ? " (per part, capped to source)" : " (per part)"
+            : plan.IsBitrateCappedToSource ? " (capped to source)" : string.Empty;
+        StrategyBitrate = $"{plan.VideoBitrateKbps} kbps{bitrateDetails}";
         StrategyParts = plan.Parts == 1 ? "Single file" : $"{plan.Parts} parts";
         StrategyOutputFrameRate = analysis.OutputFrameRate > 0 ? $"{analysis.OutputFrameRate:0.##} fps" : "Original";
         StrategyCrop = string.IsNullOrWhiteSpace(analysis.CropFilter) ? "No crop detected" : analysis.CropFilter;

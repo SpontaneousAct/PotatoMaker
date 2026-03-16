@@ -12,7 +12,13 @@ public static class EncodePlanner
     /// <summary>
     /// Describes the chosen encode plan.
     /// </summary>
-    public sealed record EncodePlan(int VideoBitrateKbps, int Parts, string? ScaleFilter, string ResolutionLabel);
+    public sealed record EncodePlan(
+        int VideoBitrateKbps,
+        int Parts,
+        string? ScaleFilter,
+        string ResolutionLabel,
+        bool IsBitrateCappedToSource = false,
+        int? SourceVideoBitrateKbps = null);
 
     public static int ResolveSourceHeightForPlan(int originalHeight, string? cropFilter)
     {
@@ -71,6 +77,27 @@ public static class EncodePlanner
         return new EncodePlan(bitrate, parts, ScaleFilter(1080), splitLabel);
     }
 
+    public static EncodePlan ApplySourceVideoBitrateCap(EncodePlan plan, int? sourceVideoBitrateKbps)
+    {
+        int? normalizedSourceBitrateKbps = NormalizeSourceVideoBitrate(sourceVideoBitrateKbps);
+        if (normalizedSourceBitrateKbps is null)
+            return plan;
+
+        if (plan.VideoBitrateKbps <= normalizedSourceBitrateKbps.Value)
+            return plan with
+            {
+                IsBitrateCappedToSource = false,
+                SourceVideoBitrateKbps = normalizedSourceBitrateKbps
+            };
+
+        return plan with
+        {
+            VideoBitrateKbps = Math.Max(1, normalizedSourceBitrateKbps.Value),
+            IsBitrateCappedToSource = true,
+            SourceVideoBitrateKbps = normalizedSourceBitrateKbps
+        };
+    }
+
     public static double ResolveOutputFrameRate(double sourceFrameRate, EncodeSettings settings)
     {
         if (sourceFrameRate <= 0)
@@ -125,6 +152,9 @@ public static class EncodePlanner
         if (double.IsNaN(durationSecs) || double.IsInfinity(durationSecs) || durationSecs <= 0)
             throw new InvalidOperationException(InvalidDurationMessage);
     }
+
+    private static int? NormalizeSourceVideoBitrate(int? sourceVideoBitrateKbps) =>
+        sourceVideoBitrateKbps is > 0 ? sourceVideoBitrateKbps : null;
 
     // -2 preserves aspect ratio and keeps the width even for AV1 encoders.
     private static string ScaleFilter(int maxHeight) => $"scale=-2:min(ih\\,{maxHeight})";

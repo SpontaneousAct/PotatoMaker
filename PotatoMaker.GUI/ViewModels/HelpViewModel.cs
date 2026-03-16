@@ -19,8 +19,10 @@ public sealed class HelpViewModel : ViewModelBase
     public IReadOnlyList<ShortcutHint> ShortcutHints { get; } =
     [
         new("Space", "Play or pause the current preview."),
+        new("Q", "Jump backward by 10 seconds."),
+        new("E", "Jump forward by 10 seconds."),
         new("A", "Set the trim start to the current playback position."),
-        new("D", "Set the trim end to the current playback position.")
+        new("D", "Set the trim end to the current playback position."),
     ];
 }
 

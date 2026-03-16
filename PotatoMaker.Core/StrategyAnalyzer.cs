@@ -63,7 +63,9 @@ public static class StrategyAnalyzer
         int sourceHeightForPlan = EncodePlanner.ResolveSourceHeightForPlan(info.Height, cropFilter);
         double outputFrameRate = EncodePlanner.ResolveOutputFrameRate(info.FrameRate, settings);
         string? frameRateFilter = EncodePlanner.BuildFrameRateFilter(info.FrameRate, settings);
-        var plan = EncodePlanner.PlanStrategy(effectiveDuration.TotalSeconds, sourceHeightForPlan, info.FrameRate, settings);
+        var plan = EncodePlanner.ApplySourceVideoBitrateCap(
+            EncodePlanner.PlanStrategy(effectiveDuration.TotalSeconds, sourceHeightForPlan, info.FrameRate, settings),
+            info.SourceVideoBitrateKbps);
 
         return new StrategyAnalysis(fullPath, cropFilter, frameRateFilter, outputFrameRate, plan);
     }

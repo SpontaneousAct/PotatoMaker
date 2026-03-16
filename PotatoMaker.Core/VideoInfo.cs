@@ -9,7 +9,8 @@ public record VideoInfo(
     TimeSpan Duration,
     int      Width,
     int      Height,
-    double   FrameRate)
+    double   FrameRate,
+    int?     SourceVideoBitrateKbps = null)
 {
     /// <summary>
     /// Runs FFProbe on <paramref name="path"/> and returns a <see cref="VideoInfo"/>.
@@ -28,6 +29,15 @@ public record VideoInfo(
             analysis.Duration,
             video?.Width  ?? 0,
             video?.Height ?? 0,
-            video?.FrameRate ?? 0);
+            video?.FrameRate ?? 0,
+            ParseBitrateKbps(video?.BitRate));
+    }
+
+    private static int? ParseBitrateKbps(long? bitRate)
+    {
+        if (bitRate is not > 0)
+            return null;
+
+        return (int)Math.Max(1, Math.Round(bitRate.Value / 1000d, MidpointRounding.AwayFromZero));
     }
 }

@@ -88,7 +88,10 @@ public class ProcessingPipeline
         _logger.LogInformation("  Target size   : {Target} MB  (hard limit: {Limit} MB)", _settings.EffectiveTargetMb, _settings.TargetSizeMb);
         _logger.LogInformation("  Audio reserve : {Audio} kbps", _settings.AudioBitrateKbps);
         _logger.LogInformation("  Resolution    : {Resolution}", encodePlan.ResolutionLabel);
-        _logger.LogInformation("  Bitrate       : {Bitrate} kbps", encodePlan.VideoBitrateKbps);
+        _logger.LogInformation(
+            "  Bitrate       : {Bitrate} kbps{Suffix}",
+            encodePlan.VideoBitrateKbps,
+            encodePlan.IsBitrateCappedToSource ? "  (capped to source video bitrate)" : string.Empty);
         _logger.LogInformation("  Files         : {Parts}", encodePlan.Parts);
 
         if (encodePlan.VideoBitrateKbps < _settings.MinVideoBitrateKbps)

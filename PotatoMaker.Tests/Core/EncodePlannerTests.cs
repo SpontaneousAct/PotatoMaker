@@ -46,6 +46,20 @@ public sealed class EncodePlannerTests
     }
 
     [Fact]
+    public void ApplySourceVideoBitrateCap_ShortClip_UsesSourceVideoBitrate()
+    {
+        EncodePlanner.EncodePlan uncappedPlan = EncodePlanner.PlanStrategy(0.1, 1080, 60, new EncodeSettings());
+
+        EncodePlanner.EncodePlan cappedPlan = EncodePlanner.ApplySourceVideoBitrateCap(uncappedPlan, 4500);
+
+        Assert.Equal(4500, cappedPlan.VideoBitrateKbps);
+        Assert.True(cappedPlan.IsBitrateCappedToSource);
+        Assert.Equal(4500, cappedPlan.SourceVideoBitrateKbps);
+        Assert.Equal(uncappedPlan.Parts, cappedPlan.Parts);
+        Assert.Equal(uncappedPlan.ResolutionLabel, cappedPlan.ResolutionLabel);
+    }
+
+    [Fact]
     public void BuildFrameRateFilter_OnlyReturnsFilterWhenFrameRateDrops()
     {
         EncodeSettings cappedSettings = new()

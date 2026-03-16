@@ -230,17 +230,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             Key.Space when Workspace.VideoPlayer.TogglePlaybackCommand.CanExecute(null) =>
                 ExecuteShortcut(Workspace.VideoPlayer.TogglePlaybackCommand),
+            Key.Q when Workspace.VideoPlayer.SeekBackwardTenSecondsCommand.CanExecute(null) =>
+                ExecuteShortcut(Workspace.VideoPlayer.SeekBackwardTenSecondsCommand),
             Key.A when Workspace.VideoPlayer.SetTrimStartCommand.CanExecute(null) =>
                 ExecuteShortcut(Workspace.VideoPlayer.SetTrimStartCommand),
             Key.D when Workspace.VideoPlayer.SetTrimEndCommand.CanExecute(null) =>
                 ExecuteShortcut(Workspace.VideoPlayer.SetTrimEndCommand),
+            Key.E when Workspace.VideoPlayer.SeekForwardTenSecondsCommand.CanExecute(null) =>
+                ExecuteShortcut(Workspace.VideoPlayer.SeekForwardTenSecondsCommand),
             _ => false
         };
     }
 
     public static bool IsGlobalShortcut(Key key, KeyModifiers modifiers) =>
         modifiers == KeyModifiers.None &&
-        key is Key.Space or Key.A or Key.D;
+        key is Key.Space or Key.Q or Key.A or Key.D or Key.E;
 
     [RelayCommand]
     private void ShowMainView() => SelectedView = ShellViewKind.Main;
