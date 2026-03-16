@@ -38,6 +38,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private bool _isSeekInteractionActive;
     private bool _isUpdatingFromPlayer;
     private bool _isPrimingInitialFrame;
+    private bool _isInitialFramePausePending;
     private bool _isResettingToFirstFrame;
     private bool _muteBeforeInitialFramePrime;
     private int _volumeBeforeInitialFramePrime;
@@ -463,6 +464,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         DetachCurrentMedia();
         _sourcePath = null;
         _isPrimingInitialFrame = false;
+        _isInitialFramePausePending = false;
         _isResettingToFirstFrame = false;
         HasMedia = false;
         IsPlaying = false;
@@ -768,6 +770,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         IsPlaying = ShouldExposePlayingState(
             mediaPlayerIsPlaying,
             _isPrimingInitialFrame,
+            _isInitialFramePausePending,
             _isResettingToFirstFrame,
             IsSeekPreviewPlaybackManaged(),
             _resumePlaybackAfterSeek);
@@ -807,6 +810,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         try
         {
             _isPrimingInitialFrame = true;
+            _isInitialFramePausePending = false;
             _muteBeforeInitialFramePrime = MediaPlayer.Mute;
             _volumeBeforeInitialFramePrime = MediaPlayer.Volume;
             MediaPlayer.Volume = 0;
@@ -816,6 +820,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         catch
         {
             _isPrimingInitialFrame = false;
+            _isInitialFramePausePending = false;
             _isResettingToFirstFrame = false;
 
             if (MediaPlayer is not null)
@@ -853,7 +858,13 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     private void OnMediaPlayerPaused(object? sender, EventArgs e)
     {
-        Dispatcher.UIThread.Post(HandlePausedSeekRefreshPlayerStateChanged);
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (_isInitialFramePausePending)
+                FinalizeInitialFramePrime();
+
+            HandlePausedSeekRefreshPlayerStateChanged();
+        });
     }
 
     private void OnMediaPlayerStopped(object? sender, EventArgs e)
@@ -898,24 +909,45 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         if (!_isPrimingInitialFrame || MediaPlayer is null)
             return;
 
-        _isPrimingInitialFrame = false;
-
         try
         {
             MediaPlayer.SetPause(true);
-
-            long currentTime = MediaPlayer.Time;
-            if (currentTime >= 0)
-                SetTimelineFromPlayer(TimeSpan.FromMilliseconds(currentTime));
+            _isInitialFramePausePending = true;
+            // Keep the exposed timeline parked at the beginning while we briefly
+            // play to materialize the first frame, so the transport controls do
+            // not flicker into a playing/resettable state during startup.
+            SetTimelineFromPlayer(TimeSpan.Zero);
         }
-        finally
+        catch
         {
+            _isPrimingInitialFrame = false;
+            _isInitialFramePausePending = false;
             _isResettingToFirstFrame = false;
             MediaPlayer.Volume = _volumeBeforeInitialFramePrime;
             MediaPlayer.Mute = _muteBeforeInitialFramePrime;
             ApplyAudioSettings();
             UpdatePlaybackState();
         }
+    }
+
+    private void FinalizeInitialFramePrime()
+    {
+        if (!_isPrimingInitialFrame && !_isInitialFramePausePending)
+            return;
+
+        _isPrimingInitialFrame = false;
+        _isInitialFramePausePending = false;
+        _isResettingToFirstFrame = false;
+
+        if (MediaPlayer is not null)
+        {
+            MediaPlayer.Volume = _volumeBeforeInitialFramePrime;
+            MediaPlayer.Mute = _muteBeforeInitialFramePrime;
+        }
+
+        ApplyAudioSettings();
+        SetTimelineFromPlayer(TimeSpan.Zero);
+        UpdatePlaybackState();
     }
 
     private void ResetAfterPlaybackEnded()
@@ -934,6 +966,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         CancelPendingPausedSeekRefresh();
         CancelPendingSeekInteraction();
         _isPrimingInitialFrame = false;
+        _isInitialFramePausePending = false;
         _isResettingToFirstFrame = false;
 
         try
@@ -1093,6 +1126,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         CancelPendingPausedSeekRefresh();
         CancelPendingSeekInteraction();
         _isPrimingInitialFrame = false;
+        _isInitialFramePausePending = false;
         _isResettingToFirstFrame = true;
 
         try
@@ -1424,11 +1458,12 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private static bool ShouldExposePlayingState(
         bool mediaPlayerIsPlaying,
         bool isPrimingInitialFrame,
+        bool isInitialFramePausePending,
         bool isResettingToFirstFrame,
         bool isSeekPreviewPlaybackManaged,
         bool resumePlaybackAfterSeek)
     {
-        if (isPrimingInitialFrame || isResettingToFirstFrame)
+        if (isPrimingInitialFrame || isInitialFramePausePending || isResettingToFirstFrame)
             return false;
 
         if (isSeekPreviewPlaybackManaged)
