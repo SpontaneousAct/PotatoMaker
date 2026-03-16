@@ -205,6 +205,33 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void OpeningRecentVideos_UsesCurrentOutputPrefixAndSuffixForExclusion()
+    {
+        var recentVideos = new RecordingRecentVideoDiscoveryService();
+        var workspace = new EncodeWorkspaceViewModel(
+            new NoOpAnalysisService(),
+            new NoOpEncodingService(),
+            new StaticEncoderCapabilityService(),
+            null,
+            initializeEncoderSupport: false);
+        workspace.OutputSettings.OutputNamePrefix = "pm_";
+        workspace.OutputSettings.OutputNameSuffix = "_discord";
+
+        var viewModel = new MainWindowViewModel(
+            workspace,
+            new RecordingThemeService(),
+            null,
+            recentVideos,
+            null);
+
+        viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+
+        Assert.NotNull(recentVideos.LastQuery);
+        Assert.Equal("pm_", recentVideos.LastQuery!.ExcludedPrefix);
+        Assert.Equal("_discord", recentVideos.LastQuery.ExcludedSuffix);
+    }
+
+    [Fact]
     public async Task SpaceShortcut_IsIgnoredWhenPlaybackCommandIsUnavailable()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
@@ -521,10 +548,13 @@ public sealed class MainWindowViewModelTests
 
         public IReadOnlyList<RecentVideoFile> RecentVideos { get; } = recentVideos ?? [];
 
-        public IReadOnlyList<RecentVideoFile> GetRecentVideos(string? directoryPath, int limit = RecentVideoDiscoveryService.DefaultLimit)
+        public RecentVideoQuery? LastQuery { get; private set; }
+
+        public IReadOnlyList<RecentVideoFile> GetRecentVideos(RecentVideoQuery query)
         {
             CallCount++;
-            return RecentVideos.Take(limit).ToArray();
+            LastQuery = query;
+            return RecentVideos.Take(query.Limit).ToArray();
         }
     }
 

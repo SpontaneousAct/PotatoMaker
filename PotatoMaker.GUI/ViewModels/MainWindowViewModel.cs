@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Threading;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace PotatoMaker.GUI.ViewModels;
 
@@ -62,6 +63,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _recentVideoDiscoveryService = recentVideoDiscoveryService;
         _updateService = updateService ?? new DisabledAppUpdateService();
         RecentVideos.CollectionChanged += OnRecentVideosCollectionChanged;
+        Workspace.OutputSettings.PropertyChanged += OnOutputSettingsChanged;
 
         ApplyInitialSettings();
     }
@@ -428,7 +430,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private void RefreshRecentVideos()
     {
-        IReadOnlyList<RecentVideoFile> recentVideos = _recentVideoDiscoveryService.GetRecentVideos(RecentVideosDirectory);
+        IReadOnlyList<RecentVideoFile> recentVideos = _recentVideoDiscoveryService.GetRecentVideos(new RecentVideoQuery(
+            RecentVideosDirectory,
+            Workspace.OutputSettings.OutputNamePrefix,
+            Workspace.OutputSettings.OutputNameSuffix));
 
         RecentVideos.Clear();
         foreach (RecentVideoFile video in recentVideos)
@@ -472,6 +477,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _lifetimeCts.Cancel();
         _lifetimeCts.Dispose();
         RecentVideos.CollectionChanged -= OnRecentVideosCollectionChanged;
+        Workspace.OutputSettings.PropertyChanged -= OnOutputSettingsChanged;
         Workspace.Dispose();
     }
 
@@ -479,6 +485,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         OnPropertyChanged(nameof(HasRecentVideos));
         OnPropertyChanged(nameof(IsRecentVideosEmpty));
+    }
+
+    private void OnOutputSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!IsRecentVideosPanelOpen)
+            return;
+
+        if (e.PropertyName is nameof(OutputSettingsViewModel.OutputNamePrefix) or nameof(OutputSettingsViewModel.OutputNameSuffix))
+            RefreshRecentVideos();
     }
 
     public enum UpdateIndicatorState
