@@ -59,7 +59,31 @@ public sealed class AppUpdateServiceTests
         await service.ApplyUpdateAsync();
 
         Assert.Equal(1, manager.DownloadCallCount);
+        Assert.Equal(1, manager.CleanPackagesCallCount);
+        Assert.Equal("PotatoMaker-3.4.5-full.nupkg", manager.KeptPackageFileName);
         Assert.Equal("3.4.5", manager.AppliedVersion);
+    }
+
+    [Fact]
+    public async Task ApplyUpdateAsync_CleansCachedPackagesBeforeApplyingPendingRestart()
+    {
+        var manager = new StubVelopackUpdateManager
+        {
+            IsInstalled = true,
+            IsUpdatePendingRestart = true,
+            UpdatePendingRestart = new VelopackAsset
+            {
+                Version = SemanticVersion.Parse("4.5.6"),
+                FileName = "PotatoMaker-4.5.6-full.nupkg"
+            }
+        };
+        var service = CreateService(manager);
+
+        await service.ApplyUpdateAsync();
+
+        Assert.Equal(1, manager.CleanPackagesCallCount);
+        Assert.Equal("PotatoMaker-4.5.6-full.nupkg", manager.KeptPackageFileName);
+        Assert.Equal("4.5.6", manager.AppliedVersion);
     }
 
     private static AppUpdateService CreateService(StubVelopackUpdateManager manager) =>
@@ -75,7 +99,8 @@ public sealed class AppUpdateServiceTests
         new(
             new VelopackAsset
             {
-                Version = SemanticVersion.Parse(version)
+                Version = SemanticVersion.Parse(version),
+                FileName = $"PotatoMaker-{version}-full.nupkg"
             },
             isDowngrade: false,
             deltaBaseRelease: null!,
@@ -100,6 +125,10 @@ public sealed class AppUpdateServiceTests
 
         public int DownloadCallCount { get; private set; }
 
+        public int CleanPackagesCallCount { get; private set; }
+
+        public string? KeptPackageFileName { get; private set; }
+
         public string? AppliedVersion { get; private set; }
 
         public Task<UpdateInfo?> CheckForUpdatesAsync(CancellationToken ct = default) =>
@@ -110,6 +139,12 @@ public sealed class AppUpdateServiceTests
             DownloadCallCount++;
             progress(100);
             return Task.CompletedTask;
+        }
+
+        public void CleanPackagesExcept(string? assetFileName)
+        {
+            CleanPackagesCallCount++;
+            KeptPackageFileName = assetFileName;
         }
 
         public void ApplyUpdatesAndRestart(VelopackAsset toApply, string[] restartArgs)

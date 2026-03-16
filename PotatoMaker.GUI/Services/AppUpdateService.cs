@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Velopack;
+using Velopack.Locators;
 using Velopack.Sources;
 
 namespace PotatoMaker.GUI.Services;
@@ -49,6 +50,8 @@ public interface IVelopackUpdateManager
     Task<UpdateInfo?> CheckForUpdatesAsync(CancellationToken ct = default);
 
     Task DownloadUpdatesAsync(UpdateInfo updates, Action<int> progress, CancellationToken ct = default);
+
+    void CleanPackagesExcept(string? assetFileName);
 
     void ApplyUpdatesAndRestart(VelopackAsset toApply, string[] restartArgs);
 }
@@ -123,6 +126,25 @@ public sealed class VelopackUpdateManagerFactory : IVelopackUpdateManagerFactory
         public Task DownloadUpdatesAsync(UpdateInfo updates, Action<int> progress, CancellationToken ct = default) =>
             inner.DownloadUpdatesAsync(updates, progress, ct);
 
+        public void CleanPackagesExcept(string? assetFileName)
+        {
+            string? packagesDirectory = VelopackLocator.Current?.PackagesDir;
+            if (string.IsNullOrWhiteSpace(packagesDirectory) || !Directory.Exists(packagesDirectory))
+                return;
+
+            foreach (string filePath in Directory.EnumerateFiles(packagesDirectory, "*", SearchOption.TopDirectoryOnly))
+            {
+                string fileName = Path.GetFileName(filePath);
+                bool shouldDelete =
+                    fileName.EndsWith(".partial", StringComparison.OrdinalIgnoreCase) ||
+                    (fileName.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase) &&
+                     !string.Equals(fileName, assetFileName, StringComparison.OrdinalIgnoreCase));
+
+                if (shouldDelete)
+                    File.Delete(filePath);
+            }
+        }
+
         public void ApplyUpdatesAndRestart(VelopackAsset toApply, string[] restartArgs) =>
             inner.ApplyUpdatesAndRestart(toApply, restartArgs);
     }
@@ -193,7 +215,10 @@ public sealed class AppUpdateService : IAppUpdateService
         if (_updateManager.IsUpdatePendingRestart)
         {
             if (_updateManager.UpdatePendingRestart is { } pendingRestart)
+            {
+                TryCleanPackagesExcept(_updateManager, pendingRestart);
                 _updateManager.ApplyUpdatesAndRestart(pendingRestart, []);
+            }
 
             return;
         }
@@ -203,6 +228,7 @@ public sealed class AppUpdateService : IAppUpdateService
 
         Action<int> progressCallback = progress ?? (_ => { });
         await _updateManager.DownloadUpdatesAsync(_availableUpdate, progressCallback, ct).ConfigureAwait(false);
+        TryCleanPackagesExcept(_updateManager, _availableUpdate.TargetFullRelease);
         _updateManager.ApplyUpdatesAndRestart(_availableUpdate.TargetFullRelease, []);
     }
 
@@ -255,4 +281,19 @@ public sealed class AppUpdateService : IAppUpdateService
 
     private static string? NormalizeVersion(VelopackAsset? asset) =>
         asset?.Version?.ToFullString() ?? asset?.Version?.ToString();
+
+    private static void TryCleanPackagesExcept(IVelopackUpdateManager updateManager, VelopackAsset? asset)
+    {
+        if (asset is null || string.IsNullOrWhiteSpace(asset.FileName))
+            return;
+
+        try
+        {
+            updateManager.CleanPackagesExcept(asset.FileName);
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceWarning("Failed to clean cached update packages. {0}", ex.Message);
+        }
+    }
 }
