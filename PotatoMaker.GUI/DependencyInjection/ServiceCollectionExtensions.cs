@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAppVersionService, AssemblyAppVersionService>();
         services.AddSingleton<IThemeService, AvaloniaThemeService>();
         services.AddSingleton<IRecentVideoDiscoveryService, RecentVideoDiscoveryService>();
+        services.AddSingleton<IRecentVideoThumbnailService, RecentVideoThumbnailService>();
         services.AddSingleton<IVideoAnalysisService, VideoAnalysisService>();
         services.AddSingleton<IVideoEncodingService, VideoEncodingService>();
         services.AddSingleton<IEncoderCapabilityService, EncoderCapabilityService>();

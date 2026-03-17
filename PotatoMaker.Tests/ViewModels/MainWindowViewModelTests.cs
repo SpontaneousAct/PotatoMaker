@@ -1,4 +1,5 @@
 using Avalonia.Input;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.Input;
 using PotatoMaker.GUI.Services;
 using PotatoMaker.GUI.ViewModels;
@@ -229,6 +230,44 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(recentVideos.LastQuery);
         Assert.Equal("pm_", recentVideos.LastQuery!.ExcludedPrefix);
         Assert.Equal("_discord", recentVideos.LastQuery.ExcludedSuffix);
+    }
+
+    [Fact]
+    public async Task OpeningRecentVideos_RequestsThumbnailsForDisplayedVideos()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var recentVideos = new RecordingRecentVideoDiscoveryService(
+            [
+                new RecentVideoFile(Path.GetFullPath(inputPath), Path.GetFileName(inputPath), DateTimeOffset.Now)
+            ]);
+            var thumbnailService = new RecordingRecentVideoThumbnailService();
+            var viewModel = new MainWindowViewModel(
+                new EncodeWorkspaceViewModel(
+                    new NoOpAnalysisService(),
+                    new NoOpEncodingService(),
+                    new StaticEncoderCapabilityService(),
+                    null,
+                    initializeEncoderSupport: false),
+                new RecordingThemeService(),
+                null,
+                recentVideos,
+                thumbnailService,
+                null);
+
+            viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+
+            string requestedPath = await thumbnailService.WaitForRequestAsync();
+
+            Assert.Equal(Path.GetFullPath(inputPath), requestedPath);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
     }
 
     [Fact]
@@ -556,6 +595,19 @@ public sealed class MainWindowViewModelTests
             LastQuery = query;
             return RecentVideos.Take(query.Limit).ToArray();
         }
+    }
+
+    private sealed class RecordingRecentVideoThumbnailService : IRecentVideoThumbnailService
+    {
+        private readonly TaskCompletionSource<string> _requestTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<Bitmap?> GetThumbnailAsync(string videoPath, CancellationToken ct = default)
+        {
+            _requestTcs.TrySetResult(videoPath);
+            return Task.FromResult<Bitmap?>(null);
+        }
+
+        public Task<string> WaitForRequestAsync() => _requestTcs.Task;
     }
 
     private sealed class NoOpAnalysisService : IVideoAnalysisService

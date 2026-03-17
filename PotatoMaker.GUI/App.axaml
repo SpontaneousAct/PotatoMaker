@@ -494,6 +494,29 @@
             <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
         </Style>
 
+        <Style Selector="Border.pm-recent-thumbnail">
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+        </Style>
+
+        <Style Selector="Image.pm-recent-thumbnail-image">
+            <Setter Property="Stretch" Value="UniformToFill"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-recent-thumbnail-placeholder">
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons,Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+
         <Style Selector="TextBlock.pm-recent-item-title">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>

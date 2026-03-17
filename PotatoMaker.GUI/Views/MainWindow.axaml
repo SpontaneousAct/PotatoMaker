@@ -43,22 +43,8 @@
                                 Classes.pm-nav-active="{Binding IsRecentVideosPanelOpen}"
                                 Command="{Binding ToggleRecentVideosPanelCommand}"
                                 ToolTip.Tip="Recent videos">
-                            <Viewbox Width="24"
-                                     Height="24">
-                                <Canvas Width="24"
-                                        Height="24">
-                                    <Path Classes="pm-nav-icon-path"
-                                          StrokeThickness="1.6"
-                                          StrokeJoin="Round"
-                                          Data="M4,6 C4,4.9 4.9,4 6,4 H18 C19.1,4 20,4.9 20,6 V18 C20,19.1 19.1,20 18,20 H6 C4.9,20 4,19.1 4,18 Z"/>
-                                    <Path Classes="pm-nav-icon-fill"
-                                          Data="M10.2,9.2 L15.4,12 L10.2,14.8 Z"/>
-                                    <Path Classes="pm-nav-icon-path"
-                                          StrokeThickness="1.2"
-                                          StrokeLineCap="Round"
-                                          Data="M6.8,7.2 H8.6 M10.7,7.2 H12.5 M14.6,7.2 H16.4 M6.8,16.8 H8.6 M10.7,16.8 H12.5 M14.6,16.8 H16.4"/>
-                                </Canvas>
-                            </Viewbox>
+                            <TextBlock Text="&#xE714;"
+                                       Classes="pm-nav-icon"/>
                         </Button>
 
                         <Button Classes="pm-nav-button"
@@ -112,10 +98,12 @@
         <Popup x:Name="RecentVideosPopup"
                IsOpen="{Binding IsRecentVideosPanelOpen, Mode=TwoWay}"
                PlacementTarget="{Binding #RecentVideosButton}"
+               OverlayInputPassThroughElement="{Binding #NavigationPane}"
                Placement="RightEdgeAlignedTop"
                HorizontalOffset="12"
                VerticalOffset="0"
                IsLightDismissEnabled="True"
+               OverlayDismissEventPassThrough="True"
                Topmost="True"
                Closed="OnRecentVideosPopupClosed">
             <Border Classes="pm-card pm-recent-panel"
@@ -146,13 +134,31 @@
                                         Command="{Binding SelectCommand}"
                                         HorizontalAlignment="Stretch"
                                         ToolTip.Tip="{Binding FullPath}">
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="{Binding FileName}"
-                                                   Classes="pm-recent-item-title"
-                                                   TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Text="{Binding ModifiedText}"
-                                                   Classes="pm-caption"/>
-                                    </StackPanel>
+                                    <Grid ColumnDefinitions="64,*"
+                                          ColumnSpacing="10">
+                                        <Border Classes="pm-recent-thumbnail"
+                                                Width="64"
+                                                Height="36">
+                                            <Grid>
+                                                <Image Source="{Binding Thumbnail}"
+                                                       Classes="pm-recent-thumbnail-image"
+                                                       IsVisible="{Binding HasThumbnail}"/>
+                                                <TextBlock Text="&#xE714;"
+                                                           Classes="pm-recent-thumbnail-placeholder"
+                                                           IsVisible="{Binding IsThumbnailMissing}"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1"
+                                                    Spacing="2"
+                                                    VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding FileName}"
+                                                       Classes="pm-recent-item-title"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding ModifiedText}"
+                                                       Classes="pm-caption"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

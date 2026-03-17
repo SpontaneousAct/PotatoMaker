@@ -18,8 +18,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
     private readonly IAppUpdateService _updateService;
     private readonly IRecentVideoDiscoveryService _recentVideoDiscoveryService;
+    private readonly IRecentVideoThumbnailService _recentVideoThumbnailService;
     private readonly CancellationTokenSource _lifetimeCts = new();
     private bool _isApplyingSettings;
+    private CancellationTokenSource? _recentVideosThumbnailCts;
 
     public MainWindowViewModel()
         : this(
@@ -27,6 +29,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             new AvaloniaThemeService(),
             null,
             new RecentVideoDiscoveryService(),
+            new RecentVideoThumbnailService(),
             new DisabledAppUpdateService(),
             new AssemblyAppVersionService())
     {
@@ -39,10 +42,30 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         IRecentVideoDiscoveryService recentVideoDiscoveryService,
         IAppUpdateService? updateService,
         IAppVersionService? appVersionService = null)
+        : this(
+            workspace,
+            themeService,
+            settingsCoordinator,
+            recentVideoDiscoveryService,
+            DisabledRecentVideoThumbnailService.Instance,
+            updateService,
+            appVersionService)
+    {
+    }
+
+    public MainWindowViewModel(
+        EncodeWorkspaceViewModel workspace,
+        IThemeService themeService,
+        IAppSettingsCoordinator? settingsCoordinator,
+        IRecentVideoDiscoveryService recentVideoDiscoveryService,
+        IRecentVideoThumbnailService recentVideoThumbnailService,
+        IAppUpdateService? updateService,
+        IAppVersionService? appVersionService = null)
     {
         ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(themeService);
         ArgumentNullException.ThrowIfNull(recentVideoDiscoveryService);
+        ArgumentNullException.ThrowIfNull(recentVideoThumbnailService);
 
         Workspace = workspace;
         Settings = new SettingsViewModel(
@@ -61,6 +84,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _themeService = themeService;
         _settingsCoordinator = settingsCoordinator;
         _recentVideoDiscoveryService = recentVideoDiscoveryService;
+        _recentVideoThumbnailService = recentVideoThumbnailService;
         _updateService = updateService ?? new DisabledAppUpdateService();
         RecentVideos.CollectionChanged += OnRecentVideosCollectionChanged;
         Workspace.OutputSettings.PropertyChanged += OnOutputSettingsChanged;
@@ -185,6 +209,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             return;
 
         _ = PersistThemePreferenceAsync();
+    }
+
+    partial void OnIsRecentVideosPanelOpenChanged(bool value)
+    {
+        if (!value)
+            CancelRecentVideoThumbnailLoading();
     }
 
     public bool TryLoadStartupFiles(IEnumerable<string> startupArgs)
@@ -318,8 +348,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        RefreshRecentVideos();
         IsRecentVideosPanelOpen = true;
+        RefreshRecentVideos();
     }
 
     [RelayCommand(CanExecute = nameof(CanApplyUpdate), AllowConcurrentExecutions = false)]
@@ -430,16 +460,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private void RefreshRecentVideos()
     {
+        CancelRecentVideoThumbnailLoading();
+
         IReadOnlyList<RecentVideoFile> recentVideos = _recentVideoDiscoveryService.GetRecentVideos(new RecentVideoQuery(
             RecentVideosDirectory,
             Workspace.OutputSettings.OutputNamePrefix,
             Workspace.OutputSettings.OutputNameSuffix));
 
+        DisposeRecentVideoItems();
         RecentVideos.Clear();
+        List<RecentVideoItemViewModel> recentItems = [];
         foreach (RecentVideoFile video in recentVideos)
         {
-            RecentVideos.Add(new RecentVideoItemViewModel(video.FullPath, video.FileName, video.LastModified, OpenRecentVideo));
+            var item = new RecentVideoItemViewModel(video.FullPath, video.FileName, video.LastModified, OpenRecentVideo);
+            RecentVideos.Add(item);
+            recentItems.Add(item);
         }
+
+        if (recentItems.Count > 0 && IsRecentVideosPanelOpen)
+            _ = LoadRecentVideoThumbnailsAsync(recentItems, CreateRecentVideoThumbnailToken());
     }
 
     private void OpenRecentVideo(string path)
@@ -474,6 +513,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        CancelRecentVideoThumbnailLoading();
+        DisposeRecentVideoItems();
         _lifetimeCts.Cancel();
         _lifetimeCts.Dispose();
         RecentVideos.CollectionChanged -= OnRecentVideosCollectionChanged;
@@ -494,6 +535,69 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         if (e.PropertyName is nameof(OutputSettingsViewModel.OutputNamePrefix) or nameof(OutputSettingsViewModel.OutputNameSuffix))
             RefreshRecentVideos();
+    }
+
+    private CancellationToken CreateRecentVideoThumbnailToken()
+    {
+        CancelRecentVideoThumbnailLoading();
+        _recentVideosThumbnailCts = CancellationTokenSource.CreateLinkedTokenSource(_lifetimeCts.Token);
+        return _recentVideosThumbnailCts.Token;
+    }
+
+    private async Task LoadRecentVideoThumbnailsAsync(
+        IReadOnlyList<RecentVideoItemViewModel> recentItems,
+        CancellationToken ct)
+    {
+        try
+        {
+            foreach (RecentVideoItemViewModel item in recentItems)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var thumbnail = await _recentVideoThumbnailService
+                    .GetThumbnailAsync(item.FullPath, ct)
+                    .ConfigureAwait(false);
+
+                if (thumbnail is null)
+                    continue;
+
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    if (!ct.IsCancellationRequested)
+                        item.SetThumbnail(thumbnail);
+                    else
+                        thumbnail.Dispose();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void CancelRecentVideoThumbnailLoading()
+    {
+        if (_recentVideosThumbnailCts is null)
+            return;
+
+        try
+        {
+            _recentVideosThumbnailCts.Cancel();
+        }
+        catch
+        {
+        }
+        finally
+        {
+            _recentVideosThumbnailCts.Dispose();
+            _recentVideosThumbnailCts = null;
+        }
+    }
+
+    private void DisposeRecentVideoItems()
+    {
+        foreach (RecentVideoItemViewModel item in RecentVideos)
+            item.Dispose();
     }
 
     public enum UpdateIndicatorState
