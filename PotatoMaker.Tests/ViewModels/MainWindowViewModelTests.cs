@@ -233,6 +233,46 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void OpeningRecentVideos_MarksProcessedItems()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            DateTimeOffset lastModified = new(File.GetLastWriteTime(inputPath));
+            var recentVideos = new RecordingRecentVideoDiscoveryService(
+            [
+                new RecentVideoFile(Path.GetFullPath(inputPath), Path.GetFileName(inputPath), lastModified)
+            ]);
+            var tracker = new RecordingProcessedVideoTracker();
+            tracker.MarkProcessed(Path.GetFullPath(inputPath), lastModified);
+            var viewModel = new MainWindowViewModel(
+                new EncodeWorkspaceViewModel(
+                    new NoOpAnalysisService(),
+                    new NoOpEncodingService(),
+                    new StaticEncoderCapabilityService(),
+                    null,
+                    initializeEncoderSupport: false),
+                new RecordingThemeService(),
+                null,
+                recentVideos,
+                DisabledRecentVideoThumbnailService.Instance,
+                tracker,
+                null);
+
+            viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+
+            Assert.Single(viewModel.RecentVideos);
+            Assert.True(viewModel.RecentVideos[0].IsProcessed);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task OpeningRecentVideos_RequestsThumbnailsForDisplayedVideos()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
@@ -256,6 +296,7 @@ public sealed class MainWindowViewModelTests
                 null,
                 recentVideos,
                 thumbnailService,
+                DisabledProcessedVideoTracker.Instance,
                 null);
 
             viewModel.ToggleRecentVideosPanelCommand.Execute(null);
@@ -608,6 +649,28 @@ public sealed class MainWindowViewModelTests
         }
 
         public Task<string> WaitForRequestAsync() => _requestTcs.Task;
+    }
+
+    private sealed class RecordingProcessedVideoTracker : IProcessedVideoTracker
+    {
+        private readonly HashSet<(string Path, long Ticks)> _processed = [];
+
+        public event EventHandler? ProcessedVideosChanged;
+
+        public bool IsProcessed(string videoPath, DateTimeOffset lastModified) =>
+            _processed.Contains((Path.GetFullPath(videoPath), lastModified.UtcDateTime.Ticks));
+
+        public Task MarkProcessedAsync(string videoPath, CancellationToken ct = default)
+        {
+            MarkProcessed(videoPath, new DateTimeOffset(File.GetLastWriteTime(videoPath)));
+            return Task.CompletedTask;
+        }
+
+        public void MarkProcessed(string videoPath, DateTimeOffset lastModified)
+        {
+            _processed.Add((Path.GetFullPath(videoPath), lastModified.UtcDateTime.Ticks));
+            ProcessedVideosChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private sealed class NoOpAnalysisService : IVideoAnalysisService

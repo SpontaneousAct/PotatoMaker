@@ -522,6 +522,16 @@
             <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
 
+        <Style Selector="Border.pm-recent-processed-dot">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="{DynamicResource PmUpdateDotBackground}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCardBackground}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
         <Style Selector="Border.pm-update-dot">
             <Setter Property="Width" Value="10"/>
             <Setter Property="Height" Value="10"/>

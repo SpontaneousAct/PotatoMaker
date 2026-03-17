@@ -19,6 +19,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly IAppUpdateService _updateService;
     private readonly IRecentVideoDiscoveryService _recentVideoDiscoveryService;
     private readonly IRecentVideoThumbnailService _recentVideoThumbnailService;
+    private readonly IProcessedVideoTracker _processedVideoTracker;
     private readonly CancellationTokenSource _lifetimeCts = new();
     private bool _isApplyingSettings;
     private CancellationTokenSource? _recentVideosThumbnailCts;
@@ -30,6 +31,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             null,
             new RecentVideoDiscoveryService(),
             new RecentVideoThumbnailService(),
+            DisabledProcessedVideoTracker.Instance,
             new DisabledAppUpdateService(),
             new AssemblyAppVersionService())
     {
@@ -48,6 +50,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             settingsCoordinator,
             recentVideoDiscoveryService,
             DisabledRecentVideoThumbnailService.Instance,
+            DisabledProcessedVideoTracker.Instance,
             updateService,
             appVersionService)
     {
@@ -59,6 +62,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         IAppSettingsCoordinator? settingsCoordinator,
         IRecentVideoDiscoveryService recentVideoDiscoveryService,
         IRecentVideoThumbnailService recentVideoThumbnailService,
+        IProcessedVideoTracker processedVideoTracker,
         IAppUpdateService? updateService,
         IAppVersionService? appVersionService = null)
     {
@@ -66,6 +70,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ArgumentNullException.ThrowIfNull(themeService);
         ArgumentNullException.ThrowIfNull(recentVideoDiscoveryService);
         ArgumentNullException.ThrowIfNull(recentVideoThumbnailService);
+        ArgumentNullException.ThrowIfNull(processedVideoTracker);
 
         Workspace = workspace;
         Settings = new SettingsViewModel(
@@ -85,9 +90,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _settingsCoordinator = settingsCoordinator;
         _recentVideoDiscoveryService = recentVideoDiscoveryService;
         _recentVideoThumbnailService = recentVideoThumbnailService;
+        _processedVideoTracker = processedVideoTracker;
         _updateService = updateService ?? new DisabledAppUpdateService();
         RecentVideos.CollectionChanged += OnRecentVideosCollectionChanged;
         Workspace.OutputSettings.PropertyChanged += OnOutputSettingsChanged;
+        _processedVideoTracker.ProcessedVideosChanged += OnProcessedVideosChanged;
 
         ApplyInitialSettings();
     }
@@ -472,7 +479,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         List<RecentVideoItemViewModel> recentItems = [];
         foreach (RecentVideoFile video in recentVideos)
         {
-            var item = new RecentVideoItemViewModel(video.FullPath, video.FileName, video.LastModified, OpenRecentVideo);
+            bool isProcessed = _processedVideoTracker.IsProcessed(video.FullPath, video.LastModified);
+            var item = new RecentVideoItemViewModel(
+                video.FullPath,
+                video.FileName,
+                video.LastModified,
+                isProcessed,
+                OpenRecentVideo);
             RecentVideos.Add(item);
             recentItems.Add(item);
         }
@@ -519,6 +532,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _lifetimeCts.Dispose();
         RecentVideos.CollectionChanged -= OnRecentVideosCollectionChanged;
         Workspace.OutputSettings.PropertyChanged -= OnOutputSettingsChanged;
+        _processedVideoTracker.ProcessedVideosChanged -= OnProcessedVideosChanged;
         Workspace.Dispose();
     }
 
@@ -535,6 +549,18 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         if (e.PropertyName is nameof(OutputSettingsViewModel.OutputNamePrefix) or nameof(OutputSettingsViewModel.OutputNameSuffix))
             RefreshRecentVideos();
+    }
+
+    private void OnProcessedVideosChanged(object? sender, EventArgs e)
+    {
+        if (!IsRecentVideosPanelOpen)
+            return;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (IsRecentVideosPanelOpen)
+                RefreshRecentVideos();
+        });
     }
 
     private CancellationToken CreateRecentVideoThumbnailToken()

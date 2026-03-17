@@ -155,8 +155,14 @@
                                             <TextBlock Text="{Binding FileName}"
                                                        Classes="pm-recent-item-title"
                                                        TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding ModifiedText}"
-                                                       Classes="pm-caption"/>
+                                            <StackPanel Orientation="Horizontal"
+                                                        Spacing="6">
+                                                <Border Classes="pm-recent-processed-dot"
+                                                        IsVisible="{Binding IsProcessed}"
+                                                        ToolTip.Tip="Already compressed"/>
+                                                <TextBlock Text="{Binding ModifiedText}"
+                                                           Classes="pm-caption"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Grid>
                                 </Button>

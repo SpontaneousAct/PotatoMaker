@@ -257,6 +257,37 @@ public sealed class EncodeWorkspaceViewModelTests
     }
 
     [Fact]
+    public async Task SuccessfulEncode_MarksCurrentVideoAsProcessed()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var tracker = new RecordingProcessedVideoTracker();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false,
+                processedVideoTracker: tracker);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            await workspace.StartEncodeCommand.ExecuteAsync(null);
+
+            Assert.Equal(Path.GetFullPath(inputPath), await tracker.WaitForMarkedPathAsync());
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task CancelledEncode_DoesNotNotifyCompletion()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
@@ -953,6 +984,24 @@ public sealed class EncodeWorkspaceViewModelTests
         {
             NotificationCount++;
         }
+    }
+
+    private sealed class RecordingProcessedVideoTracker : IProcessedVideoTracker
+    {
+        private readonly TaskCompletionSource<string> _markedPathTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public event EventHandler? ProcessedVideosChanged;
+
+        public bool IsProcessed(string videoPath, DateTimeOffset lastModified) => false;
+
+        public Task MarkProcessedAsync(string videoPath, CancellationToken ct = default)
+        {
+            _markedPathTcs.TrySetResult(Path.GetFullPath(videoPath));
+            ProcessedVideosChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
+        public Task<string> WaitForMarkedPathAsync() => _markedPathTcs.Task;
     }
 
     private sealed class RecordingSettingsCoordinator : IAppSettingsCoordinator

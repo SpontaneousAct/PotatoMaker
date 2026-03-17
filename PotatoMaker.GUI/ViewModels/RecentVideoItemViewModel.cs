@@ -11,6 +11,16 @@ public sealed class RecentVideoItemViewModel : ViewModelBase, IDisposable
     private Bitmap? _thumbnail;
 
     public RecentVideoItemViewModel(string fullPath, string fileName, DateTimeOffset lastModified, Action<string> onSelected)
+        : this(fullPath, fileName, lastModified, isProcessed: false, onSelected)
+    {
+    }
+
+    public RecentVideoItemViewModel(
+        string fullPath,
+        string fileName,
+        DateTimeOffset lastModified,
+        bool isProcessed,
+        Action<string> onSelected)
     {
         ArgumentNullException.ThrowIfNull(fullPath);
         ArgumentNullException.ThrowIfNull(fileName);
@@ -19,6 +29,7 @@ public sealed class RecentVideoItemViewModel : ViewModelBase, IDisposable
         FullPath = fullPath;
         FileName = fileName;
         ModifiedText = $"Modified {lastModified.LocalDateTime:g}";
+        IsProcessed = isProcessed;
         SelectCommand = new RelayCommand(() => onSelected(FullPath));
     }
 
@@ -27,6 +38,8 @@ public sealed class RecentVideoItemViewModel : ViewModelBase, IDisposable
     public string FileName { get; }
 
     public string ModifiedText { get; }
+
+    public bool IsProcessed { get; }
 
     public Bitmap? Thumbnail
     {

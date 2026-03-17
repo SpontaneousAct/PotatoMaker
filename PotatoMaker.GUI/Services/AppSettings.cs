@@ -26,4 +26,6 @@ public sealed record AppSettings
     public string? LastOutputFolder { get; init; }
 
     public string RecentVideosDirectory { get; init; } = DefaultRecentVideosDirectory;
+
+    public ProcessedVideoRecord[]? ProcessedVideos { get; init; }
 }

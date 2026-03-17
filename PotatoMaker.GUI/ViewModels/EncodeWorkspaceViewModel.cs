@@ -17,6 +17,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private readonly IVideoEncodingService _encodingService;
     private readonly IEncoderCapabilityService _encoderCapabilityService;
     private readonly IEncodeCompletionNotifier _encodeCompletionNotifier;
+    private readonly IProcessedVideoTracker _processedVideoTracker;
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
     private readonly bool _initializeEncoderSupport;
     private readonly TimeSpan _cancelledStatusDuration;
@@ -38,7 +39,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             null,
             initializeEncoderSupport: true,
             NoOpEncodeCompletionNotifier.Instance,
-            null)
+            null,
+            DisabledProcessedVideoTracker.Instance)
     {
     }
 
@@ -49,7 +51,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         IAppSettingsCoordinator? settingsCoordinator,
         bool initializeEncoderSupport = true,
         IEncodeCompletionNotifier? encodeCompletionNotifier = null,
-        TimeSpan? cancelledStatusDuration = null)
+        TimeSpan? cancelledStatusDuration = null,
+        IProcessedVideoTracker? processedVideoTracker = null)
         : this(
             analysisService,
             encodingService,
@@ -58,7 +61,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             settingsCoordinator,
             initializeEncoderSupport,
             encodeCompletionNotifier,
-            cancelledStatusDuration)
+            cancelledStatusDuration,
+            processedVideoTracker)
     {
     }
 
@@ -70,13 +74,15 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         IAppSettingsCoordinator? settingsCoordinator,
         bool initializeEncoderSupport = true,
         IEncodeCompletionNotifier? encodeCompletionNotifier = null,
-        TimeSpan? cancelledStatusDuration = null)
+        TimeSpan? cancelledStatusDuration = null,
+        IProcessedVideoTracker? processedVideoTracker = null)
     {
         _analysisService = analysisService;
         _encodingService = encodingService;
         VideoPlayer = videoPlayer;
         _encoderCapabilityService = encoderCapabilityService;
         _encodeCompletionNotifier = encodeCompletionNotifier ?? NoOpEncodeCompletionNotifier.Instance;
+        _processedVideoTracker = processedVideoTracker ?? DisabledProcessedVideoTracker.Instance;
         _settingsCoordinator = settingsCoordinator;
         _initializeEncoderSupport = initializeEncoderSupport;
         _cancelledStatusDuration = cancelledStatusDuration ?? TimeSpan.FromSeconds(5);
@@ -162,6 +168,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
             _encodeStopwatch?.Stop();
             ConversionLog.MarkDone(_encodeStopwatch?.Elapsed);
+            await TryMarkCurrentVideoAsProcessedAsync(path);
             _encodeCompletionNotifier.NotifyEncodeSucceeded();
         }
         catch (OperationCanceledException)
@@ -621,6 +628,18 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         }
 
         ConversionLog.SetIdleText(CanStartEncode() ? "Ready" : "Getting ready");
+    }
+
+    private async Task TryMarkCurrentVideoAsProcessedAsync(string path)
+    {
+        try
+        {
+            await _processedVideoTracker.MarkProcessedAsync(path);
+        }
+        catch
+        {
+            // Ignore persistence failures and keep the successful encode state.
+        }
     }
 
     private async Task RefreshStrategyPreviewForCurrentStateAsync(string path, VideoInfo info)

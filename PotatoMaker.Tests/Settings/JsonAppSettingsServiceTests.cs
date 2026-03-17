@@ -57,7 +57,14 @@ public sealed class JsonAppSettingsServiceTests
                 PreviewVolumePercent = 42,
                 SvtAv1Preset = 8,
                 LastOutputFolder = "C:\\encoded",
-                RecentVideosDirectory = "D:\\Captures"
+                RecentVideosDirectory = "D:\\Captures",
+                ProcessedVideos =
+                [
+                    new ProcessedVideoRecord(
+                        "C:\\Videos\\clip001.mp4",
+                        638600000000000000,
+                        new DateTimeOffset(2026, 3, 17, 9, 30, 0, TimeSpan.Zero))
+                ]
             });
 
             Assert.True(File.Exists(settingsPath));
@@ -74,6 +81,10 @@ public sealed class JsonAppSettingsServiceTests
             Assert.Equal(8, settings.SvtAv1Preset);
             Assert.Equal("C:\\encoded", settings.LastOutputFolder);
             Assert.Equal("D:\\Captures", settings.RecentVideosDirectory);
+            Assert.NotNull(settings.ProcessedVideos);
+            Assert.Single(settings.ProcessedVideos!);
+            Assert.Equal("C:\\Videos\\clip001.mp4", settings.ProcessedVideos[0].FullPath);
+            Assert.Equal(638600000000000000, settings.ProcessedVideos[0].SourceLastWriteUtcTicks);
         }
         finally
         {
@@ -93,7 +104,14 @@ public sealed class JsonAppSettingsServiceTests
               "UseNvencEncoder": false,
               "OutputNamePrefix": "legacy_",
               "OutputNameSuffix": "_legacy",
-              "RecentVideosDirectory": "E:\\LegacyCaptures"
+              "RecentVideosDirectory": "E:\\LegacyCaptures",
+              "ProcessedVideos": [
+                {
+                  "FullPath": "E:\\LegacyCaptures\\clip.mp4",
+                  "SourceLastWriteUtcTicks": 638600000000000001,
+                  "ProcessedAtUtc": "2026-03-17T09:30:00+00:00"
+                }
+              ]
             }
             """);
 
@@ -107,6 +125,9 @@ public sealed class JsonAppSettingsServiceTests
             Assert.Equal("legacy_", settings.OutputNamePrefix);
             Assert.Equal("_legacy", settings.OutputNameSuffix);
             Assert.Equal("E:\\LegacyCaptures", settings.RecentVideosDirectory);
+            Assert.NotNull(settings.ProcessedVideos);
+            Assert.Single(settings.ProcessedVideos!);
+            Assert.Equal("E:\\LegacyCaptures\\clip.mp4", settings.ProcessedVideos[0].FullPath);
         }
         finally
         {

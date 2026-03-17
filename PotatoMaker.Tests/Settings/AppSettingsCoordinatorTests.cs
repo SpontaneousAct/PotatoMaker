@@ -21,7 +21,8 @@ public sealed class AppSettingsCoordinatorTests
                 PreviewVolumePercent = 100,
                 SvtAv1Preset = 6,
                 LastOutputFolder = null,
-                RecentVideosDirectory = AppSettings.DefaultRecentVideosDirectory
+                RecentVideosDirectory = AppSettings.DefaultRecentVideosDirectory,
+                ProcessedVideos = null
             });
 
         await coordinator.UpdateAsync(settings => settings with
@@ -33,7 +34,14 @@ public sealed class AppSettingsCoordinatorTests
             PreviewVolumePercent = 42,
             SvtAv1Preset = 8,
             LastOutputFolder = "C:\\out",
-            RecentVideosDirectory = "D:\\Captures"
+            RecentVideosDirectory = "D:\\Captures",
+            ProcessedVideos =
+            [
+                new ProcessedVideoRecord(
+                    "C:\\Videos\\clip001.mp4",
+                    638600000000000000,
+                    new DateTimeOffset(2026, 3, 17, 9, 30, 0, TimeSpan.Zero))
+            ]
         });
 
         Assert.True(coordinator.Current.IsDarkMode);
@@ -44,6 +52,8 @@ public sealed class AppSettingsCoordinatorTests
         Assert.Equal(8, coordinator.Current.SvtAv1Preset);
         Assert.Equal("C:\\out", coordinator.Current.LastOutputFolder);
         Assert.Equal("D:\\Captures", coordinator.Current.RecentVideosDirectory);
+        Assert.NotNull(coordinator.Current.ProcessedVideos);
+        Assert.Single(coordinator.Current.ProcessedVideos!);
         Assert.Single(persistence.SavedSettings);
         Assert.Equal(coordinator.Current, persistence.SavedSettings[0]);
     }
