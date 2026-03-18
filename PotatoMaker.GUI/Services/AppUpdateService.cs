@@ -57,6 +57,8 @@ public interface IVelopackUpdateManager
 
     Task DownloadUpdatesAsync(UpdateInfo updates, Action<int> progress, CancellationToken ct = default);
 
+    void RefreshLocalState();
+
     void CleanPackagesExcept(string? assetFileName);
 
     void ApplyUpdatesAndExit(VelopackAsset toApply);
@@ -133,6 +135,12 @@ public sealed class VelopackUpdateManagerFactory : IVelopackUpdateManagerFactory
 
         public Task DownloadUpdatesAsync(UpdateInfo updates, Action<int> progress, CancellationToken ct = default) =>
             inner.DownloadUpdatesAsync(updates, progress, ct);
+
+        public void RefreshLocalState()
+        {
+            if (VelopackLocator.Current is CachingVelopackLocator cachingLocator)
+                cachingLocator.InvalidateLocalPackageCache();
+        }
 
         public void CleanPackagesExcept(string? assetFileName)
         {
@@ -231,6 +239,7 @@ public sealed class AppUpdateService : IAppUpdateService
 
         Action<int> progressCallback = progress ?? (_ => { });
         await _updateManager.DownloadUpdatesAsync(_availableUpdate, progressCallback, ct).ConfigureAwait(false);
+        _updateManager.RefreshLocalState();
         TryCleanPackagesExcept(_updateManager, _availableUpdate.TargetFullRelease);
     }
 

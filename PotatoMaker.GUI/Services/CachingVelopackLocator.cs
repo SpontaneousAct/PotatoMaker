@@ -12,22 +12,15 @@ namespace PotatoMaker.GUI.Services;
 /// </summary>
 internal sealed class CachingVelopackLocator : IVelopackLocator
 {
+    private readonly object _cacheGate = new();
     private readonly IVelopackLocator _inner;
-    private readonly Lazy<List<VelopackAsset>> _localPackages;
-    private readonly Lazy<VelopackAsset?> _latestLocalFullPackage;
+    private List<VelopackAsset>? _localPackages;
+    private VelopackAsset? _latestLocalFullPackage;
+    private bool _hasLoadedLocalPackages;
 
     private CachingVelopackLocator(IVelopackLocator inner)
     {
         _inner = inner ?? throw new ArgumentNullException(nameof(inner));
-        _localPackages = new Lazy<List<VelopackAsset>>(
-            LoadLocalPackages,
-            LazyThreadSafetyMode.ExecutionAndPublication);
-        _latestLocalFullPackage = new Lazy<VelopackAsset?>(
-            () => _localPackages.Value
-                .Where(asset => asset.Type == VelopackAssetType.Full)
-                .OrderByDescending(asset => asset.Version)
-                .FirstOrDefault(),
-            LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     public string? AppId => _inner.AppId;
@@ -65,11 +58,29 @@ internal sealed class CachingVelopackLocator : IVelopackLocator
         return new CachingVelopackLocator(inner);
     }
 
-    public List<VelopackAsset> GetLocalPackages() => [.. _localPackages.Value];
+    public List<VelopackAsset> GetLocalPackages()
+    {
+        EnsureLocalPackagesLoaded();
+        return _localPackages is null ? [] : [.. _localPackages];
+    }
 
-    public VelopackAsset? GetLatestLocalFullPackage() => _latestLocalFullPackage.Value;
+    public VelopackAsset? GetLatestLocalFullPackage()
+    {
+        EnsureLocalPackagesLoaded();
+        return _latestLocalFullPackage;
+    }
 
     public Guid? GetOrCreateStagedUserId() => _inner.GetOrCreateStagedUserId();
+
+    public void InvalidateLocalPackageCache()
+    {
+        lock (_cacheGate)
+        {
+            _localPackages = null;
+            _latestLocalFullPackage = null;
+            _hasLoadedLocalPackages = false;
+        }
+    }
 
     private List<VelopackAsset> LoadLocalPackages()
     {
@@ -98,6 +109,26 @@ internal sealed class CachingVelopackLocator : IVelopackLocator
         {
             Log.Error(ex, "Error while reading local packages.");
             return [];
+        }
+    }
+
+    private void EnsureLocalPackagesLoaded()
+    {
+        if (_hasLoadedLocalPackages)
+            return;
+
+        lock (_cacheGate)
+        {
+            if (_hasLoadedLocalPackages)
+                return;
+
+            List<VelopackAsset> packages = LoadLocalPackages();
+            _localPackages = packages;
+            _latestLocalFullPackage = packages
+                .Where(asset => asset.Type == VelopackAssetType.Full)
+                .OrderByDescending(asset => asset.Version)
+                .FirstOrDefault();
+            _hasLoadedLocalPackages = true;
         }
     }
 
