@@ -20,7 +20,6 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private static readonly string[] LibVlcStartupArguments =
     [
         "--quiet",
-        "--no-plugins-cache",
         "--no-stats",
         "--no-video-title-show",
         "--ignore-config",

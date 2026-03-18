@@ -29,9 +29,9 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             DisableAvaloniaDataAnnotationValidation();
-            Services = new ServiceCollection()
-                .AddPotatoMakerGui()
-                .BuildServiceProvider();
+            ServiceCollection serviceCollection = new ServiceCollection();
+            serviceCollection.AddPotatoMakerGui();
+            Services = serviceCollection.BuildServiceProvider();
 
             var settingsCoordinator = Services.GetRequiredService<IAppSettingsCoordinator>();
             var themeService = Services.GetRequiredService<IThemeService>();

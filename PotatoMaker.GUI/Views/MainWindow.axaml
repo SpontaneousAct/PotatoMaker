@@ -86,14 +86,8 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Column="1">
-                <ContentControl Content="{Binding Workspace}"
-                                IsVisible="{Binding IsMainViewSelected}"/>
-                <ContentControl Content="{Binding Settings}"
-                                IsVisible="{Binding IsSettingsViewSelected}"/>
-                <ContentControl Content="{Binding Help}"
-                                IsVisible="{Binding IsHelpViewSelected}"/>
-            </Grid>
+            <ContentControl Grid.Column="1"
+                            Content="{Binding CurrentView}"/>
 
         <Popup x:Name="RecentVideosPopup"
                IsOpen="{Binding IsRecentVideosPanelOpen, Mode=TwoWay}"

@@ -72,12 +72,16 @@ namespace PotatoMaker.GUI
         [SupportedOSPlatform("windows")]
         public static void Main(string[] args)
         {
-            VelopackApp.Build()
+            var velopackApp = VelopackApp.Build();
+            if (CachingVelopackLocator.CreateForCurrentProcess() is { } locator)
+                velopackApp = velopackApp.SetLocator(locator);
+
+            velopackApp = velopackApp
                 .SetAutoApplyOnStartup(false)
                 .OnAfterInstallFastCallback(_ => WindowsFileContextMenuRegistration.RegisterForInstalledApp())
                 .OnAfterUpdateFastCallback(_ => WindowsFileContextMenuRegistration.RegisterForInstalledApp())
-                .OnBeforeUninstallFastCallback(_ => WindowsFileContextMenuRegistration.RemoveForInstalledApp())
-                .Run();
+                .OnBeforeUninstallFastCallback(_ => WindowsFileContextMenuRegistration.RemoveForInstalledApp());
+            velopackApp.Run();
 
             SingleInstanceManager = WindowsSingleInstanceManager.Create(args);
             if (SingleInstanceManager is { IsPrimaryInstance: false })

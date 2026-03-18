@@ -41,14 +41,17 @@ public sealed class JsonAppSettingsService : IAppSettingsService
         string? legacySettingsPath = null,
         string? packagedDefaultsPath = null)
     {
-        string settingsDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "PotatoMaker");
+        string settingsDirectory = GetSettingsDirectoryPath();
 
         _settingsPath = settingsPath ?? Path.Combine(settingsDirectory, "appsettings.json");
         _legacySettingsPath = legacySettingsPath ?? Path.Combine(Path.GetDirectoryName(_settingsPath) ?? settingsDirectory, "settings.json");
         _packagedDefaultsPath = packagedDefaultsPath ?? Path.Combine(AppContext.BaseDirectory, "appsettings.defaults.json");
     }
+
+    internal static string GetSettingsDirectoryPath() =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "PotatoMaker");
 
     public AppSettings Load()
     {

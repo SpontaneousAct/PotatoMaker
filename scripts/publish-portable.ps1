@@ -23,6 +23,86 @@ $versionPropsPath = Join-Path $repoRoot "Directory.Build.props"
 $publishRoot = Join-Path $artifactsDir "publish"
 $portableRoot = Join-Path $artifactsDir "portable"
 
+function Read-ChoiceValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Prompt,
+        [Parameter(Mandatory = $true)]
+        [string[]]$Choices,
+        [Parameter(Mandatory = $true)]
+        [string]$Default
+    )
+
+    while ($true) {
+        Write-Host $Prompt
+        for ($i = 0; $i -lt $Choices.Count; $i++) {
+            $marker = if ($Choices[$i] -eq $Default) { " (default)" } else { "" }
+            Write-Host "  [$($i + 1)] $($Choices[$i])$marker"
+        }
+
+        $input = (Read-Host "Choose 1-$($Choices.Count) or enter a value").Trim()
+        if ([string]::IsNullOrWhiteSpace($input)) {
+            return $Default
+        }
+
+        $selectedIndex = 0
+        if ([int]::TryParse($input, [ref]$selectedIndex)) {
+            $index = $selectedIndex - 1
+            if ($index -ge 0 -and $index -lt $Choices.Count) {
+                return $Choices[$index]
+            }
+        }
+
+        foreach ($choice in $Choices) {
+            if ($choice.Equals($input, [System.StringComparison]::OrdinalIgnoreCase)) {
+                return $choice
+            }
+        }
+
+        Write-Warning "Please choose one of the listed options."
+    }
+}
+
+function Read-YesNo {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Prompt,
+        [Parameter(Mandatory = $true)]
+        [bool]$Default
+    )
+
+    $defaultLabel = if ($Default) { "Y/n" } else { "y/N" }
+    while ($true) {
+        $input = (Read-Host "$Prompt [$defaultLabel]").Trim()
+        if ([string]::IsNullOrWhiteSpace($input)) {
+            return $Default
+        }
+
+        switch -Regex ($input) {
+            '^(y|yes)$' { return $true }
+            '^(n|no)$' { return $false }
+        }
+
+        Write-Warning "Please answer y or n."
+    }
+}
+
+function Read-ValueOrDefault {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Prompt,
+        [Parameter(Mandatory = $true)]
+        [string]$Default
+    )
+
+    $input = Read-Host "$Prompt [$Default]"
+    if ([string]::IsNullOrWhiteSpace($input)) {
+        return $Default
+    }
+
+    return $input.Trim()
+}
+
 function Invoke-External {
     param(
         [Parameter(Mandatory = $true)]
@@ -88,6 +168,34 @@ function Resolve-PathFfmpegDirFromPath {
     return $ffmpegPathDir
 }
 
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    $Version = Get-DefaultSemanticVersion -Path $versionPropsPath
+}
+
+if (-not $PSBoundParameters.ContainsKey("Configuration")) {
+    $Configuration = Read-ChoiceValue -Prompt "Configuration?" -Choices @("Release", "Debug") -Default $Configuration
+}
+
+if (-not $PSBoundParameters.ContainsKey("Runtime")) {
+    $Runtime = Read-ChoiceValue -Prompt "Runtime?" -Choices @("win-x64", "win-arm64", "win-x86") -Default $Runtime
+}
+
+if (-not $PSBoundParameters.ContainsKey("Framework")) {
+    $Framework = Read-ValueOrDefault -Prompt "Target framework?" -Default $Framework
+}
+
+if (-not $PSBoundParameters.ContainsKey("Version")) {
+    $Version = Read-ValueOrDefault -Prompt "Version?" -Default $Version
+}
+
+if (-not $PSBoundParameters.ContainsKey("SingleFile")) {
+    $SingleFile = Read-YesNo -Prompt "Publish as a single-file app?" -Default $SingleFile
+}
+
+if (-not $PSBoundParameters.ContainsKey("ReadyToRun")) {
+    $ReadyToRun = Read-YesNo -Prompt "Enable ReadyToRun precompilation?" -Default $ReadyToRun
+}
+
 if (-not $SkipFfmpeg -and [string]::IsNullOrWhiteSpace($FfmpegDir)) {
     $defaultFfmpegDir = Join-Path $repoRoot "third_party\ffmpeg\$Runtime"
     if (Test-Path $defaultFfmpegDir) {
@@ -101,8 +209,24 @@ if (-not $SkipFfmpeg -and [string]::IsNullOrWhiteSpace($FfmpegDir)) {
     }
 }
 
-if ([string]::IsNullOrWhiteSpace($Version)) {
-    $Version = Get-DefaultSemanticVersion -Path $versionPropsPath
+if (-not $PSBoundParameters.ContainsKey("SkipFfmpeg") -and -not $PSBoundParameters.ContainsKey("FfmpegDir")) {
+    $bundleFfmpeg = Read-YesNo -Prompt "Bundle FFmpeg into the package?" -Default (-not [string]::IsNullOrWhiteSpace($FfmpegDir))
+    if (-not $bundleFfmpeg) {
+        $SkipFfmpeg = $true
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($FfmpegDir)) {
+        $useDetectedFfmpeg = Read-YesNo -Prompt "Use detected FFmpeg directory '$FfmpegDir'?" -Default $true
+        if (-not $useDetectedFfmpeg) {
+            $FfmpegDir = Read-Host "Enter FFmpeg directory"
+        }
+    }
+    else {
+        $FfmpegDir = Read-Host "Enter FFmpeg directory"
+    }
+}
+
+if (-not $PSBoundParameters.ContainsKey("SkipZip")) {
+    $SkipZip = -not (Read-YesNo -Prompt "Create a portable zip archive?" -Default (-not $SkipZip))
 }
 
 $packageDir = Join-Path $publishRoot "$packageName-$Runtime"

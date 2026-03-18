@@ -107,13 +107,13 @@ dotnet run --project .\PotatoMaker.GUI
 
 ## Packaging
 
-Portable publish:
+Portable publish (the script now prompts for publish options when you omit flags):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\publish-portable.ps1
 ```
 
-Velopack installer/release packaging:
+Velopack installer/release packaging (the script will guide you through the remaining choices):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\publish-velopack.ps1 -GitHubRepoUrl https://github.com/SpontaneousAct/PotatoMaker
