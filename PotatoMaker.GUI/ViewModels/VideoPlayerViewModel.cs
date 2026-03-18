@@ -17,6 +17,15 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private static readonly TimeSpan SeekPreviewPausedDispatchInterval = TimeSpan.FromMilliseconds(75);
     private static readonly TimeSpan SkipStep = TimeSpan.FromSeconds(10);
     private const double PlaybackEndRestartThresholdSeconds = 0.05;
+    private static readonly string[] LibVlcStartupArguments =
+    [
+        "--quiet",
+        "--no-plugins-cache",
+        "--no-stats",
+        "--no-video-title-show",
+        "--ignore-config",
+        "--no-osd"
+    ];
 
     private readonly DispatcherTimer _positionTimer;
     private readonly DispatcherTimer _seekPreviewTimer;
@@ -620,7 +629,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         try
         {
             LibVlcRuntime.EnsureInitialized();
-            libVlc = new LibVLC("--quiet");
+            libVlc = new LibVLC(LibVlcStartupArguments);
             mediaPlayer = new MediaPlayer(libVlc);
             return new PlayerInitializationResult(libVlc, mediaPlayer, null);
         }
