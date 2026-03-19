@@ -153,6 +153,10 @@ public sealed class AppUpdateServiceTests
             KeptPackageFileName = assetFileName;
         }
 
+        public void RefreshLocalState()
+        {
+        }
+
         public void ApplyUpdatesAndExit(VelopackAsset toApply)
         {
             AppliedVersion = toApply.Version?.ToFullString() ?? toApply.Version?.ToString();

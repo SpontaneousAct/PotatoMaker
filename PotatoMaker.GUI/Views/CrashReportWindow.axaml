@@ -1,0 +1,60 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="PotatoMaker.GUI.Views.CrashReportWindow"
+        Title="PotatoMaker Crash Report"
+        Width="560"
+        SizeToContent="Height"
+        MinWidth="560"
+        CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Border Classes="pm-card"
+            Margin="16"
+            Padding="18">
+        <StackPanel Spacing="14">
+            <StackPanel Spacing="6">
+                <TextBlock Text="PotatoMaker closed unexpectedly"
+                           Classes="pm-page-title"/>
+                <TextBlock Text="A local crash report was saved. You can copy it, open the report folder, or open GitHub to file an issue."
+                           Classes="pm-muted"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <Border Classes="pm-inset"
+                    Padding="12,10">
+                <StackPanel Spacing="6">
+                    <TextBlock x:Name="ExceptionTypeTextBlock"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"/>
+                    <TextBlock x:Name="ExceptionMessageTextBlock"
+                               Classes="pm-muted"
+                               TextWrapping="Wrap"/>
+                    <TextBlock x:Name="OperationTextBlock"
+                               Classes="pm-caption"
+                               TextWrapping="Wrap"
+                               IsVisible="False"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock x:Name="StatusTextBlock"
+                       Classes="pm-caption"
+                       TextWrapping="Wrap"
+                       IsVisible="False"/>
+
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8">
+                <Button Content="Copy report"
+                        Click="OnCopyReportClick"/>
+                <Button Content="Open report folder"
+                        Click="OnOpenReportFolderClick"/>
+                <Button Content="Report issue"
+                        Classes="pm-primary"
+                        Click="OnReportIssueClick"/>
+                <Button Content="Close"
+                        Click="OnCloseClick"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

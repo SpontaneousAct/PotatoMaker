@@ -28,6 +28,7 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            using IDisposable initializationOperation = CrashReportService.Shared.BeginOperation("Initializing application");
             DisableAvaloniaDataAnnotationValidation();
             ServiceCollection serviceCollection = new ServiceCollection();
             serviceCollection.AddPotatoMakerGui();
@@ -39,6 +40,7 @@ public partial class App : Application
 
             var mainWindow = Services.GetRequiredService<MainWindow>();
             desktop.MainWindow = mainWindow;
+            mainWindow.Opened += OnMainWindowOpened;
 
             if (mainWindow.DataContext is MainWindowViewModel viewModel)
             {
@@ -64,6 +66,29 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static async void OnMainWindowOpened(object? sender, EventArgs e)
+    {
+        if (sender is not MainWindow mainWindow)
+            return;
+
+        mainWindow.Opened -= OnMainWindowOpened;
+
+        CrashReport? pendingReport = CrashReportService.Shared.TryGetLatestPendingReport();
+        if (pendingReport is null)
+            return;
+
+        try
+        {
+            var dialog = new CrashReportWindow(pendingReport, CrashReportService.Shared);
+            await dialog.ShowDialog(mainWindow);
+            CrashReportService.Shared.MarkReportAsReviewed(pendingReport);
+        }
+        catch
+        {
+            // Avoid a follow-up startup crash if the crash prompt itself cannot be shown.
+        }
     }
 
     private static void DisableAvaloniaDataAnnotationValidation()

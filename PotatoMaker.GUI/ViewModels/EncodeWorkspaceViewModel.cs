@@ -130,6 +130,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     [RelayCommand(CanExecute = nameof(CanStartEncode))]
     private async Task StartEncode()
     {
+        using IDisposable operation = CrashReportService.Shared.BeginOperation("Compressing video");
         VideoInfo? info = VideoSummary.Info;
         string? path = FileInput.InputFilePath;
         StrategyAnalysis? strategy = VideoSummary.StrategyAnalysis;
@@ -229,6 +230,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
     private async Task LoadSelectedFileAsync(string path)
     {
+        using IDisposable operation = CrashReportService.Shared.BeginOperation("Loading and analyzing video");
         CancelPendingPreview();
         CancelPendingStatusReset();
         var previewCts = new CancellationTokenSource();
@@ -647,6 +649,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
     private async Task RefreshStrategyPreviewForCurrentStateAsync(string path, VideoInfo info, bool showPendingState)
     {
+        using IDisposable operation = CrashReportService.Shared.BeginOperation("Refreshing encode strategy");
         try
         {
             ConversionLog.BeginAnalysis();
