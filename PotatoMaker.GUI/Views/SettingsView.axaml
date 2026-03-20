@@ -22,7 +22,7 @@
                         <StackPanel Spacing="1">
                             <TextBlock Text="Theme"
                                        Classes="pm-settings-label"/>
-                            <TextBlock Text="Switch between light and dark themes."
+                            <TextBlock Text="Choose the app theme."
                                        Classes="pm-caption"
                                        TextWrapping="Wrap"/>
                         </StackPanel>
@@ -49,7 +49,7 @@
                         <StackPanel Spacing="2">
                             <TextBlock Text="Quick-load folder"
                                        Classes="pm-settings-label"/>
-                            <TextBlock Text="Used by the left-nav shortcut to show the 5 newest supported videos for fast loading."
+                            <TextBlock Text="Used by Recent videos to show the 8 newest supported files for quick loading."
                                        Classes="pm-caption"
                                        TextWrapping="Wrap"/>
                         </StackPanel>
@@ -79,10 +79,7 @@
                         <StackPanel Spacing="2">
                             <TextBlock Text="Prefer NVIDIA NVENC AV1"
                                        Classes="pm-settings-label"/>
-                            <TextBlock Text="Use the GPU encoder by default when this machine supports AV1 NVENC."
-                                       Classes="pm-caption"
-                                       TextWrapping="Wrap"/>
-                            <TextBlock Text="{Binding OutputSettings.NvencSupportSummary}"
+                            <TextBlock Text="Warning: NVENC AV1 does not guarantee the target file size and is best used only for short clips."
                                        Classes="pm-caption"
                                        TextWrapping="Wrap"/>
                         </StackPanel>
@@ -90,6 +87,8 @@
                         <ToggleSwitch Grid.Column="1"
                                       IsChecked="{Binding OutputSettings.UseNvencEncoder}"
                                       IsEnabled="{Binding OutputSettings.CanUseNvenc}"
+                                      ToolTip.Tip="{Binding OutputSettings.NvencUnavailableToolTip}"
+                                      ToolTip.ShowOnDisabled="True"
                                       OnContent="Enabled"
                                       OffContent="Off"
                                       HorizontalAlignment="Right"
@@ -102,7 +101,7 @@
                         <StackPanel Spacing="2">
                             <TextBlock Text="Encoded frame rate"
                                        Classes="pm-settings-label"/>
-                            <TextBlock Text="Cap the output at 30 FPS, 60 FPS, or keep the source cadence. Lower caps help the planner spend the same upload budget more efficiently."
+                            <TextBlock Text="Set the output to 30 FPS, 60 FPS, or keep the source frame rate."
                                        Classes="pm-caption"
                                        TextWrapping="Wrap"/>
                         </StackPanel>
@@ -120,7 +119,7 @@
                         <StackPanel Spacing="2">
                             <TextBlock Text="CPU preset"
                                        Classes="pm-settings-label"/>
-                            <TextBlock Text="Controls CPU encode speed when NVENC is unavailable or turned off."
+                            <TextBlock Text="Adjust CPU encode speed."
                                        Classes="pm-caption"
                                        TextWrapping="Wrap"/>
                         </StackPanel>
@@ -165,7 +164,7 @@
                         <StackPanel Spacing="2">
                             <TextBlock Text="Filename suffix"
                                        Classes="pm-settings-label"/>
-                            <TextBlock Text="Added after the source file name. Split outputs still append part numbers after this suffix."
+                            <TextBlock Text="Added after the source file name. Split outputs append part numbers after the suffix."
                                        Classes="pm-caption"
                                        TextWrapping="Wrap"/>
                         </StackPanel>

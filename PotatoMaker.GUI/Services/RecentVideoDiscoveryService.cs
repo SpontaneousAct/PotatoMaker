@@ -29,7 +29,7 @@ public interface IRecentVideoDiscoveryService
 /// </summary>
 public sealed class RecentVideoDiscoveryService : IRecentVideoDiscoveryService
 {
-    public const int DefaultLimit = 5;
+    public const int DefaultLimit = 8;
 
     public IReadOnlyList<RecentVideoFile> GetRecentVideos(RecentVideoQuery query)
     {

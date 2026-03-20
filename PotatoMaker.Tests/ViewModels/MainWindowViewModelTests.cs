@@ -297,6 +297,7 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(recentVideos.LastQuery);
         Assert.Equal("pm_", recentVideos.LastQuery!.ExcludedPrefix);
         Assert.Equal("_discord", recentVideos.LastQuery.ExcludedSuffix);
+        Assert.Equal(RecentVideoDiscoveryService.DefaultLimit, recentVideos.LastQuery.Limit);
     }
 
     [Fact]

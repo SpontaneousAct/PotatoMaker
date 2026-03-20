@@ -13,7 +13,7 @@ public sealed class OutputSettingsViewModelTests
 
         int[] presets = viewModel.CpuEncodePresetOptions.Select(option => option.Value).ToArray();
 
-        Assert.Equal([6, 8, 10], presets);
+        Assert.Equal([6, 8, 10, EncodeSettings.MaxSvtAv1Preset], presets);
     }
 
     [Fact]
@@ -24,6 +24,22 @@ public sealed class OutputSettingsViewModelTests
         viewModel.SetCpuEncodePreset(9);
 
         Assert.Equal(8, viewModel.CpuEncodePreset);
+    }
+
+    [Fact]
+    public void NvencUnavailableToolTip_IsOnlyShownWhenNvencIsUnavailable()
+    {
+        var viewModel = new OutputSettingsViewModel();
+
+        Assert.Null(viewModel.NvencUnavailableToolTip);
+
+        viewModel.SetNvencSupport(false);
+
+        Assert.Equal("NVENC AV1 is not available on this system.", viewModel.NvencUnavailableToolTip);
+
+        viewModel.SetNvencSupport(true);
+
+        Assert.Null(viewModel.NvencUnavailableToolTip);
     }
 
     [Fact]

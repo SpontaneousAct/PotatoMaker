@@ -43,7 +43,8 @@ public partial class OutputSettingsViewModel : ViewModelBase
     [
         6,
         8,
-        10
+        10,
+        EncodeSettings.MaxSvtAv1Preset
     ];
 
     public OutputSettingsViewModel()
@@ -66,11 +67,13 @@ public partial class OutputSettingsViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanUseNvenc))]
     [NotifyPropertyChangedFor(nameof(NvencSupportSummary))]
+    [NotifyPropertyChangedFor(nameof(NvencUnavailableToolTip))]
     private bool _isNvencSupportKnown;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanUseNvenc))]
     [NotifyPropertyChangedFor(nameof(NvencSupportSummary))]
+    [NotifyPropertyChangedFor(nameof(NvencUnavailableToolTip))]
     private bool _isNvencSupported;
 
     [ObservableProperty]
@@ -114,6 +117,11 @@ public partial class OutputSettingsViewModel : ViewModelBase
             : IsNvencSupported
                 ? "NVENC AV1 is available on this system."
                 : "NVENC AV1 is not available on this system.";
+
+    public string? NvencUnavailableToolTip =>
+        IsNvencSupportKnown && !IsNvencSupported
+            ? "NVENC AV1 is not available on this system."
+            : null;
 
     public IReadOnlyList<CpuEncodePresetOption> CpuEncodePresetOptions { get; } = CreateCpuEncodePresetOptions();
 
@@ -236,8 +244,9 @@ public partial class OutputSettingsViewModel : ViewModelBase
         string description = preset switch
         {
             EncodeSettings.DefaultSvtAv1Preset => "Balanced (default)",
-            8 => "Faster",
-            10 => "Fastest",
+            8 => "Fast",
+            10 => "Faster",
+            EncodeSettings.MaxSvtAv1Preset => "Fastest",
             _ => "Custom"
         };
 
