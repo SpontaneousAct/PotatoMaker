@@ -1,6 +1,7 @@
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.Input;
+using PotatoMaker.Core;
 using PotatoMaker.GUI.Services;
 using PotatoMaker.GUI.ViewModels;
 using Xunit;
@@ -157,6 +158,51 @@ public sealed class MainWindowViewModelTests
 
         Assert.True(viewModel.IsQueueViewSelected);
         Assert.False(viewModel.IsMainViewSelected);
+    }
+
+    [Fact]
+    public async Task QueueBadge_ReflectsActiveQueuedItems()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var queue = new CompressionQueueViewModel(
+                null,
+                new NoOpEncodingService(),
+                new EncodeExecutionCoordinator());
+            var workspace = new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                queue,
+                new EncodeExecutionCoordinator(),
+                initializeEncoderSupport: false);
+            var viewModel = new MainWindowViewModel(
+                workspace,
+                new RecordingThemeService(),
+                null,
+                new RecordingRecentVideoDiscoveryService(),
+                DisabledRecentVideoThumbnailService.Instance,
+                DisabledProcessedVideoTracker.Instance,
+                queue,
+                null);
+
+            Assert.False(viewModel.IsQueueBadgeVisible);
+
+            QueueEnqueueResult result = await queue.AddAsync(CreateQueueDraft(inputPath));
+
+            Assert.True(result.Succeeded);
+            Assert.True(viewModel.IsQueueBadgeVisible);
+            Assert.Equal(1, viewModel.QueueBadgeCount);
+            Assert.Equal("1", viewModel.QueueBadgeText);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
     }
 
     [Fact]
@@ -839,5 +885,33 @@ public sealed class MainWindowViewModelTests
         {
             ApplyPendingAndRestartCallCount++;
         }
+    }
+
+    private static QueuedCompressionItemDraft CreateQueueDraft(string inputPath)
+    {
+        VideoInfo info = new(TimeSpan.FromSeconds(90), 1920, 1080, 60, 4000);
+        EncodeSettings settings = new()
+        {
+            Encoder = EncoderChoice.Nvenc,
+            OutputNamePrefix = "queue_",
+            OutputNameSuffix = "_discord",
+            FrameRateMode = EncodeFrameRateMode.Original,
+            SvtAv1Preset = EncodeSettings.DefaultSvtAv1Preset
+        };
+        StrategyAnalysis strategy = new(
+            Path.GetFullPath(inputPath),
+            "crop=1920:800:0:140",
+            null,
+            60,
+            new EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)"));
+
+        return new QueuedCompressionItemDraft(
+            Path.GetFullPath(inputPath),
+            @"D:\Queued",
+            info,
+            strategy,
+            settings,
+            new VideoClipRange(TimeSpan.Zero, TimeSpan.FromSeconds(30)),
+            123);
     }
 }

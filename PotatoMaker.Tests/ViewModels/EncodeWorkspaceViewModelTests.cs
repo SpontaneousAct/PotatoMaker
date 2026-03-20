@@ -303,6 +303,8 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal("social_", queuedItem.Settings.OutputNamePrefix);
             Assert.Equal("_mobile", queuedItem.Settings.OutputNameSuffix);
             Assert.Equal(263, queuedItem.SelectedSizeBytes);
+            Assert.True(workspace.IsQueueAddFeedbackVisible);
+            Assert.Equal("Added", workspace.QueueAddFeedbackTitle);
         }
         finally
         {

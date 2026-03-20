@@ -61,6 +61,14 @@
                     <SolidColorBrush x:Key="PmUpdateDotBackground">#FF1E8E3E</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBackground">#FFFFF2DE</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBorderBrush">#FFE8C98B</SolidColorBrush>
+                    <LinearGradientBrush x:Key="PmQueueFeedbackBackground" StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FF1A86FF" Offset="0"/>
+                        <GradientStop Color="#FF1666D8" Offset="1"/>
+                    </LinearGradientBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackBorderBrush">#FF5DA3FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackForeground">#FFFFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackBadgeBackground">#2EFFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackBadgeBorderBrush">#40FFFFFF</SolidColorBrush>
 
                     <SolidColorBrush x:Key="PmPrimaryBackground">#FF176FE5</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF267BEF</SolidColorBrush>
@@ -123,6 +131,14 @@
                     <SolidColorBrush x:Key="PmUpdateDotBackground">#FF5FC779</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBackground">#FF2C2416</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBorderBrush">#FF6C5531</SolidColorBrush>
+                    <LinearGradientBrush x:Key="PmQueueFeedbackBackground" StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FF4291FF" Offset="0"/>
+                        <GradientStop Color="#FF245FD5" Offset="1"/>
+                    </LinearGradientBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackBorderBrush">#FF77ADFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackForeground">#FFF7FBFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackBadgeBackground">#28FFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackBadgeBorderBrush">#35FFFFFF</SolidColorBrush>
 
                     <SolidColorBrush x:Key="PmPrimaryBackground">#FF3A7AFE</SolidColorBrush>
                     <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF4A86FF</SolidColorBrush>
@@ -544,9 +560,56 @@
             <Setter Property="BorderThickness" Value="1.5"/>
         </Style>
 
+        <Style Selector="Border.pm-nav-count-badge">
+            <Setter Property="MinWidth" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Padding" Value="5,0"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCardBackground}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-nav-count-badge-text">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+
         <Style Selector="Border.pm-update-panel">
             <Setter Property="Background" Value="{DynamicResource PmUpdatePanelBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmUpdatePanelBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Border.pm-queue-feedback">
+            <Setter Property="Background" Value="{DynamicResource PmQueueFeedbackBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmQueueFeedbackBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+
+        <Style Selector="Border.pm-queue-feedback-badge">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="{DynamicResource PmQueueFeedbackBadgeBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmQueueFeedbackBadgeBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Border.pm-queue-feedback-badge TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource PmQueueFeedbackForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-queue-feedback-title">
+            <Setter Property="Foreground" Value="{DynamicResource PmQueueFeedbackForeground}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
 
         <Style Selector="Button.pm-primary">

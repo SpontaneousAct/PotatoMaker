@@ -23,8 +23,11 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private readonly EncodeExecutionCoordinator _executionCoordinator;
     private readonly bool _initializeEncoderSupport;
     private readonly TimeSpan _cancelledStatusDuration;
+    private readonly TimeSpan _queueFeedbackVisibleDuration = TimeSpan.FromMilliseconds(1250);
+    private readonly TimeSpan _queueFeedbackExitDuration = TimeSpan.FromMilliseconds(220);
     private CancellationTokenSource? _encodeCts;
     private CancellationTokenSource? _previewCts;
+    private CancellationTokenSource? _queueFeedbackCts;
     private CancellationTokenSource? _statusResetCts;
     private Stopwatch? _encodeStopwatch;
     private int _previewVersion;
@@ -192,6 +195,21 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
     public ICommand EncodeButtonCommand => IsEncodeInProgress ? CancelEncodeCommand : StartEncodeCommand;
 
+    [ObservableProperty]
+    private bool _isQueueAddFeedbackVisible;
+
+    [ObservableProperty]
+    private string _queueAddFeedbackTitle = "Added";
+
+    [ObservableProperty]
+    private double _queueAddFeedbackOpacity;
+
+    [ObservableProperty]
+    private double _queueAddFeedbackScale = 0.96d;
+
+    [ObservableProperty]
+    private double _queueAddFeedbackOffsetY = 10d;
+
     [RelayCommand(CanExecute = nameof(CanStartEncode))]
     private async Task StartEncode()
     {
@@ -287,6 +305,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
         QueueEnqueueResult result = await _compressionQueue.AddAsync(draft!);
         ConversionLog.SetIdleText(result.Message);
+        if (result.Succeeded)
+            TriggerQueueAddFeedback();
         NotifyEncodeStateChanged();
     }
 
@@ -657,6 +677,60 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(EncodeButtonCommand));
     }
 
+    private void TriggerQueueAddFeedback()
+    {
+        QueueAddFeedbackTitle = "Added";
+
+        _queueFeedbackCts?.Cancel();
+        _queueFeedbackCts?.Dispose();
+
+        var feedbackCts = new CancellationTokenSource();
+        _queueFeedbackCts = feedbackCts;
+        _ = RunQueueAddFeedbackAsync(feedbackCts);
+    }
+
+    private async Task RunQueueAddFeedbackAsync(CancellationTokenSource feedbackCts)
+    {
+        try
+        {
+            IsQueueAddFeedbackVisible = true;
+            QueueAddFeedbackOpacity = 0d;
+            QueueAddFeedbackScale = 0.96d;
+            QueueAddFeedbackOffsetY = 10d;
+
+            await Task.Yield();
+            if (feedbackCts.IsCancellationRequested || !ReferenceEquals(_queueFeedbackCts, feedbackCts))
+                return;
+
+            QueueAddFeedbackOpacity = 1d;
+            QueueAddFeedbackScale = 1d;
+            QueueAddFeedbackOffsetY = 0d;
+
+            await Task.Delay(_queueFeedbackVisibleDuration, feedbackCts.Token);
+            QueueAddFeedbackOpacity = 0d;
+            QueueAddFeedbackScale = 0.985d;
+            QueueAddFeedbackOffsetY = -8d;
+
+            await Task.Delay(_queueFeedbackExitDuration, feedbackCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            if (ReferenceEquals(_queueFeedbackCts, feedbackCts))
+            {
+                QueueAddFeedbackOpacity = 0d;
+                QueueAddFeedbackScale = 0.96d;
+                QueueAddFeedbackOffsetY = 10d;
+                IsQueueAddFeedbackVisible = false;
+                _queueFeedbackCts = null;
+            }
+
+            feedbackCts.Dispose();
+        }
+    }
+
     private void UpdateSourceSelectionState()
     {
         FileInput.IsSourceSelectionLocked = ConversionLog.IsProcessing;
@@ -850,6 +924,9 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     {
         CancelPendingPreview();
         CancelPendingStatusReset();
+        _queueFeedbackCts?.Cancel();
+        _queueFeedbackCts?.Dispose();
+        _queueFeedbackCts = null;
         CancellationTokenSource? encodeCts = _encodeCts;
         _encodeCts = null;
         encodeCts?.Cancel();

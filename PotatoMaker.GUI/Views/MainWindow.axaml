@@ -51,8 +51,19 @@
                                 Classes.pm-nav-active="{Binding IsQueueViewSelected}"
                                 Command="{Binding ShowQueueViewCommand}"
                                 ToolTip.Tip="Queue">
-                            <TextBlock Text="&#xE8FD;"
-                                       Classes="pm-nav-icon"/>
+                            <Grid Width="46"
+                                  Height="46">
+                                <TextBlock Text="&#xE8FD;"
+                                           Classes="pm-nav-icon"/>
+                                <Border Classes="pm-nav-count-badge"
+                                        IsVisible="{Binding IsQueueBadgeVisible}"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Margin="0,4,4,0">
+                                    <TextBlock Text="{Binding QueueBadgeText}"
+                                               Classes="pm-nav-count-badge-text"/>
+                                </Border>
+                            </Grid>
                         </Button>
 
                         <Button Classes="pm-nav-button"

@@ -45,7 +45,66 @@
                                 VerticalAlignment="Top"/>
 
                 <Grid ColumnDefinitions="*,*"
-                      ColumnSpacing="8">
+                      ColumnSpacing="8"
+                      ClipToBounds="False">
+                    <Border Grid.Column="0"
+                            Classes="pm-queue-feedback"
+                            IsVisible="{Binding IsQueueAddFeedbackVisible}"
+                            Opacity="{Binding QueueAddFeedbackOpacity}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Margin="0,-54,0,0"
+                            MaxWidth="132"
+                            IsHitTestVisible="False">
+                        <Border.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform ScaleX="{Binding QueueAddFeedbackScale}"
+                                                ScaleY="{Binding QueueAddFeedbackScale}">
+                                    <ScaleTransform.Transitions>
+                                        <Transitions>
+                                            <DoubleTransition Property="ScaleX"
+                                                              Duration="0:0:0.22"/>
+                                            <DoubleTransition Property="ScaleY"
+                                                              Duration="0:0:0.22"/>
+                                        </Transitions>
+                                    </ScaleTransform.Transitions>
+                                </ScaleTransform>
+                                <TranslateTransform Y="{Binding QueueAddFeedbackOffsetY}">
+                                    <TranslateTransform.Transitions>
+                                        <Transitions>
+                                            <DoubleTransition Property="Y"
+                                                              Duration="0:0:0.22"/>
+                                        </Transitions>
+                                    </TranslateTransform.Transitions>
+                                </TranslateTransform>
+                            </TransformGroup>
+                        </Border.RenderTransform>
+                        <Border.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity"
+                                                  Duration="0:0:0.18"/>
+                            </Transitions>
+                        </Border.Transitions>
+
+                        <Grid ColumnDefinitions="Auto,*"
+                              ColumnSpacing="8">
+                            <Border Grid.Column="0"
+                                    Classes="pm-queue-feedback-badge">
+                                <TextBlock Text="✓"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           TextAlignment="Center"/>
+                            </Border>
+
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding QueueAddFeedbackTitle}"
+                                       Classes="pm-queue-feedback-title"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
                     <Button Grid.Column="0"
                             Content="Add to queue"
                             Command="{Binding AddToQueueCommand}"

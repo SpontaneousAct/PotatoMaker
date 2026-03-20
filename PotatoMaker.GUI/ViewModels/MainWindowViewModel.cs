@@ -123,6 +123,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         RecentVideos.CollectionChanged += OnRecentVideosCollectionChanged;
         Workspace.OutputSettings.PropertyChanged += OnOutputSettingsChanged;
         _processedVideoTracker.ProcessedVideosChanged += OnProcessedVideosChanged;
+        _compressionQueue.PropertyChanged += OnCompressionQueueChanged;
 
         ApplyInitialSettings();
     }
@@ -175,6 +176,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [NotifyPropertyChangedFor(nameof(IsSettingsViewSelected))]
     [NotifyPropertyChangedFor(nameof(IsHelpViewSelected))]
     private ShellViewKind _selectedView = ShellViewKind.Main;
+
+    public int QueueBadgeCount => _compressionQueue.ActiveItemCount;
+
+    public string QueueBadgeText => QueueBadgeCount.ToString();
+
+    public bool IsQueueBadgeVisible => QueueBadgeCount > 0;
 
     public object CurrentView => SelectedView switch
     {
@@ -574,6 +581,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         RecentVideos.CollectionChanged -= OnRecentVideosCollectionChanged;
         Workspace.OutputSettings.PropertyChanged -= OnOutputSettingsChanged;
         _processedVideoTracker.ProcessedVideosChanged -= OnProcessedVideosChanged;
+        _compressionQueue.PropertyChanged -= OnCompressionQueueChanged;
         Workspace.Dispose();
         _compressionQueue.Dispose();
     }
@@ -603,6 +611,17 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             if (IsRecentVideosPanelOpen)
                 RefreshRecentVideos();
         });
+    }
+
+    private void OnCompressionQueueChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(CompressionQueueViewModel.ActiveItemCount)
+            or nameof(CompressionQueueViewModel.QueueCount))
+        {
+            OnPropertyChanged(nameof(QueueBadgeCount));
+            OnPropertyChanged(nameof(QueueBadgeText));
+            OnPropertyChanged(nameof(IsQueueBadgeVisible));
+        }
     }
 
     private CancellationToken CreateRecentVideoThumbnailToken()
