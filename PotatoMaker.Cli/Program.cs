@@ -76,7 +76,7 @@ class Program
             logger.LogInformation(PipelineEvents.Success, "Strategy ready.");
 
             var pipeline = new ProcessingPipeline(inputPath, info, settings, logger, progress);
-            await pipeline.RunAsync(analysis, cts.Token);
+            _ = await pipeline.RunAsync(analysis, cts.Token);
             return 0;
         }
         catch (OperationCanceledException)

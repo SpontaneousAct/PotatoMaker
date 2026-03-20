@@ -139,6 +139,27 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void ShowQueueView_SelectsQueueScreen()
+    {
+        var viewModel = new MainWindowViewModel(
+            new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false),
+            new RecordingThemeService(),
+            null,
+            new RecordingRecentVideoDiscoveryService(),
+            null);
+
+        viewModel.ShowQueueViewCommand.Execute(null);
+
+        Assert.True(viewModel.IsQueueViewSelected);
+        Assert.False(viewModel.IsMainViewSelected);
+    }
+
+    [Fact]
     public async Task ChangingRecentVideosDirectory_PersistsPreference()
     {
         var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
@@ -754,11 +775,12 @@ public sealed class MainWindowViewModelTests
 
     private sealed class NoOpEncodingService : IVideoEncodingService
     {
-        public Task RunAsync(
+        public Task<PotatoMaker.Core.ProcessingPipelineResult> RunAsync(
             EncodeRequest request,
             Microsoft.Extensions.Logging.ILogger<PotatoMaker.Core.ProcessingPipeline> logger,
             IProgress<PotatoMaker.Core.EncodeProgress>? progress = null,
-            CancellationToken ct = default) => Task.CompletedTask;
+            CancellationToken ct = default) =>
+            Task.FromResult(new PotatoMaker.Core.ProcessingPipelineResult([], 0));
     }
 
     private sealed class StaticEncoderCapabilityService : IEncoderCapabilityService

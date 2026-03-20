@@ -40,7 +40,7 @@ public class ProcessingPipeline
             : null;
     }
 
-    public async Task RunAsync(StrategyAnalysis analysis, CancellationToken ct = default)
+    public async Task<ProcessingPipelineResult> RunAsync(StrategyAnalysis analysis, CancellationToken ct = default)
     {
         Directory.CreateDirectory(_outputDir);
         string ffmpegVersionSummary = await FFmpegBinaries.GetVersionSummaryAsync(ct);
@@ -112,15 +112,15 @@ public class ProcessingPipeline
 
         if (encodePlan.Parts == 1)
         {
-            await RunSingleAsync(encodePlan.VideoBitrateKbps, videoFilter, effectiveRange, ct);
+            return await RunSingleAsync(encodePlan.VideoBitrateKbps, videoFilter, effectiveRange, ct);
         }
         else
         {
-            await RunSplitAsync(encodePlan.VideoBitrateKbps, videoFilter, encodePlan.Parts, effectiveRange, ct);
+            return await RunSplitAsync(encodePlan.VideoBitrateKbps, videoFilter, encodePlan.Parts, effectiveRange, ct);
         }
     }
 
-    private async Task RunSingleAsync(int videoBitrateKbps, string? videoFilter, VideoClipRange effectiveRange, CancellationToken ct)
+    private async Task<ProcessingPipelineResult> RunSingleAsync(int videoBitrateKbps, string? videoFilter, VideoClipRange effectiveRange, CancellationToken ct)
     {
         _logger.LogInformation("--- Encoding ----------------------------------------");
         string outputPath = OutputFileNameBuilder.BuildOutputPath(_outputDir, _outputBase, _settings);
@@ -139,7 +139,9 @@ public class ProcessingPipeline
         try
         {
             await VideoEncoder.EncodeAsync(job, _settings.Encoder, _settings.SvtAv1Preset, _logger, _progress, ct: ct);
-            PrintSummary([job.OutputPath]);
+            var result = BuildResult([job.OutputPath]);
+            PrintSummary(result.OutputPaths);
+            return result;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -148,7 +150,7 @@ public class ProcessingPipeline
         }
     }
 
-    private async Task RunSplitAsync(int videoBitrateKbps, string? videoFilter, int parts, VideoClipRange effectiveRange, CancellationToken ct)
+    private async Task<ProcessingPipelineResult> RunSplitAsync(int videoBitrateKbps, string? videoFilter, int parts, VideoClipRange effectiveRange, CancellationToken ct)
     {
         double totalSecs = effectiveRange.Duration.TotalSeconds;
         double segSecs = totalSecs / parts;
@@ -183,7 +185,9 @@ public class ProcessingPipeline
                 await VideoEncoder.EncodeAsync(job, _settings.Encoder, _settings.SvtAv1Preset, _logger, _progress, label: $"[{i + 1}/{parts}] ", ct: ct);
             }
 
-            PrintSummary(outputPaths);
+            var result = BuildResult(outputPaths);
+            PrintSummary(result.OutputPaths);
+            return result;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -196,6 +200,20 @@ public class ProcessingPipeline
         value.TotalHours >= 1
             ? value.ToString(@"h\:mm\:ss\.f")
             : value.ToString(@"m\:ss\.f");
+
+    private static ProcessingPipelineResult BuildResult(IEnumerable<string> outputPaths)
+    {
+        string[] existingPaths = outputPaths
+            .Where(File.Exists)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        long totalOutputBytes = existingPaths
+            .Select(path => new FileInfo(path).Length)
+            .Sum();
+
+        return new ProcessingPipelineResult(existingPaths, totalOutputBytes);
+    }
 
     private void PrintSummary(IEnumerable<string> outputPaths)
     {

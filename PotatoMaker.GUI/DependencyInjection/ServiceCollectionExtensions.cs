@@ -33,10 +33,32 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IVideoEncodingService, VideoEncodingService>();
         services.AddSingleton<IEncoderCapabilityService, EncoderCapabilityService>();
         services.AddSingleton<IEncodeCompletionNotifier, WindowsEncodeCompletionNotifier>();
+        services.AddSingleton<EncodeExecutionCoordinator>();
+        services.AddSingleton<CompressionQueueViewModel>();
 
         services.AddTransient(_ => new VideoPlayerViewModel(initializePlayer: false));
-        services.AddTransient<EncodeWorkspaceViewModel>();
-        services.AddTransient<MainWindowViewModel>();
+        services.AddTransient(sp => new EncodeWorkspaceViewModel(
+            sp.GetRequiredService<IVideoAnalysisService>(),
+            sp.GetRequiredService<IVideoEncodingService>(),
+            sp.GetRequiredService<VideoPlayerViewModel>(),
+            sp.GetRequiredService<IEncoderCapabilityService>(),
+            sp.GetRequiredService<IAppSettingsCoordinator>(),
+            sp.GetRequiredService<CompressionQueueViewModel>(),
+            sp.GetRequiredService<EncodeExecutionCoordinator>(),
+            true,
+            sp.GetRequiredService<IEncodeCompletionNotifier>(),
+            null,
+            sp.GetRequiredService<IProcessedVideoTracker>()));
+        services.AddTransient(sp => new MainWindowViewModel(
+            sp.GetRequiredService<EncodeWorkspaceViewModel>(),
+            sp.GetRequiredService<IThemeService>(),
+            sp.GetRequiredService<IAppSettingsCoordinator>(),
+            sp.GetRequiredService<IRecentVideoDiscoveryService>(),
+            sp.GetRequiredService<IRecentVideoThumbnailService>(),
+            sp.GetRequiredService<IProcessedVideoTracker>(),
+            sp.GetRequiredService<CompressionQueueViewModel>(),
+            sp.GetRequiredService<IAppUpdateService>(),
+            sp.GetRequiredService<IAppVersionService>()));
         services.AddTransient<MainWindow>();
 
         return services;

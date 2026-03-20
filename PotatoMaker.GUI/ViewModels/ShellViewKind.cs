@@ -6,6 +6,7 @@ namespace PotatoMaker.GUI.ViewModels;
 public enum ShellViewKind
 {
     Main,
+    Queue,
     Settings,
     Help
 }

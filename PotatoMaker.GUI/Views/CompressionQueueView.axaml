@@ -1,0 +1,169 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PotatoMaker.GUI.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="920" d:DesignHeight="720"
+             x:Name="QueueViewRoot"
+             x:Class="PotatoMaker.GUI.Views.CompressionQueueView"
+             x:DataType="vm:CompressionQueueViewModel">
+
+    <Design.DataContext>
+        <vm:CompressionQueueViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,Auto,*"
+          RowSpacing="12">
+        <Border Grid.Row="0"
+                Classes="pm-card pm-page-banner"
+                Padding="16,14">
+            <Grid ColumnDefinitions="*,Auto,Auto"
+                  ColumnSpacing="12">
+                <StackPanel Grid.Column="0"
+                            Spacing="4">
+                    <TextBlock Text="Compression Queue"
+                               Classes="pm-page-title"/>
+                    <TextBlock Text="{Binding QueueCountText}"
+                               Classes="pm-section-title"/>
+                    <TextBlock Text="{Binding QueueSummaryText}"
+                               Classes="pm-caption"/>
+                    <TextBlock Text="A running queue blocks one-off compression until the current batch finishes."
+                               Classes="pm-caption"
+                               IsVisible="{Binding IsBlockedByAnotherEncode}"/>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="Compress all"
+                        Command="{Binding CompressAllCommand}"
+                        Classes="pm-primary"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"/>
+
+                <Button Grid.Column="2"
+                        Content="Clear queue"
+                        Command="{Binding ClearQueueCommand}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="3*,*,2*,*,*,176"
+              ColumnSpacing="12"
+              IsVisible="{Binding HasItems}">
+            <TextBlock Grid.Column="0"
+                       Text="FILENAME"
+                       Classes="pm-caption"
+                       FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="1"
+                       Text="SIZE"
+                       Classes="pm-caption"
+                       FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="2"
+                       Text="PROGRESS"
+                       Classes="pm-caption"
+                       FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="3"
+                       Text="OUTPUT"
+                       Classes="pm-caption"
+                       FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="4"
+                       Text="TIME"
+                       Classes="pm-caption"
+                       FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="5"
+                       Text="ACTIONS"
+                       Classes="pm-caption"
+                       FontWeight="SemiBold"
+                       HorizontalAlignment="Center"/>
+        </Grid>
+
+        <Grid Grid.Row="2"
+              IsVisible="{Binding IsEmpty}">
+            <StackPanel Margin="24"
+                        Spacing="6"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                <TextBlock Text="No videos queued yet."
+                           Classes="pm-section-title"
+                           TextAlignment="Center"/>
+                <TextBlock Text="Prepare a clip on the main screen and use Add to queue to stage it here."
+                           Classes="pm-caption"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           MaxWidth="360"/>
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer Grid.Row="2"
+                      IsVisible="{Binding HasItems}">
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="vm:CompressionQueueItemViewModel">
+                        <Border Classes="pm-card"
+                                Margin="0,0,0,10"
+                                Padding="16,14">
+                            <Grid ColumnDefinitions="3*,*,2*,*,*,176"
+                                  ColumnSpacing="12">
+                                <StackPanel Grid.Column="0"
+                                            Spacing="4">
+                                    <TextBlock Text="{Binding FileName}"
+                                               FontWeight="SemiBold"
+                                               FontSize="16"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding InputPath}"
+                                               Classes="pm-caption"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxLines="1"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding SelectedSizeText}"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"/>
+
+                                <StackPanel Grid.Column="2"
+                                            Spacing="6"
+                                            VerticalAlignment="Center">
+                                    <ProgressBar Minimum="0"
+                                                 Maximum="100"
+                                                 Value="{Binding ProgressPercent}"/>
+                                    <TextBlock Text="{Binding ProgressText}"
+                                               Classes="pm-caption"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxLines="1"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Column="3"
+                                           Text="{Binding OutputSizeText}"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"/>
+
+                                <TextBlock Grid.Column="4"
+                                           Text="{Binding ElapsedText}"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"/>
+
+                                <Grid Grid.Column="5"
+                                      ColumnDefinitions="76,76"
+                                      ColumnSpacing="8"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      Width="160">
+                                    <Button Content="Cancel"
+                                            Grid.Column="0"
+                                            Command="{Binding CancelCommand}"
+                                            MinWidth="76"/>
+                                    <Button Content="Remove"
+                                            Grid.Column="1"
+                                            Command="{Binding RemoveCommand}"
+                                            MinWidth="76"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

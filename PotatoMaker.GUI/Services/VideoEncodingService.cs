@@ -19,7 +19,7 @@ public sealed record EncodeRequest(
 /// </summary>
 public interface IVideoEncodingService
 {
-    Task RunAsync(
+    Task<ProcessingPipelineResult> RunAsync(
         EncodeRequest request,
         ILogger<ProcessingPipeline> logger,
         IProgress<EncodeProgress>? progress = null,
@@ -31,7 +31,7 @@ public interface IVideoEncodingService
 /// </summary>
 public sealed class VideoEncodingService : IVideoEncodingService
 {
-    public Task RunAsync(
+    public Task<ProcessingPipelineResult> RunAsync(
         EncodeRequest request,
         ILogger<ProcessingPipeline> logger,
         IProgress<EncodeProgress>? progress = null,

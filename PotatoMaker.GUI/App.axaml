@@ -9,6 +9,9 @@
         <DataTemplate DataType="vm:EncodeWorkspaceViewModel">
             <views:MainWorkspaceView/>
         </DataTemplate>
+        <DataTemplate DataType="vm:CompressionQueueViewModel">
+            <views:CompressionQueueView/>
+        </DataTemplate>
         <DataTemplate DataType="vm:FileInputViewModel">
             <views:FileInputView/>
         </DataTemplate>

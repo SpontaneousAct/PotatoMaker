@@ -64,6 +64,30 @@ public sealed class JsonAppSettingsServiceTests
                         "C:\\Videos\\clip001.mp4",
                         638600000000000000,
                         new DateTimeOffset(2026, 3, 17, 9, 30, 0, TimeSpan.Zero))
+                ],
+                CompressionQueueItems =
+                [
+                    new QueuedCompressionItemRecord(
+                        "queue-1",
+                        "C:\\Videos\\clip001.mp4",
+                        "C:\\encoded",
+                        new PotatoMaker.Core.VideoInfo(TimeSpan.FromSeconds(90), 1920, 1080, 60),
+                        new PotatoMaker.Core.StrategyAnalysis(
+                            "C:\\Videos\\clip001.mp4",
+                            "crop=1920:800:0:140",
+                            null,
+                            60,
+                            new PotatoMaker.Core.EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)")),
+                        new PotatoMaker.Core.EncodeSettings(),
+                        0,
+                        TimeSpan.FromSeconds(30).Ticks,
+                        2_048_000,
+                        CompressionQueueItemStatus.Queued,
+                        0,
+                        "Waiting in queue",
+                        null,
+                        null,
+                        new DateTimeOffset(2026, 3, 18, 9, 30, 0, TimeSpan.Zero))
                 ]
             });
 
@@ -85,6 +109,9 @@ public sealed class JsonAppSettingsServiceTests
             Assert.Single(settings.ProcessedVideos!);
             Assert.Equal("C:\\Videos\\clip001.mp4", settings.ProcessedVideos[0].FullPath);
             Assert.Equal(638600000000000000, settings.ProcessedVideos[0].SourceLastWriteUtcTicks);
+            Assert.NotNull(settings.CompressionQueueItems);
+            Assert.Single(settings.CompressionQueueItems!);
+            Assert.Equal("queue-1", settings.CompressionQueueItems[0].Id);
         }
         finally
         {
@@ -111,6 +138,58 @@ public sealed class JsonAppSettingsServiceTests
                   "SourceLastWriteUtcTicks": 638600000000000001,
                   "ProcessedAtUtc": "2026-03-17T09:30:00+00:00"
                 }
+              ],
+              "CompressionQueueItems": [
+                {
+                  "Id": "queue-legacy",
+                  "InputPath": "E:\\LegacyCaptures\\clip.mp4",
+                  "OutputDirectory": "E:\\LegacyCaptures\\encoded",
+                  "Info": {
+                    "Duration": "00:01:30",
+                    "Width": 1920,
+                    "Height": 1080,
+                    "FrameRate": 60,
+                    "SourceVideoBitrateKbps": 4000
+                  },
+                  "Strategy": {
+                    "InputPath": "E:\\LegacyCaptures\\clip.mp4",
+                    "CropFilter": null,
+                    "FrameRateFilter": null,
+                    "OutputFrameRate": 60,
+                    "Plan": {
+                      "VideoBitrateKbps": 1800,
+                      "Parts": 1,
+                      "ScaleFilter": "scale=-2:min(ih\\\\,1080)",
+                      "ResolutionLabel": "1080p (original)",
+                      "IsBitrateCappedToSource": false,
+                      "SourceVideoBitrateKbps": 4000
+                    }
+                  },
+                  "Settings": {
+                    "Encoder": "Nvenc",
+                    "OutputNamePrefix": "",
+                    "OutputNameSuffix": "_discord",
+                    "FrameRateMode": "Original",
+                    "TargetSizeMb": 9.5,
+                    "EffectiveTargetMb": 9.0,
+                    "AudioBitrateKbps": 128,
+                    "SvtAv1Preset": 6,
+                    "MinVideoBitrateKbps": 100,
+                    "HdFloorKbps": 500,
+                    "FullHdFloorKbps": 1000,
+                    "MaxParts": 10,
+                    "SkipCropDetect": false
+                  },
+                  "ClipStartTicks": 0,
+                  "ClipEndTicks": 300000000,
+                  "SelectedSizeBytes": 2048000,
+                  "Status": "Queued",
+                  "ProgressPercent": 0,
+                  "ProgressStateText": "Waiting in queue",
+                  "OutputSizeBytes": null,
+                  "FailureMessage": null,
+                  "AddedAtUtc": "2026-03-18T09:30:00+00:00"
+                }
               ]
             }
             """);
@@ -128,6 +207,9 @@ public sealed class JsonAppSettingsServiceTests
             Assert.NotNull(settings.ProcessedVideos);
             Assert.Single(settings.ProcessedVideos!);
             Assert.Equal("E:\\LegacyCaptures\\clip.mp4", settings.ProcessedVideos[0].FullPath);
+            Assert.NotNull(settings.CompressionQueueItems);
+            Assert.Single(settings.CompressionQueueItems!);
+            Assert.Equal("queue-legacy", settings.CompressionQueueItems[0].Id);
         }
         finally
         {

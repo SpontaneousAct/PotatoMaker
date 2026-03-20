@@ -19,6 +19,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private readonly IEncodeCompletionNotifier _encodeCompletionNotifier;
     private readonly IProcessedVideoTracker _processedVideoTracker;
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
+    private readonly CompressionQueueViewModel _compressionQueue;
+    private readonly EncodeExecutionCoordinator _executionCoordinator;
     private readonly bool _initializeEncoderSupport;
     private readonly TimeSpan _cancelledStatusDuration;
     private CancellationTokenSource? _encodeCts;
@@ -37,6 +39,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             new VideoPlayerViewModel(initializePlayer: false),
             new EncoderCapabilityService(),
             null,
+            new CompressionQueueViewModel(),
+            new EncodeExecutionCoordinator(),
             initializeEncoderSupport: true,
             NoOpEncodeCompletionNotifier.Instance,
             null,
@@ -49,6 +53,32 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         IVideoEncodingService encodingService,
         IEncoderCapabilityService encoderCapabilityService,
         IAppSettingsCoordinator? settingsCoordinator,
+        bool initializeEncoderSupport,
+        IEncodeCompletionNotifier? encodeCompletionNotifier,
+        TimeSpan? cancelledStatusDuration = null,
+        IProcessedVideoTracker? processedVideoTracker = null)
+        : this(
+            analysisService,
+            encodingService,
+            new VideoPlayerViewModel(initializePlayer: false),
+            encoderCapabilityService,
+            settingsCoordinator,
+            null,
+            null,
+            initializeEncoderSupport,
+            encodeCompletionNotifier,
+            cancelledStatusDuration,
+            processedVideoTracker)
+    {
+    }
+
+    public EncodeWorkspaceViewModel(
+        IVideoAnalysisService analysisService,
+        IVideoEncodingService encodingService,
+        IEncoderCapabilityService encoderCapabilityService,
+        IAppSettingsCoordinator? settingsCoordinator,
+        CompressionQueueViewModel? compressionQueue = null,
+        EncodeExecutionCoordinator? executionCoordinator = null,
         bool initializeEncoderSupport = true,
         IEncodeCompletionNotifier? encodeCompletionNotifier = null,
         TimeSpan? cancelledStatusDuration = null,
@@ -59,6 +89,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             new VideoPlayerViewModel(initializePlayer: false),
             encoderCapabilityService,
             settingsCoordinator,
+            compressionQueue,
+            executionCoordinator,
             initializeEncoderSupport,
             encodeCompletionNotifier,
             cancelledStatusDuration,
@@ -72,6 +104,33 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         VideoPlayerViewModel videoPlayer,
         IEncoderCapabilityService encoderCapabilityService,
         IAppSettingsCoordinator? settingsCoordinator,
+        bool initializeEncoderSupport,
+        IEncodeCompletionNotifier? encodeCompletionNotifier,
+        TimeSpan? cancelledStatusDuration = null,
+        IProcessedVideoTracker? processedVideoTracker = null)
+        : this(
+            analysisService,
+            encodingService,
+            videoPlayer,
+            encoderCapabilityService,
+            settingsCoordinator,
+            null,
+            null,
+            initializeEncoderSupport,
+            encodeCompletionNotifier,
+            cancelledStatusDuration,
+            processedVideoTracker)
+    {
+    }
+
+    public EncodeWorkspaceViewModel(
+        IVideoAnalysisService analysisService,
+        IVideoEncodingService encodingService,
+        VideoPlayerViewModel videoPlayer,
+        IEncoderCapabilityService encoderCapabilityService,
+        IAppSettingsCoordinator? settingsCoordinator,
+        CompressionQueueViewModel? compressionQueue = null,
+        EncodeExecutionCoordinator? executionCoordinator = null,
         bool initializeEncoderSupport = true,
         IEncodeCompletionNotifier? encodeCompletionNotifier = null,
         TimeSpan? cancelledStatusDuration = null,
@@ -84,6 +143,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         _encodeCompletionNotifier = encodeCompletionNotifier ?? NoOpEncodeCompletionNotifier.Instance;
         _processedVideoTracker = processedVideoTracker ?? DisabledProcessedVideoTracker.Instance;
         _settingsCoordinator = settingsCoordinator;
+        _compressionQueue = compressionQueue ?? new CompressionQueueViewModel();
+        _executionCoordinator = executionCoordinator ?? new EncodeExecutionCoordinator();
         _initializeEncoderSupport = initializeEncoderSupport;
         _cancelledStatusDuration = cancelledStatusDuration ?? TimeSpan.FromSeconds(5);
 
@@ -99,6 +160,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         VideoSummary.PropertyChanged += OnEncodePrerequisiteChanged;
         ConversionLog.PropertyChanged += OnEncodePrerequisiteChanged;
         OutputSettings.PropertyChanged += OnOutputSettingsChanged;
+        _compressionQueue.PropertyChanged += OnCompressionQueueChanged;
+        _executionCoordinator.PropertyChanged += OnExecutionCoordinatorChanged;
 
         ApplyInitialSettings();
         UpdateSourceSelectionState();
@@ -119,11 +182,13 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
     public ConversionLogViewModel ConversionLog { get; } = new();
 
+    public CompressionQueueViewModel CompressionQueue => _compressionQueue;
+
     public bool IsEncodeInProgress => ConversionLog.IsProcessing;
 
     public bool IsEncodeIdle => !ConversionLog.IsProcessing;
 
-    public string EncodeButtonText => IsEncodeInProgress ? "Cancel Compression" : "Start Compression";
+    public string EncodeButtonText => IsEncodeInProgress ? "Cancel" : "Compress";
 
     public ICommand EncodeButtonCommand => IsEncodeInProgress ? CancelEncodeCommand : StartEncodeCommand;
 
@@ -131,11 +196,22 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private async Task StartEncode()
     {
         using IDisposable operation = CrashReportService.Shared.BeginOperation("Compressing video");
+        IDisposable? executionLease = _executionCoordinator.TryAcquire();
+        if (executionLease is null)
+        {
+            UpdateConversionIdlePrompt();
+            NotifyEncodeStateChanged();
+            return;
+        }
+
         VideoInfo? info = VideoSummary.Info;
         string? path = FileInput.InputFilePath;
         StrategyAnalysis? strategy = VideoSummary.StrategyAnalysis;
         if (info is null || path is null || strategy is null)
+        {
+            executionLease.Dispose();
             return;
+        }
 
         EncodeSettings settings = BuildEncodeSettings();
         var encodeCts = new CancellationTokenSource();
@@ -191,12 +267,38 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 _encodeCts = null;
 
             encodeCts.Dispose();
+            executionLease.Dispose();
             NotifyEncodeStateChanged();
         }
     }
 
     private bool CanStartEncode() =>
-        FileInput.HasFile && VideoSummary.HasData && VideoSummary.HasStrategy && !ConversionLog.IsProcessing;
+        FileInput.HasFile &&
+        VideoSummary.HasData &&
+        VideoSummary.HasStrategy &&
+        !ConversionLog.IsProcessing &&
+        !_executionCoordinator.IsBusy;
+
+    [RelayCommand(CanExecute = nameof(CanAddToQueue), AllowConcurrentExecutions = false)]
+    private async Task AddToQueueAsync()
+    {
+        if (!TryBuildQueueDraft(out QueuedCompressionItemDraft? draft))
+            return;
+
+        QueueEnqueueResult result = await _compressionQueue.AddAsync(draft!);
+        ConversionLog.SetIdleText(result.Message);
+        NotifyEncodeStateChanged();
+    }
+
+    private bool CanAddToQueue() =>
+        TryBuildQueueDraft(out QueuedCompressionItemDraft? draft) &&
+        draft is not null &&
+        _compressionQueue.ActiveItemCount < _compressionQueue.MaxQueueSize &&
+        !_compressionQueue.Items.Any(item => item.BlocksDuplicateEntries &&
+                                             string.Equals(
+                                                 item.DuplicateKey,
+                                                 CompressionQueueItemViewModel.BuildDuplicateKey(draft),
+                                                 StringComparison.Ordinal));
 
     [RelayCommand(CanExecute = nameof(CanCancelEncode))]
     private void CancelEncode()
@@ -548,6 +650,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         UpdateConversionIdlePrompt();
         StartEncodeCommand.NotifyCanExecuteChanged();
         CancelEncodeCommand.NotifyCanExecuteChanged();
+        AddToQueueCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(IsEncodeInProgress));
         OnPropertyChanged(nameof(IsEncodeIdle));
         OnPropertyChanged(nameof(EncodeButtonText));
@@ -629,7 +732,69 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        if (_executionCoordinator.IsBusy && !ConversionLog.IsProcessing)
+        {
+            ConversionLog.SetIdleText("Another compression is running");
+            return;
+        }
+
         ConversionLog.SetIdleText(CanStartEncode() ? "Ready" : "Getting ready");
+    }
+
+    private bool TryBuildQueueDraft(out QueuedCompressionItemDraft? draft)
+    {
+        draft = null;
+
+        VideoInfo? info = VideoSummary.Info;
+        StrategyAnalysis? strategy = VideoSummary.StrategyAnalysis;
+        string? inputPath = FileInput.InputFilePath;
+        if (info is null || strategy is null || inputPath is null)
+            return false;
+
+        string outputDirectory = OutputSettings.OutputFolderPath
+            ?? Path.GetDirectoryName(Path.GetFullPath(inputPath))
+            ?? ".";
+        VideoClipRange clipRange = ClipRange.Selection.Normalize(info.Duration);
+        long selectedSizeBytes = EstimateSelectedSizeBytes(inputPath, info, clipRange);
+
+        draft = new QueuedCompressionItemDraft(
+            inputPath,
+            outputDirectory,
+            info,
+            strategy,
+            BuildEncodeSettings(),
+            clipRange,
+            selectedSizeBytes);
+
+        return true;
+    }
+
+    private static long EstimateSelectedSizeBytes(string inputPath, VideoInfo info, VideoClipRange clipRange)
+    {
+        long fileSizeBytes = new FileInfo(Path.GetFullPath(inputPath)).Length;
+        if (info.Duration <= TimeSpan.Zero)
+            return fileSizeBytes;
+
+        double ratio = clipRange.Duration.TotalMilliseconds / info.Duration.TotalMilliseconds;
+        ratio = Math.Clamp(ratio, 0d, 1d);
+        return (long)Math.Round(fileSizeBytes * ratio, MidpointRounding.AwayFromZero);
+    }
+
+    private void OnCompressionQueueChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(CompressionQueueViewModel.QueueCount)
+            or nameof(CompressionQueueViewModel.ActiveItemCount)
+            or nameof(CompressionQueueViewModel.CanCompressAll)
+            or nameof(CompressionQueueViewModel.QueueSummaryText))
+        {
+            AddToQueueCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    private void OnExecutionCoordinatorChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(EncodeExecutionCoordinator.IsBusy))
+            NotifyEncodeStateChanged();
     }
 
     private async Task TryMarkCurrentVideoAsProcessedAsync(string path)
@@ -701,6 +866,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         VideoSummary.PropertyChanged -= OnEncodePrerequisiteChanged;
         ConversionLog.PropertyChanged -= OnEncodePrerequisiteChanged;
         OutputSettings.PropertyChanged -= OnOutputSettingsChanged;
+        _compressionQueue.PropertyChanged -= OnCompressionQueueChanged;
+        _executionCoordinator.PropertyChanged -= OnExecutionCoordinatorChanged;
         VideoPlayer.Dispose();
     }
 }

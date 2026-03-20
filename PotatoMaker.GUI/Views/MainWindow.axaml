@@ -48,6 +48,14 @@
                         </Button>
 
                         <Button Classes="pm-nav-button"
+                                Classes.pm-nav-active="{Binding IsQueueViewSelected}"
+                                Command="{Binding ShowQueueViewCommand}"
+                                ToolTip.Tip="Queue">
+                            <TextBlock Text="&#xE8FD;"
+                                       Classes="pm-nav-icon"/>
+                        </Button>
+
+                        <Button Classes="pm-nav-button"
                                 Classes.pm-nav-active="{Binding IsSettingsViewSelected}"
                                 Command="{Binding ShowSettingsViewCommand}"
                                 ToolTip.Tip="Settings">
@@ -89,6 +97,8 @@
             <Grid Grid.Column="1">
                 <ContentControl Content="{Binding Workspace}"
                                 IsVisible="{Binding IsMainViewSelected}"/>
+                <ContentControl Content="{Binding Queue}"
+                                IsVisible="{Binding IsQueueViewSelected}"/>
                 <ContentControl Content="{Binding Settings}"
                                 IsVisible="{Binding IsSettingsViewSelected}"/>
                 <ContentControl Content="{Binding Help}"

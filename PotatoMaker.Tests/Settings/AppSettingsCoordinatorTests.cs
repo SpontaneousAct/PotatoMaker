@@ -35,14 +35,38 @@ public sealed class AppSettingsCoordinatorTests
             SvtAv1Preset = 8,
             LastOutputFolder = "C:\\out",
             RecentVideosDirectory = "D:\\Captures",
-            ProcessedVideos =
-            [
-                new ProcessedVideoRecord(
-                    "C:\\Videos\\clip001.mp4",
-                    638600000000000000,
-                    new DateTimeOffset(2026, 3, 17, 9, 30, 0, TimeSpan.Zero))
-            ]
-        });
+                ProcessedVideos =
+                [
+                    new ProcessedVideoRecord(
+                        "C:\\Videos\\clip001.mp4",
+                        638600000000000000,
+                        new DateTimeOffset(2026, 3, 17, 9, 30, 0, TimeSpan.Zero))
+                ],
+                CompressionQueueItems =
+                [
+                    new QueuedCompressionItemRecord(
+                        "queue-1",
+                        "C:\\Videos\\clip001.mp4",
+                        "C:\\encoded",
+                        new PotatoMaker.Core.VideoInfo(TimeSpan.FromSeconds(30), 1920, 1080, 60),
+                        new PotatoMaker.Core.StrategyAnalysis(
+                            "C:\\Videos\\clip001.mp4",
+                            null,
+                            null,
+                            60,
+                            new PotatoMaker.Core.EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)")),
+                        new PotatoMaker.Core.EncodeSettings(),
+                        0,
+                        TimeSpan.FromSeconds(30).Ticks,
+                        2_048_000,
+                        CompressionQueueItemStatus.Queued,
+                        0,
+                        "Waiting in queue",
+                        null,
+                        null,
+                        new DateTimeOffset(2026, 3, 18, 9, 30, 0, TimeSpan.Zero))
+                ]
+            });
 
         Assert.True(coordinator.Current.IsDarkMode);
         Assert.Equal("clip_", coordinator.Current.OutputNamePrefix);
@@ -54,6 +78,8 @@ public sealed class AppSettingsCoordinatorTests
         Assert.Equal("D:\\Captures", coordinator.Current.RecentVideosDirectory);
         Assert.NotNull(coordinator.Current.ProcessedVideos);
         Assert.Single(coordinator.Current.ProcessedVideos!);
+        Assert.NotNull(coordinator.Current.CompressionQueueItems);
+        Assert.Single(coordinator.Current.CompressionQueueItems!);
         Assert.Single(persistence.SavedSettings);
         Assert.Equal(coordinator.Current, persistence.SavedSettings[0]);
     }

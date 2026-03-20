@@ -2,6 +2,7 @@ using Xunit;
 using PotatoMaker.Core;
 using PotatoMaker.GUI.Services;
 using PotatoMaker.GUI.ViewModels;
+using CommunityToolkit.Mvvm.Input;
 
 namespace PotatoMaker.Tests.ViewModels;
 
@@ -249,6 +250,59 @@ public sealed class EncodeWorkspaceViewModelTests
 
             Assert.Equal(ConversionStatus.Done, workspace.ConversionLog.Status);
             Assert.StartsWith("Done in ", workspace.ConversionLog.StatusText);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task AddToQueue_SnapshotsCurrentSelectionAndSettings()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, new string('q', 1_000));
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var queue = new CompressionQueueViewModel(
+                null,
+                new NoOpEncodingService(),
+                new EncodeExecutionCoordinator());
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                queue,
+                new EncodeExecutionCoordinator(),
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            workspace.ClipRange.StartSeconds = 20;
+            workspace.ClipRange.EndSeconds = 45;
+            await analysisService.WaitForStrategyCountAsync(2);
+            workspace.OutputSettings.SetCustomOutputFolder(@"D:\Queued");
+            workspace.OutputSettings.UseNvencEncoder = false;
+            workspace.OutputSettings.SetCpuEncodePreset(8);
+            workspace.OutputSettings.OutputNamePrefix = "social_";
+            workspace.OutputSettings.OutputNameSuffix = "_mobile";
+
+            await ((IAsyncRelayCommand)workspace.AddToQueueCommand).ExecuteAsync(null);
+
+            CompressionQueueItemViewModel queuedItem = Assert.Single(queue.Items);
+            Assert.Equal(Path.GetFullPath(inputPath), queuedItem.InputPath);
+            Assert.Equal(Path.GetFullPath(@"D:\Queued"), queuedItem.OutputDirectory);
+            Assert.Equal(TimeSpan.FromSeconds(20), queuedItem.ClipRange.Start);
+            Assert.Equal(TimeSpan.FromSeconds(45), queuedItem.ClipRange.End);
+            Assert.Equal(EncoderChoice.SvtAv1, queuedItem.Settings.Encoder);
+            Assert.Equal(8, queuedItem.Settings.SvtAv1Preset);
+            Assert.Equal("social_", queuedItem.Settings.OutputNamePrefix);
+            Assert.Equal("_mobile", queuedItem.Settings.OutputNameSuffix);
+            Assert.Equal(263, queuedItem.SelectedSizeBytes);
         }
         finally
         {
@@ -971,25 +1025,26 @@ public sealed class EncodeWorkspaceViewModelTests
 
     private sealed class NoOpEncodingService : IVideoEncodingService
     {
-        public Task RunAsync(
+        public Task<ProcessingPipelineResult> RunAsync(
             EncodeRequest request,
             Microsoft.Extensions.Logging.ILogger<ProcessingPipeline> logger,
             IProgress<EncodeProgress>? progress = null,
-            CancellationToken ct = default) => Task.CompletedTask;
+            CancellationToken ct = default) =>
+            Task.FromResult(new ProcessingPipelineResult([], 0));
     }
 
     private sealed class RecordingEncodingService : IVideoEncodingService
     {
         private readonly TaskCompletionSource<EncodeRequest> _requestTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public Task RunAsync(
+        public Task<ProcessingPipelineResult> RunAsync(
             EncodeRequest request,
             Microsoft.Extensions.Logging.ILogger<ProcessingPipeline> logger,
             IProgress<EncodeProgress>? progress = null,
             CancellationToken ct = default)
         {
             _requestTcs.TrySetResult(request);
-            return Task.CompletedTask;
+            return Task.FromResult(new ProcessingPipelineResult([], 0));
         }
 
         public Task<EncodeRequest> WaitForRequestAsync() => _requestTcs.Task;
@@ -999,7 +1054,7 @@ public sealed class EncodeWorkspaceViewModelTests
     {
         private readonly TaskCompletionSource _startTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public async Task RunAsync(
+        public async Task<ProcessingPipelineResult> RunAsync(
             EncodeRequest request,
             Microsoft.Extensions.Logging.ILogger<ProcessingPipeline> logger,
             IProgress<EncodeProgress>? progress = null,
@@ -1007,6 +1062,7 @@ public sealed class EncodeWorkspaceViewModelTests
         {
             _startTcs.TrySetResult();
             await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            throw new OperationCanceledException(ct);
         }
 
         public Task WaitForStartAsync() => _startTcs.Task;
@@ -1014,12 +1070,12 @@ public sealed class EncodeWorkspaceViewModelTests
 
     private sealed class ThrowingEncodingService : IVideoEncodingService
     {
-        public Task RunAsync(
+        public Task<ProcessingPipelineResult> RunAsync(
             EncodeRequest request,
             Microsoft.Extensions.Logging.ILogger<ProcessingPipeline> logger,
             IProgress<EncodeProgress>? progress = null,
             CancellationToken ct = default) =>
-            Task.FromException(new InvalidOperationException("Encode failed."));
+            Task.FromException<ProcessingPipelineResult>(new InvalidOperationException("Encode failed."));
     }
 
     private sealed class StaticEncoderCapabilityService : IEncoderCapabilityService

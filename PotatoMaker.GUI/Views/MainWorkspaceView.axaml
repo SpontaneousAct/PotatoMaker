@@ -44,14 +44,26 @@
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Top"/>
 
-                <Button Content="{Binding EncodeButtonText}"
-                        Command="{Binding EncodeButtonCommand}"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Bottom"
-                        MinHeight="34"
-                        Padding="10,6"
-                        Classes.pm-primary="{Binding IsEncodeIdle}"
-                        Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
+                <Grid ColumnDefinitions="*,*"
+                      ColumnSpacing="8">
+                    <Button Grid.Column="0"
+                            Content="Add to queue"
+                            Command="{Binding AddToQueueCommand}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Bottom"
+                            MinHeight="34"
+                            Padding="10,6"/>
+
+                    <Button Grid.Column="1"
+                            Content="{Binding EncodeButtonText}"
+                            Command="{Binding EncodeButtonCommand}"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Bottom"
+                            MinHeight="34"
+                            Padding="10,6"
+                            Classes.pm-primary="{Binding IsEncodeIdle}"
+                            Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
+                </Grid>
             </StackPanel>
         </Grid>
     </Grid>

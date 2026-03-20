@@ -20,6 +20,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly IRecentVideoDiscoveryService _recentVideoDiscoveryService;
     private readonly IRecentVideoThumbnailService _recentVideoThumbnailService;
     private readonly IProcessedVideoTracker _processedVideoTracker;
+    private readonly CompressionQueueViewModel _compressionQueue;
     private readonly CancellationTokenSource _lifetimeCts = new();
     private bool _isApplyingSettings;
     private CancellationTokenSource? _recentVideosThumbnailCts;
@@ -32,12 +33,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             new RecentVideoDiscoveryService(),
             new RecentVideoThumbnailService(),
             DisabledProcessedVideoTracker.Instance,
+            new CompressionQueueViewModel(),
             new DisabledAppUpdateService(),
             new AssemblyAppVersionService())
     {
     }
 
-    public MainWindowViewModel(
+    internal MainWindowViewModel(
         EncodeWorkspaceViewModel workspace,
         IThemeService themeService,
         IAppSettingsCoordinator? settingsCoordinator,
@@ -51,6 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             recentVideoDiscoveryService,
             DisabledRecentVideoThumbnailService.Instance,
             DisabledProcessedVideoTracker.Instance,
+            null,
             updateService,
             appVersionService)
     {
@@ -63,6 +66,29 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         IRecentVideoDiscoveryService recentVideoDiscoveryService,
         IRecentVideoThumbnailService recentVideoThumbnailService,
         IProcessedVideoTracker processedVideoTracker,
+        IAppUpdateService? updateService,
+        IAppVersionService? appVersionService = null)
+        : this(
+            workspace,
+            themeService,
+            settingsCoordinator,
+            recentVideoDiscoveryService,
+            recentVideoThumbnailService,
+            processedVideoTracker,
+            null,
+            updateService,
+            appVersionService)
+    {
+    }
+
+    public MainWindowViewModel(
+        EncodeWorkspaceViewModel workspace,
+        IThemeService themeService,
+        IAppSettingsCoordinator? settingsCoordinator,
+        IRecentVideoDiscoveryService recentVideoDiscoveryService,
+        IRecentVideoThumbnailService recentVideoThumbnailService,
+        IProcessedVideoTracker processedVideoTracker,
+        CompressionQueueViewModel? compressionQueue,
         IAppUpdateService? updateService,
         IAppVersionService? appVersionService = null)
     {
@@ -85,12 +111,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             value => RecentVideosDirectory = value,
             ApplyUpdateCommand);
         Help = new HelpViewModel();
+        Queue = compressionQueue ?? new CompressionQueueViewModel();
         VersionText = (appVersionService ?? new AssemblyAppVersionService()).DisplayVersion;
         _themeService = themeService;
         _settingsCoordinator = settingsCoordinator;
         _recentVideoDiscoveryService = recentVideoDiscoveryService;
         _recentVideoThumbnailService = recentVideoThumbnailService;
         _processedVideoTracker = processedVideoTracker;
+        _compressionQueue = Queue;
         _updateService = updateService ?? new DisabledAppUpdateService();
         RecentVideos.CollectionChanged += OnRecentVideosCollectionChanged;
         Workspace.OutputSettings.PropertyChanged += OnOutputSettingsChanged;
@@ -104,6 +132,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public SettingsViewModel Settings { get; }
 
     public HelpViewModel Help { get; }
+
+    public CompressionQueueViewModel Queue { get; }
 
     public string VersionText { get; }
 
@@ -141,18 +171,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentView))]
     [NotifyPropertyChangedFor(nameof(IsMainViewSelected))]
+    [NotifyPropertyChangedFor(nameof(IsQueueViewSelected))]
     [NotifyPropertyChangedFor(nameof(IsSettingsViewSelected))]
     [NotifyPropertyChangedFor(nameof(IsHelpViewSelected))]
     private ShellViewKind _selectedView = ShellViewKind.Main;
 
     public object CurrentView => SelectedView switch
     {
+        ShellViewKind.Queue => Queue,
         ShellViewKind.Settings => Settings,
         ShellViewKind.Help => Help,
         _ => Workspace
     };
 
     public bool IsMainViewSelected => SelectedView == ShellViewKind.Main;
+
+    public bool IsQueueViewSelected => SelectedView == ShellViewKind.Queue;
 
     public bool IsSettingsViewSelected => SelectedView == ShellViewKind.Settings;
 
@@ -337,6 +371,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         IsRecentVideosPanelOpen = false;
         SelectedView = ShellViewKind.Settings;
+    }
+
+    [RelayCommand]
+    private void ShowQueueView()
+    {
+        IsRecentVideosPanelOpen = false;
+        SelectedView = ShellViewKind.Queue;
     }
 
     [RelayCommand]
@@ -534,6 +575,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         Workspace.OutputSettings.PropertyChanged -= OnOutputSettingsChanged;
         _processedVideoTracker.ProcessedVideosChanged -= OnProcessedVideosChanged;
         Workspace.Dispose();
+        _compressionQueue.Dispose();
     }
 
     private void OnRecentVideosCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

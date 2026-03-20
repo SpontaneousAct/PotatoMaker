@@ -28,4 +28,6 @@ public sealed record AppSettings
     public string RecentVideosDirectory { get; init; } = DefaultRecentVideosDirectory;
 
     public ProcessedVideoRecord[]? ProcessedVideos { get; init; }
+
+    public QueuedCompressionItemRecord[]? CompressionQueueItems { get; init; }
 }
