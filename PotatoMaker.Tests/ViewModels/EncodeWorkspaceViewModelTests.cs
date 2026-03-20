@@ -523,6 +523,57 @@ public sealed class EncodeWorkspaceViewModelTests
     }
 
     [Fact]
+    public async Task SelectingAndClearingFile_PreservesExplicitCustomOutputFolderWhenItMatchesSourceFolder()
+    {
+        string outputFolder = Path.Combine(Path.GetTempPath(), $"potatomaker-out-{Guid.NewGuid():N}");
+        string inputPath = Path.Combine(outputFolder, $"potatomaker-{Guid.NewGuid():N}.mp4");
+        Directory.CreateDirectory(outputFolder);
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
+            {
+                IsDarkMode = false,
+                UseNvencEncoder = true,
+                OutputNamePrefix = "",
+                OutputNameSuffix = "_discord",
+                FrameRateMode = EncodeFrameRateMode.Original,
+                PreviewVolumePercent = 100,
+                SvtAv1Preset = 6,
+                LastOutputFolder = outputFolder
+            });
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                settingsCoordinator,
+                initializeEncoderSupport: false);
+
+            Assert.Equal(outputFolder, workspace.OutputSettings.CustomOutputFolder);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            Assert.Equal(outputFolder, workspace.OutputSettings.CustomOutputFolder);
+            Assert.Equal(outputFolder, workspace.OutputSettings.OutputFolderPath);
+            Assert.Equal(outputFolder, settingsCoordinator.Current.LastOutputFolder);
+
+            workspace.FileInput.ClearFileCommand.Execute(null);
+
+            Assert.Equal(outputFolder, workspace.OutputSettings.CustomOutputFolder);
+            Assert.Equal(outputFolder, workspace.OutputSettings.OutputFolderPath);
+            Assert.Equal(outputFolder, settingsCoordinator.Current.LastOutputFolder);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task ChangingOutputNameSettings_PersistsThroughCoordinator()
     {
         var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings

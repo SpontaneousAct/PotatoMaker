@@ -123,9 +123,7 @@ public partial class OutputSettingsViewModel : ViewModelBase
 
     public EncodeFrameRateMode FrameRateMode => SelectedFrameRateOption?.Value ?? EncodeSettings.DefaultFrameRateMode;
 
-    public bool CanResetOutputFolder =>
-        !string.IsNullOrWhiteSpace(CustomOutputFolder) &&
-        !PathsEqual(CustomOutputFolder, SourceFolder);
+    public bool CanResetOutputFolder => !string.IsNullOrWhiteSpace(CustomOutputFolder);
 
     /// <summary>
     /// Set by the view to open the native folder picker dialog.
@@ -159,9 +157,6 @@ public partial class OutputSettingsViewModel : ViewModelBase
     public void SetSourceFolder(string? folder)
     {
         SourceFolder = NormalizeFolderPath(folder);
-
-        if (PathsEqual(CustomOutputFolder, SourceFolder))
-            CustomOutputFolder = null;
     }
 
     public void SetCustomOutputFolder(string folder)
@@ -169,10 +164,7 @@ public partial class OutputSettingsViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(folder))
             return;
 
-        string? normalizedFolder = NormalizeFolderPath(folder);
-        CustomOutputFolder = PathsEqual(normalizedFolder, SourceFolder)
-            ? null
-            : normalizedFolder;
+        CustomOutputFolder = NormalizeFolderPath(folder);
     }
 
     public void SetNvencSupport(bool supported)

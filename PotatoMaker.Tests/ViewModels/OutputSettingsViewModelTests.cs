@@ -72,4 +72,34 @@ public sealed class OutputSettingsViewModelTests
 
         Assert.Equal(new string('s', EncodeSettings.MaxOutputNameAffixLength), viewModel.OutputNameSuffix);
     }
+
+    [Fact]
+    public void SetCustomOutputFolder_PreservesExplicitFolderWhenItMatchesSourceFolder()
+    {
+        const string folder = "C:\\videos";
+        var viewModel = new OutputSettingsViewModel();
+
+        viewModel.SetSourceFolder(folder);
+        viewModel.SetCustomOutputFolder(folder);
+
+        Assert.Equal(folder, viewModel.CustomOutputFolder);
+        Assert.Equal(folder, viewModel.OutputFolderPath);
+        Assert.True(viewModel.CanResetOutputFolder);
+    }
+
+    [Fact]
+    public void SetSourceFolder_DoesNotDiscardExistingExplicitCustomFolderWhenPathsMatch()
+    {
+        const string folder = "C:\\videos";
+        var viewModel = new OutputSettingsViewModel
+        {
+            CustomOutputFolder = folder
+        };
+
+        viewModel.SetSourceFolder(folder);
+
+        Assert.Equal(folder, viewModel.CustomOutputFolder);
+        Assert.Equal(folder, viewModel.OutputFolderPath);
+        Assert.True(viewModel.CanResetOutputFolder);
+    }
 }
