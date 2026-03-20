@@ -61,7 +61,7 @@ public sealed class AppSettingsCoordinatorTests
                         2_048_000,
                         CompressionQueueItemStatus.Queued,
                         0,
-                        "Waiting in queue",
+            "Ready",
                         null,
                         null,
                         new DateTimeOffset(2026, 3, 18, 9, 30, 0, TimeSpan.Zero))

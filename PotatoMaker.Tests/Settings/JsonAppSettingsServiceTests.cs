@@ -84,7 +84,7 @@ public sealed class JsonAppSettingsServiceTests
                         2_048_000,
                         CompressionQueueItemStatus.Queued,
                         0,
-                        "Waiting in queue",
+            "Ready",
                         null,
                         null,
                         new DateTimeOffset(2026, 3, 18, 9, 30, 0, TimeSpan.Zero))
@@ -185,7 +185,7 @@ public sealed class JsonAppSettingsServiceTests
                   "SelectedSizeBytes": 2048000,
                   "Status": "Queued",
                   "ProgressPercent": 0,
-                  "ProgressStateText": "Waiting in queue",
+            "ProgressStateText": "Ready",
                   "OutputSizeBytes": null,
                   "FailureMessage": null,
                   "AddedAtUtc": "2026-03-18T09:30:00+00:00"

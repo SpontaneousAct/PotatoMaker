@@ -299,20 +299,58 @@ public partial class CompressionQueueViewModel : ViewModelBase, IDisposable
 
     private void RegisterItem(CompressionQueueItemViewModel item)
     {
-        item.AttachActions(CancelItemCore, RemoveItemAsync);
+        item.AttachActions(CancelItemCore, RestartItemAsync, RemoveItemAsync);
         item.PropertyChanged += OnQueueItemPropertyChanged;
     }
 
     private void UnregisterItem(CompressionQueueItemViewModel item)
     {
         item.PropertyChanged -= OnQueueItemPropertyChanged;
-        item.AttachActions(null, null);
+        item.AttachActions(null, null, null);
     }
 
     private void CancelItemCore(CompressionQueueItemViewModel item)
     {
         if (item.CanCancel)
             item.CancelActiveEncode();
+    }
+
+    private async Task RestartItemAsync(CompressionQueueItemViewModel item)
+    {
+        if (!item.CanRestart)
+            return;
+
+        item.MarkQueued();
+        await PersistQueueSafelyAsync();
+        NotifyQueueStateChanged();
+
+        if (IsQueueProcessing)
+            return;
+
+        IDisposable? lease = _executionCoordinator.TryAcquire();
+        if (lease is null)
+        {
+            NotifyQueueStateChanged();
+            return;
+        }
+
+        IsQueueProcessing = true;
+        NotifyQueueStateChanged();
+        bool completed = false;
+
+        try
+        {
+            completed = await RunQueueItemAsync(item);
+        }
+        finally
+        {
+            IsQueueProcessing = false;
+            lease.Dispose();
+            NotifyQueueStateChanged();
+        }
+
+        if (completed)
+            _encodeCompletionNotifier.NotifyEncodeSucceeded();
     }
 
     private void NotifyQueueStateChanged()

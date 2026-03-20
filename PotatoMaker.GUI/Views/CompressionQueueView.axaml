@@ -48,7 +48,7 @@
         </Border>
 
         <Grid Grid.Row="1"
-              ColumnDefinitions="3*,*,2*,*,*,176"
+              ColumnDefinitions="3.1*,0.95*,2.1*,0.95*,0.85*,80"
               ColumnSpacing="12"
               IsVisible="{Binding HasItems}">
             <TextBlock Grid.Column="0"
@@ -103,13 +103,13 @@
                         <Border Classes="pm-card"
                                 Margin="0,0,0,10"
                                 Padding="16,14">
-                            <Grid ColumnDefinitions="3*,*,2*,*,*,176"
+                            <Grid ColumnDefinitions="3.1*,0.95*,2.1*,0.95*,0.85*,80"
                                   ColumnSpacing="12">
                                 <StackPanel Grid.Column="0"
-                                            Spacing="4">
+                                            Spacing="4"
+                                            MinWidth="0">
                                     <TextBlock Text="{Binding FileName}"
-                                               FontWeight="SemiBold"
-                                               FontSize="16"
+                                               Classes="pm-queue-file-name"
                                                TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Text="{Binding InputPath}"
                                                Classes="pm-caption"
@@ -120,44 +120,62 @@
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding SelectedSizeText}"
                                            VerticalAlignment="Center"
+                                           MinWidth="0"
                                            FontWeight="SemiBold"/>
 
-                                <StackPanel Grid.Column="2"
-                                            Spacing="6"
-                                            VerticalAlignment="Center">
+                                <Grid Grid.Column="2"
+                                      RowDefinitions="Auto,Auto"
+                                      RowSpacing="6"
+                                      VerticalAlignment="Center"
+                                      HorizontalAlignment="Stretch"
+                                      MinWidth="0">
                                     <ProgressBar Minimum="0"
                                                  Maximum="100"
-                                                 Value="{Binding ProgressPercent}"/>
-                                    <TextBlock Text="{Binding ProgressText}"
+                                                 Value="{Binding ProgressPercent}"
+                                                 HorizontalAlignment="Stretch"/>
+                                    <TextBlock Grid.Row="1"
+                                               Text="{Binding ProgressText}"
                                                Classes="pm-caption"
+                                               HorizontalAlignment="Left"
+                                               TextAlignment="Left"
                                                TextTrimming="CharacterEllipsis"
                                                MaxLines="1"/>
-                                </StackPanel>
+                                </Grid>
 
                                 <TextBlock Grid.Column="3"
                                            Text="{Binding OutputSizeText}"
                                            VerticalAlignment="Center"
+                                           MinWidth="0"
+                                           TextTrimming="CharacterEllipsis"
                                            FontWeight="SemiBold"/>
 
                                 <TextBlock Grid.Column="4"
                                            Text="{Binding ElapsedText}"
                                            VerticalAlignment="Center"
+                                           MinWidth="0"
                                            FontWeight="SemiBold"/>
 
                                 <Grid Grid.Column="5"
-                                      ColumnDefinitions="76,76"
+                                      ColumnDefinitions="36,36"
                                       ColumnSpacing="8"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Center"
-                                      Width="160">
-                                    <Button Content="Cancel"
-                                            Grid.Column="0"
-                                            Command="{Binding CancelCommand}"
-                                            MinWidth="76"/>
-                                    <Button Content="Remove"
-                                            Grid.Column="1"
-                                            Command="{Binding RemoveCommand}"
-                                            MinWidth="76"/>
+                                      Width="80">
+                                    <Button Grid.Column="0"
+                                            Classes="pm-queue-action"
+                                            IsVisible="{Binding HasPrimaryAction}"
+                                            ToolTip.Tip="{Binding PrimaryActionToolTip}"
+                                            Command="{Binding PrimaryActionCommand}">
+                                        <TextBlock Text="{Binding PrimaryActionIconGlyph}"
+                                                   Classes="pm-queue-action-icon"/>
+                                    </Button>
+                                    <Button Grid.Column="1"
+                                            Classes="pm-queue-action"
+                                            ToolTip.Tip="Remove from queue"
+                                            Command="{Binding RemoveCommand}">
+                                        <TextBlock Text="&#xE711;"
+                                                   Classes="pm-queue-action-icon"/>
+                                    </Button>
                                 </Grid>
                             </Grid>
                         </Border>

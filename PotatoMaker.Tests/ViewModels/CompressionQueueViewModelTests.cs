@@ -150,6 +150,44 @@ public sealed class CompressionQueueViewModelTests
         }
     }
 
+    [Fact]
+    public async Task RestartCancelledItem_RunsItAgain_WhenQueueIsIdle()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "retry");
+
+        try
+        {
+            var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings());
+            var notifier = new RecordingEncodeCompletionNotifier();
+            var encodingService = new RecordingEncodingService(
+                new ProcessingPipelineResult(["D:\\encoded\\retry.mp4"], 321_000));
+            var queue = new CompressionQueueViewModel(
+                settingsCoordinator,
+                encodingService,
+                new EncodeExecutionCoordinator(),
+                notifier);
+
+            Assert.True((await queue.AddAsync(CreateDraft(inputPath, "D:\\encoded", VideoClipRange.Full(TimeSpan.FromSeconds(100)), 123))).Succeeded);
+
+            CompressionQueueItemViewModel item = Assert.Single(queue.Items);
+            item.MarkCancelled();
+
+            await item.PrimaryActionCommand.ExecuteAsync(null);
+
+            Assert.Equal(CompressionQueueItemStatus.Completed, item.Status);
+            Assert.Equal("Done", item.ProgressText);
+            Assert.Single(encodingService.Requests);
+            Assert.Equal(1, notifier.NotificationCount);
+            Assert.NotNull(settingsCoordinator.Current.CompressionQueueItems);
+            Assert.Empty(settingsCoordinator.Current.CompressionQueueItems!);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
     private static QueuedCompressionItemDraft CreateDraft(
         string inputPath,
         string outputDirectory,

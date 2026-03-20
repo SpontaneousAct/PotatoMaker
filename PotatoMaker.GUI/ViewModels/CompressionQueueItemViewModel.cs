@@ -10,9 +10,12 @@ namespace PotatoMaker.GUI.ViewModels;
 /// </summary>
 public partial class CompressionQueueItemViewModel : ViewModelBase
 {
-    private const string WaitingInQueueText = "Waiting in queue";
+    private const string WaitingInQueueText = "Ready";
+    private const string CancelGlyph = "\uE71A";
+    private const string RestartGlyph = "\uE768";
     private CancellationTokenSource? _encodeCts;
     private Action<CompressionQueueItemViewModel>? _cancelAction;
+    private Func<CompressionQueueItemViewModel, Task>? _restartAction;
     private Func<CompressionQueueItemViewModel, Task>? _removeAction;
 
     private CompressionQueueItemViewModel(
@@ -47,7 +50,7 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
             : progressStateText;
         _outputSizeBytes = outputSizeBytes;
         _failureMessage = failureMessage;
-        CancelCommand = new RelayCommand(ExecuteCancel, CanExecuteCancel);
+        PrimaryActionCommand = new AsyncRelayCommand(ExecutePrimaryActionAsync, CanExecutePrimaryAction);
         RemoveCommand = new AsyncRelayCommand(ExecuteRemoveAsync, CanExecuteRemove);
     }
 
@@ -95,13 +98,29 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
 
     public bool CanCancel => Status == CompressionQueueItemStatus.Encoding;
 
+    public bool CanRestart => Status == CompressionQueueItemStatus.Cancelled;
+
     public bool CanRemove => Status != CompressionQueueItemStatus.Encoding;
+
+    public bool HasPrimaryAction => CanCancel || CanRestart;
+
+    public string PrimaryActionIconGlyph => CanCancel
+        ? CancelGlyph
+        : CanRestart
+            ? RestartGlyph
+            : string.Empty;
+
+    public string PrimaryActionToolTip => CanCancel
+        ? "Cancel encode"
+        : CanRestart
+            ? "Restart encode"
+            : string.Empty;
 
     public bool BlocksDuplicateEntries => Status is CompressionQueueItemStatus.Queued or CompressionQueueItemStatus.Encoding;
 
     public bool PersistsAcrossSessions => Status is CompressionQueueItemStatus.Queued or CompressionQueueItemStatus.Encoding;
 
-    public RelayCommand CancelCommand { get; }
+    public AsyncRelayCommand PrimaryActionCommand { get; }
 
     public AsyncRelayCommand RemoveCommand { get; }
 
@@ -112,7 +131,11 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(IsCancelled))]
     [NotifyPropertyChangedFor(nameof(IsFailed))]
     [NotifyPropertyChangedFor(nameof(CanCancel))]
+    [NotifyPropertyChangedFor(nameof(CanRestart))]
     [NotifyPropertyChangedFor(nameof(CanRemove))]
+    [NotifyPropertyChangedFor(nameof(HasPrimaryAction))]
+    [NotifyPropertyChangedFor(nameof(PrimaryActionIconGlyph))]
+    [NotifyPropertyChangedFor(nameof(PrimaryActionToolTip))]
     [NotifyPropertyChangedFor(nameof(PersistsAcrossSessions))]
     private CompressionQueueItemStatus _status;
 
@@ -240,6 +263,16 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
         Status = CompressionQueueItemStatus.Encoding;
     }
 
+    public void MarkQueued()
+    {
+        FailureMessage = null;
+        OutputSizeBytes = null;
+        ElapsedDisplay = null;
+        ProgressPercent = 0;
+        ProgressStateText = WaitingInQueueText;
+        Status = CompressionQueueItemStatus.Queued;
+    }
+
     public void UpdateProgress(EncodeProgress value)
     {
         if (Status != CompressionQueueItemStatus.Encoding)
@@ -290,9 +323,11 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
 
     internal void AttachActions(
         Action<CompressionQueueItemViewModel>? cancelAction,
+        Func<CompressionQueueItemViewModel, Task>? restartAction,
         Func<CompressionQueueItemViewModel, Task>? removeAction)
     {
         _cancelAction = cancelAction;
+        _restartAction = restartAction;
         _removeAction = removeAction;
         NotifyActionCommandStateChanged();
     }
@@ -371,12 +406,22 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
             : rounded.ToString(@"m\:ss");
     }
 
-    private bool CanExecuteCancel() => CanCancel && _cancelAction is not null;
+    private bool CanExecutePrimaryAction() =>
+        (CanCancel && _cancelAction is not null) ||
+        (CanRestart && _restartAction is not null);
 
-    private void ExecuteCancel()
+    private Task ExecutePrimaryActionAsync()
     {
-        if (CanExecuteCancel())
-            _cancelAction!(this);
+        if (CanCancel && _cancelAction is not null)
+        {
+            _cancelAction(this);
+            return Task.CompletedTask;
+        }
+
+        if (CanRestart && _restartAction is not null)
+            return _restartAction(this);
+
+        return Task.CompletedTask;
     }
 
     private bool CanExecuteRemove() => CanRemove && _removeAction is not null;
@@ -388,7 +433,7 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
 
     private void NotifyActionCommandStateChanged()
     {
-        CancelCommand.NotifyCanExecuteChanged();
+        PrimaryActionCommand.NotifyCanExecuteChanged();
         RemoveCommand.NotifyCanExecuteChanged();
     }
 }
