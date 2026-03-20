@@ -17,7 +17,7 @@ public sealed class MainWindowViewModelTests
         var settingsCoordinator = new RecordingSettingsCoordinator(
             new AppSettings
             {
-                IsDarkMode = true,
+                Theme = AppTheme.Dark,
                 UseNvencEncoder = true,
                 PreviewVolumePercent = 100,
                 SvtAv1Preset = 6
@@ -36,13 +36,13 @@ public sealed class MainWindowViewModelTests
             new RecordingRecentVideoDiscoveryService(),
             null);
 
-        Assert.True(viewModel.IsDarkMode);
-        viewModel.IsDarkMode = false;
+        Assert.Equal(AppTheme.Dark, viewModel.SelectedTheme);
+        viewModel.SelectedTheme = AppTheme.Sepia;
 
         AppSettings persisted = await settingsCoordinator.WaitForUpdateAsync();
 
-        Assert.False(themeService.AppliedThemes[^1]);
-        Assert.False(persisted.IsDarkMode);
+        Assert.Equal(AppTheme.Sepia, themeService.AppliedThemes[^1]);
+        Assert.Equal(AppTheme.Sepia, persisted.Theme);
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public sealed class MainWindowViewModelTests
     {
         var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
         {
-            IsDarkMode = false,
+            Theme = AppTheme.Light,
             RecentVideosDirectory = AppSettings.DefaultRecentVideosDirectory
         });
         var viewModel = new MainWindowViewModel(
@@ -658,13 +658,13 @@ public sealed class MainWindowViewModelTests
 
     private sealed class RecordingThemeService : IThemeService
     {
-        public List<bool> AppliedThemes { get; } = [];
+        public List<AppTheme> AppliedThemes { get; } = [];
 
-        public bool IsDarkModeEnabled() => false;
+        public AppTheme GetCurrentTheme() => AppTheme.Light;
 
-        public void ApplyTheme(bool isDarkMode)
+        public void ApplyTheme(AppTheme theme)
         {
-            AppliedThemes.Add(isDarkMode);
+            AppliedThemes.Add(theme);
         }
     }
 

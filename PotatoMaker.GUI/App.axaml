@@ -36,6 +36,13 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
+                    <Color x:Key="SystemAccentColor">#FF176FE5</Color>
+                    <Color x:Key="SystemAccentColorDark1">#FF0E5EC8</Color>
+                    <Color x:Key="SystemAccentColorDark2">#FF0B4DA7</Color>
+                    <Color x:Key="SystemAccentColorDark3">#FF083D86</Color>
+                    <Color x:Key="SystemAccentColorLight1">#FF267BEF</Color>
+                    <Color x:Key="SystemAccentColorLight2">#FF4A92F3</Color>
+                    <Color x:Key="SystemAccentColorLight3">#FF71ACF7</Color>
                     <SolidColorBrush x:Key="PmWindowBackground">#FFF2F4F8</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCardBackground">#FFFFFFFF</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCardBorderBrush">#FFD7DCE5</SolidColorBrush>
@@ -93,6 +100,17 @@
                     <SolidColorBrush x:Key="PmStatBorderBrush">#FFD6DEE9</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBackground">#FFF4F7FB</SolidColorBrush>
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FFD6DEE8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldBackground">#FFFFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldBorderBrush">#FFD1D9E6</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldPointerOverBorderBrush">#FF3A86EA</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderThumbBackground">#FF176FE5</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderThumbPointerOverBackground">#FF267BEF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderThumbBorderBrush">#FFFFFFFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderFillBackground">#FF176FE5</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderFillPointerOverBackground">#FF176FE5</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderTrackBackground">#FF9E9E9E</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderDisabledThumbBackground">#FFC8CDD7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderDisabledTrackBackground">#FFD3D7DF</SolidColorBrush>
                     <SolidColorBrush x:Key="PmStatusIdleForeground">#FF334257</SolidColorBrush>
                     <SolidColorBrush x:Key="PmStatusAnalysingForeground">#FF245B9A</SolidColorBrush>
                     <SolidColorBrush x:Key="PmStatusEncodingForeground">#FF1E6A45</SolidColorBrush>
@@ -106,73 +124,91 @@
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="PmWindowBackground">#FF0E1116</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmCardBackground">#FF1A202A</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmCardBorderBrush">#FF2A3342</SolidColorBrush>
+                    <Color x:Key="SystemAccentColor">#FF4F83D6</Color>
+                    <Color x:Key="SystemAccentColorDark1">#FF3E70C2</Color>
+                    <Color x:Key="SystemAccentColorDark2">#FF325EA8</Color>
+                    <Color x:Key="SystemAccentColorDark3">#FF284C88</Color>
+                    <Color x:Key="SystemAccentColorLight1">#FF6292DD</Color>
+                    <Color x:Key="SystemAccentColorLight2">#FF7AA5E5</Color>
+                    <Color x:Key="SystemAccentColorLight3">#FF95BAEC</Color>
+                    <SolidColorBrush x:Key="PmWindowBackground">#FF14171D</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCardBackground">#FF1C2129</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCardBorderBrush">#FF2F3744</SolidColorBrush>
                     <LinearGradientBrush x:Key="PmHeroBackground" StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FF243448" Offset="0"/>
-                        <GradientStop Color="#FF161E29" Offset="1"/>
+                        <GradientStop Color="#FF2A3342" Offset="0"/>
+                        <GradientStop Color="#FF1D232D" Offset="1"/>
                     </LinearGradientBrush>
-                    <SolidColorBrush x:Key="PmHeroBorderBrush">#FF3A4D67</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHeroBorderBrush">#FF435164</SolidColorBrush>
                     <SolidColorBrush x:Key="PmHeadingForeground">#FFF2F7FF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSectionTitleForeground">#FFE7EDF7</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmMutedForeground">#FFD3DCEC</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavSurfaceBackground">#FF151B25</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavSurfaceBorderBrush">#FF273243</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSectionTitleForeground">#FFE3E9F2</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmMutedForeground">#FFB9C3D2</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavSurfaceBackground">#FF171C24</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavSurfaceBorderBrush">#FF2A3240</SolidColorBrush>
                     <SolidColorBrush x:Key="PmNavItemBackground">#00000000</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavItemPointerOver">#FF1F2937</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavItemSelectedBackground">#FF243448</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavItemSelectedBorderBrush">#FF3B516D</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavItemForeground">#FFE7EDF7</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPageBannerBackground">#FF141B24</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPageBannerBorderBrush">#FF2A3547</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmHelpBadgeBackground">#FF233246</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FF3A4F68</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemPointerOver">#FF232B37</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemSelectedBackground">#FF293241</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemSelectedBorderBrush">#FF44566E</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemForeground">#FFE3E9F2</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPageBannerBackground">#FF171D26</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPageBannerBorderBrush">#FF2E3948</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHelpBadgeBackground">#FF26313E</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FF425367</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdateDotBackground">#FF5FC779</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdatePanelBackground">#FF2C2416</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmUpdatePanelBorderBrush">#FF6C5531</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmUpdatePanelBackground">#FF322818</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmUpdatePanelBorderBrush">#FF78603A</SolidColorBrush>
                     <LinearGradientBrush x:Key="PmQueueFeedbackBackground" StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FF4291FF" Offset="0"/>
-                        <GradientStop Color="#FF245FD5" Offset="1"/>
+                        <GradientStop Color="#FF5A93F0" Offset="0"/>
+                        <GradientStop Color="#FF356FD8" Offset="1"/>
                     </LinearGradientBrush>
-                    <SolidColorBrush x:Key="PmQueueFeedbackBorderBrush">#FF77ADFF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackBorderBrush">#FF89B4FF</SolidColorBrush>
                     <SolidColorBrush x:Key="PmQueueFeedbackForeground">#FFF7FBFF</SolidColorBrush>
                     <SolidColorBrush x:Key="PmQueueFeedbackBadgeBackground">#28FFFFFF</SolidColorBrush>
                     <SolidColorBrush x:Key="PmQueueFeedbackBadgeBorderBrush">#35FFFFFF</SolidColorBrush>
 
-                    <SolidColorBrush x:Key="PmPrimaryBackground">#FF3A7AFE</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF4A86FF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryPressed">#FF2A68E8</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryBorder">#FF5A91FF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FF2A3342</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FF2A3342</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF98A6BB</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmTrimStartBackground">#FF41B87E</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmTrimRangeBackground">#FF5A9C74</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmCancelBackground">#FFC65252</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmCancelPointerOver">#FFD26262</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmCancelPressed">#FFAA4747</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmCancelBorder">#FFD07878</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryBackground">#FF4F83D6</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF6292DD</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPressed">#FF3E70C2</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryBorder">#FF7AA5E5</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FF2B3441</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FF323B48</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF93A0B2</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmTrimStartBackground">#FF4AAE7C</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmTrimRangeBackground">#FF5F9475</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCancelBackground">#FFC06464</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCancelPointerOver">#FFCD7272</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCancelPressed">#FFA95757</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCancelBorder">#FFD38B8B</SolidColorBrush>
 
-                    <SolidColorBrush x:Key="PmDropzoneBackground">#FF151B25</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmDropzoneBorderBrush">#FF41506A</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmDropzoneDragBackground">#FF1E2A3A</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmDropzoneDragBorderBrush">#FF5F95FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneBackground">#FF181E27</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneBorderBrush">#FF445166</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBackground">#FF202A37</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBorderBrush">#FF7FA9F5</SolidColorBrush>
 
-                    <SolidColorBrush x:Key="PmStatBackground">#FF121821</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatBorderBrush">#FF273143</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmInsetBackground">#FF0F141C</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmInsetBorderBrush">#FF273143</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatusIdleForeground">#FFD6DFED</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatusAnalysingForeground">#FF9BC4FF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatusEncodingForeground">#FF98E0B7</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatusCancelledForeground">#FFF0C27C</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatusErrorForeground">#FFFFA5A5</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatusDoneForeground">#FF9BE1B8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatBackground">#FF161C24</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatBorderBrush">#FF293241</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBackground">#FF12171E</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBorderBrush">#FF293241</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldBackground">#FF202731</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldBorderBrush">#FF3B4657</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldPointerOverBorderBrush">#FF7BA7F4</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderThumbBackground">#FF4F83D6</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderThumbPointerOverBackground">#FF6292DD</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderThumbBorderBrush">#FF1C2129</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderFillBackground">#FF4F83D6</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderFillPointerOverBackground">#FF4F83D6</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderTrackBackground">#FF6F7783</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderDisabledThumbBackground">#FF4B525D</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderDisabledTrackBackground">#FF5B616B</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusIdleForeground">#FFD2D9E5</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusAnalysingForeground">#FFABC8F7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusEncodingForeground">#FF9AD8B3</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusCancelledForeground">#FFE5BE84</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusErrorForeground">#FFF1A0A0</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusDoneForeground">#FF9AD8B3</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBackground">#FF05070B</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmVideoSurfaceBorderBrush">#FF2A3342</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmVideoEmptyBackground">#FF0B1017</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmErrorForeground">#FFFF8E8E</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmVideoSurfaceBorderBrush">#FF313A48</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmVideoEmptyBackground">#FF10151C</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmErrorForeground">#FFF49A9A</SolidColorBrush>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -332,6 +368,28 @@
             <Setter Property="MinHeight" Value="30"/>
         </Style>
 
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{DynamicResource PmFieldBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldBorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="MinHeight" Value="32"/>
+        </Style>
+
+        <Style Selector="TextBox:pointerover, TextBox:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldPointerOverBorderBrush}"/>
+        </Style>
+
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource PmFieldBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldBorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="MinHeight" Value="32"/>
+        </Style>
+
+        <Style Selector="ComboBox:pointerover, ComboBox:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldPointerOverBorderBrush}"/>
+        </Style>
+
         <Style Selector="Border.pm-control-cluster">
             <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
@@ -405,8 +463,17 @@
             <Setter Property="Fill" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
         </Style>
 
+        <Style Selector="Button.pm-player-action.pm-primary:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+        </Style>
+
         <Style Selector="Button.pm-player-action.pm-primary Path.pm-control-icon">
             <Setter Property="Fill" Value="White"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action.pm-primary:disabled Path.pm-control-icon">
+            <Setter Property="Fill" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
         </Style>
 
         <Style Selector="Button.pm-player-action.pm-cancel Path.pm-control-icon">
@@ -438,6 +505,92 @@
         <Style Selector="Slider.pm-audio-slider">
             <Setter Property="Width" Value="84"/>
             <Setter Property="MinWidth" Value="84"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryBackground}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryBackground}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Thumb">
+            <Setter Property="Background" Value="{DynamicResource PmSliderThumbBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmSliderThumbBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Thumb:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderThumbPointerOverBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmSliderThumbBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Thumb:pressed">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryPressed}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmSliderThumbBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Button#PART_DecreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderFillBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Button#PART_DecreaseButton:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderFillPointerOverBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ RepeatButton#PART_DecreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderFillBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ RepeatButton#PART_DecreaseButton:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderFillPointerOverBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Button#PART_IncreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Button#PART_IncreaseButton:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ RepeatButton#PART_IncreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ RepeatButton#PART_IncreaseButton:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ Thumb">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledThumbBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmSliderThumbBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ Button#PART_DecreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ RepeatButton#PART_DecreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ Button#PART_IncreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ RepeatButton#PART_IncreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
         </Style>
 
         <Style Selector="Path.pm-icon-pause">
@@ -449,6 +602,18 @@
         </Style>
 
         <Style Selector="Button.is-playing Path.pm-icon-pause">
+            <Setter Property="IsVisible" Value="True"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-icon-pause-glyph">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-playing TextBlock.pm-icon-play-glyph">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-playing TextBlock.pm-icon-pause-glyph">
             <Setter Property="IsVisible" Value="True"/>
         </Style>
 

@@ -13,7 +13,7 @@ public sealed class AppSettingsCoordinatorTests
             persistence,
             new AppSettings
             {
-                IsDarkMode = false,
+                Theme = AppTheme.Light,
                 UseNvencEncoder = true,
                 OutputNamePrefix = "",
                 OutputNameSuffix = "_discord",
@@ -27,7 +27,7 @@ public sealed class AppSettingsCoordinatorTests
 
         await coordinator.UpdateAsync(settings => settings with
         {
-            IsDarkMode = true,
+            Theme = AppTheme.Sepia,
             OutputNamePrefix = "clip_",
             OutputNameSuffix = "_mobile",
             FrameRateMode = PotatoMaker.Core.EncodeFrameRateMode.Fps30,
@@ -68,7 +68,7 @@ public sealed class AppSettingsCoordinatorTests
                 ]
             });
 
-        Assert.True(coordinator.Current.IsDarkMode);
+        Assert.Equal(AppTheme.Sepia, coordinator.Current.Theme);
         Assert.Equal("clip_", coordinator.Current.OutputNamePrefix);
         Assert.Equal("_mobile", coordinator.Current.OutputNameSuffix);
         Assert.Equal(PotatoMaker.Core.EncodeFrameRateMode.Fps30, coordinator.Current.FrameRateMode);

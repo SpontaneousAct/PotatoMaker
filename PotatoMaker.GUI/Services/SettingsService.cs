@@ -60,6 +60,7 @@ public sealed class JsonAppSettingsService : IAppSettingsService
         {
             JsonObject mergedSettings = new();
             bool hasSettingsData = false;
+            JsonObject? persistedSettings = null;
 
             if (TryLoadSettingsObject(_packagedDefaultsPath, out JsonObject packagedDefaults))
             {
@@ -67,15 +68,17 @@ public sealed class JsonAppSettingsService : IAppSettingsService
                 hasSettingsData = true;
             }
 
-            if (settingsPath is not null && TryLoadSettingsObject(settingsPath, out JsonObject persistedSettings))
+            if (settingsPath is not null && TryLoadSettingsObject(settingsPath, out JsonObject loadedPersistedSettings))
             {
-                MergeInto(mergedSettings, persistedSettings);
+                persistedSettings = loadedPersistedSettings;
+                MergeInto(mergedSettings, loadedPersistedSettings);
                 hasSettingsData = true;
             }
 
             if (!hasSettingsData)
                 return new AppSettings();
 
+            ApplyLegacyThemeMigration(mergedSettings, persistedSettings);
             return mergedSettings.Deserialize<AppSettings>(JsonOptions) ?? new AppSettings();
         }
         catch (JsonException ex)
@@ -167,6 +170,20 @@ public sealed class JsonAppSettingsService : IAppSettingsService
         {
             target[key] = value?.DeepClone();
         }
+    }
+
+    private static void ApplyLegacyThemeMigration(JsonObject mergedSettings, JsonObject? persistedSettings)
+    {
+        if (persistedSettings is null ||
+            persistedSettings.ContainsKey(nameof(AppSettings.Theme)) ||
+            !persistedSettings.TryGetPropertyValue("IsDarkMode", out JsonNode? legacyThemeNode) ||
+            legacyThemeNode is null)
+        {
+            return;
+        }
+
+        bool useDarkTheme = legacyThemeNode.GetValue<bool>();
+        mergedSettings[nameof(AppSettings.Theme)] = JsonValue.Create(useDarkTheme ? AppTheme.Dark.ToString() : AppTheme.Light.ToString());
     }
 
     private static bool TryLoadSettingsObject(string path, out JsonObject settingsObject)

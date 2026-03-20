@@ -9,7 +9,7 @@ public sealed record AppSettings
 {
     public const string DefaultRecentVideosDirectory = @"C:\Videos";
 
-    public bool IsDarkMode { get; init; }
+    public AppTheme Theme { get; init; } = AppTheme.Light;
 
     public bool UseNvencEncoder { get; init; } = true;
 

@@ -101,8 +101,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         Workspace = workspace;
         Settings = new SettingsViewModel(
             workspace.OutputSettings,
-            () => IsDarkMode,
-            value => IsDarkMode = value,
+            () => SelectedTheme,
+            value => SelectedTheme = value,
             () => IsUpdateSectionVisible,
             () => SettingsUpdateTitle,
             () => SettingsUpdateDescription,
@@ -159,7 +159,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private int _updateProgressPercent;
 
     [ObservableProperty]
-    private bool _isDarkMode;
+    private AppTheme _selectedTheme = AppTheme.Light;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasRecentVideos))]
@@ -248,7 +248,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _ => "Download update"
     };
 
-    partial void OnIsDarkModeChanged(bool value)
+    partial void OnSelectedThemeChanged(AppTheme value)
     {
         _themeService.ApplyTheme(value);
         Settings.NotifyThemeChanged();
@@ -458,14 +458,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private void ApplyInitialSettings()
     {
-        bool initialIsDarkMode = _settingsCoordinator?.Current.IsDarkMode
-            ?? _themeService.IsDarkModeEnabled();
+        AppTheme initialTheme = _settingsCoordinator?.Current.Theme
+            ?? _themeService.GetCurrentTheme();
         string initialRecentVideosDirectory = NormalizeRecentVideosDirectory(_settingsCoordinator?.Current.RecentVideosDirectory);
 
         _isApplyingSettings = true;
         try
         {
-            IsDarkMode = initialIsDarkMode;
+            SelectedTheme = initialTheme;
             RecentVideosDirectory = initialRecentVideosDirectory;
         }
         finally
@@ -480,7 +480,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             await _settingsCoordinator!.UpdateAsync(settings => settings with
             {
-                IsDarkMode = IsDarkMode
+                Theme = SelectedTheme
             }).ConfigureAwait(false);
         }
         catch

@@ -550,7 +550,7 @@ public sealed class EncodeWorkspaceViewModelTests
         {
             var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
             {
-                IsDarkMode = false,
+                Theme = AppTheme.Light,
                 UseNvencEncoder = true,
                 OutputNamePrefix = "",
                 OutputNameSuffix = "_discord",
@@ -591,7 +591,7 @@ public sealed class EncodeWorkspaceViewModelTests
             var analysisService = new RecordingAnalysisService();
             var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
             {
-                IsDarkMode = false,
+                Theme = AppTheme.Light,
                 UseNvencEncoder = true,
                 OutputNamePrefix = "",
                 OutputNameSuffix = "_discord",
@@ -634,7 +634,7 @@ public sealed class EncodeWorkspaceViewModelTests
     {
         var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
         {
-            IsDarkMode = false,
+            Theme = AppTheme.Light,
             UseNvencEncoder = true,
             OutputNamePrefix = "",
             OutputNameSuffix = "_discord",
@@ -671,7 +671,7 @@ public sealed class EncodeWorkspaceViewModelTests
             new StaticEncoderCapabilityService(),
             new RecordingSettingsCoordinator(new AppSettings
             {
-                IsDarkMode = false,
+                Theme = AppTheme.Light,
                 UseNvencEncoder = false,
                 OutputNamePrefix = "clip_",
                 OutputNameSuffix = "_mobile",
@@ -696,7 +696,7 @@ public sealed class EncodeWorkspaceViewModelTests
     {
         var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
         {
-            IsDarkMode = false,
+            Theme = AppTheme.Light,
             UseNvencEncoder = true,
             OutputNamePrefix = "",
             OutputNameSuffix = "_discord",
@@ -724,7 +724,7 @@ public sealed class EncodeWorkspaceViewModelTests
     {
         var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
         {
-            IsDarkMode = false,
+            Theme = AppTheme.Light,
             UseNvencEncoder = true,
             OutputNamePrefix = "",
             OutputNameSuffix = "_discord",
@@ -757,7 +757,7 @@ public sealed class EncodeWorkspaceViewModelTests
             var analysisService = new RecordingAnalysisService();
             var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
             {
-                IsDarkMode = false,
+                Theme = AppTheme.Light,
                 UseNvencEncoder = true,
                 OutputNamePrefix = "",
                 OutputNameSuffix = "_discord",

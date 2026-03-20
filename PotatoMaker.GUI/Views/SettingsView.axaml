@@ -27,12 +27,12 @@
                                        TextWrapping="Wrap"/>
                         </StackPanel>
 
-                        <ToggleSwitch Grid.Column="1"
-                                      IsChecked="{Binding IsDarkMode}"
-                                      OnContent="Dark"
-                                      OffContent="Light"
-                                      HorizontalAlignment="Right"
-                                      VerticalAlignment="Center"/>
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding ThemeOptions}"
+                                  SelectedItem="{Binding SelectedTheme}"
+                                  HorizontalAlignment="Stretch"
+                                  MinWidth="160"
+                                  VerticalAlignment="Center"/>
                     </Grid>
                 </StackPanel>
             </Border>

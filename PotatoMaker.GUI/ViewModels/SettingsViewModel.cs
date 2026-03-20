@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using PotatoMaker.GUI.Services;
 
 namespace PotatoMaker.GUI.ViewModels;
 
@@ -8,8 +9,8 @@ namespace PotatoMaker.GUI.ViewModels;
 /// </summary>
 public sealed class SettingsViewModel : ViewModelBase
 {
-    private readonly Func<bool> _getIsDarkMode;
-    private readonly Action<bool> _setIsDarkMode;
+    private readonly Func<AppTheme> _getSelectedTheme;
+    private readonly Action<AppTheme> _setSelectedTheme;
     private readonly Func<bool> _getIsUpdateSectionVisible;
     private readonly Func<string> _getUpdateTitle;
     private readonly Func<string> _getUpdateDescription;
@@ -19,8 +20,8 @@ public sealed class SettingsViewModel : ViewModelBase
 
     public SettingsViewModel(
         OutputSettingsViewModel outputSettings,
-        Func<bool> getIsDarkMode,
-        Action<bool> setIsDarkMode,
+        Func<AppTheme> getSelectedTheme,
+        Action<AppTheme> setSelectedTheme,
         Func<bool> getIsUpdateSectionVisible,
         Func<string> getUpdateTitle,
         Func<string> getUpdateDescription,
@@ -30,8 +31,8 @@ public sealed class SettingsViewModel : ViewModelBase
         ICommand applyUpdateCommand)
     {
         ArgumentNullException.ThrowIfNull(outputSettings);
-        ArgumentNullException.ThrowIfNull(getIsDarkMode);
-        ArgumentNullException.ThrowIfNull(setIsDarkMode);
+        ArgumentNullException.ThrowIfNull(getSelectedTheme);
+        ArgumentNullException.ThrowIfNull(setSelectedTheme);
         ArgumentNullException.ThrowIfNull(getIsUpdateSectionVisible);
         ArgumentNullException.ThrowIfNull(getUpdateTitle);
         ArgumentNullException.ThrowIfNull(getUpdateDescription);
@@ -41,8 +42,8 @@ public sealed class SettingsViewModel : ViewModelBase
         ArgumentNullException.ThrowIfNull(applyUpdateCommand);
 
         OutputSettings = outputSettings;
-        _getIsDarkMode = getIsDarkMode;
-        _setIsDarkMode = setIsDarkMode;
+        _getSelectedTheme = getSelectedTheme;
+        _setSelectedTheme = setSelectedTheme;
         _getIsUpdateSectionVisible = getIsUpdateSectionVisible;
         _getUpdateTitle = getUpdateTitle;
         _getUpdateDescription = getUpdateDescription;
@@ -55,15 +56,17 @@ public sealed class SettingsViewModel : ViewModelBase
 
     public OutputSettingsViewModel OutputSettings { get; }
 
-    public bool IsDarkMode
+    public IReadOnlyList<AppTheme> ThemeOptions { get; } = Enum.GetValues<AppTheme>();
+
+    public AppTheme SelectedTheme
     {
-        get => _getIsDarkMode();
+        get => _getSelectedTheme();
         set
         {
-            if (value == _getIsDarkMode())
+            if (value == _getSelectedTheme())
                 return;
 
-            _setIsDarkMode(value);
+            _setSelectedTheme(value);
             OnPropertyChanged();
         }
     }
@@ -96,7 +99,7 @@ public sealed class SettingsViewModel : ViewModelBase
 
     public Action? RecentVideosDirectoryPickerRequested { get; set; }
 
-    public void NotifyThemeChanged() => OnPropertyChanged(nameof(IsDarkMode));
+    public void NotifyThemeChanged() => OnPropertyChanged(nameof(SelectedTheme));
 
     public void NotifyRecentVideosDirectoryChanged() => OnPropertyChanged(nameof(RecentVideosDirectory));
 

@@ -49,7 +49,7 @@ public sealed class JsonAppSettingsServiceTests
 
             await service.SaveAsync(new AppSettings
             {
-                IsDarkMode = true,
+                Theme = AppTheme.Sepia,
                 UseNvencEncoder = false,
                 OutputNamePrefix = "potato_",
                 OutputNameSuffix = "_share",
@@ -96,7 +96,7 @@ public sealed class JsonAppSettingsServiceTests
             Assert.Contains("\"AppSettings\"", await File.ReadAllTextAsync(settingsPath), StringComparison.Ordinal);
 
             AppSettings settings = service.Load();
-            Assert.True(settings.IsDarkMode);
+            Assert.Equal(AppTheme.Sepia, settings.Theme);
             Assert.False(settings.UseNvencEncoder);
             Assert.Equal("potato_", settings.OutputNamePrefix);
             Assert.Equal("_share", settings.OutputNameSuffix);
@@ -210,6 +210,36 @@ public sealed class JsonAppSettingsServiceTests
             Assert.NotNull(settings.CompressionQueueItems);
             Assert.Single(settings.CompressionQueueItems!);
             Assert.Equal("queue-legacy", settings.CompressionQueueItems[0].Id);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Load_WhenLegacyIsDarkModeIsPresent_MigratesToDarkTheme()
+    {
+        string tempDirectory = Path.Combine(Path.GetTempPath(), $"potatomaker-settings-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+        string settingsPath = Path.Combine(tempDirectory, "appsettings.json");
+        File.WriteAllText(settingsPath, """
+            {
+              "AppSettings": {
+                "IsDarkMode": true,
+                "UseNvencEncoder": false
+              }
+            }
+            """);
+
+        try
+        {
+            var service = new JsonAppSettingsService(settingsPath);
+
+            AppSettings settings = service.Load();
+
+            Assert.Equal(AppTheme.Dark, settings.Theme);
+            Assert.False(settings.UseNvencEncoder);
         }
         finally
         {

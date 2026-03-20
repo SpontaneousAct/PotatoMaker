@@ -36,7 +36,7 @@ public partial class App : Application
 
             var settingsCoordinator = Services.GetRequiredService<IAppSettingsCoordinator>();
             var themeService = Services.GetRequiredService<IThemeService>();
-            themeService.ApplyTheme(settingsCoordinator.Current.IsDarkMode);
+            themeService.ApplyTheme(settingsCoordinator.Current.Theme);
 
             var mainWindow = Services.GetRequiredService<MainWindow>();
             desktop.MainWindow = mainWindow;
