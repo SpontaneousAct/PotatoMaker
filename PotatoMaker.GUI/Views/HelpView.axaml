@@ -14,8 +14,13 @@
     <UserControl.Styles>
         <Style Selector="TextBlock.pm-help-title">
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
             <Setter Property="Foreground" Value="{DynamicResource PmHeadingForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-help-item-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
         </Style>
     </UserControl.Styles>
 
@@ -26,9 +31,9 @@
             <Border Classes="pm-card"
                     Padding="16">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Quick Guide"
+                    <TextBlock Text="Help"
                                Classes="pm-help-title"/>
-                    <TextBlock Text="{Binding IntroText}"
+                    <TextBlock Text="{Binding OverviewText}"
                                Classes="pm-muted"
                                TextWrapping="Wrap"/>
                 </StackPanel>
@@ -37,30 +42,95 @@
             <Border Classes="pm-card"
                     Padding="16">
                 <StackPanel Spacing="14">
-                    <TextBlock Text="How To Use It"
+                    <TextBlock Text="Start Here"
                                Classes="pm-section-title"/>
 
-                    <ItemsControl ItemsSource="{Binding QuickGuideSteps}">
+                    <ItemsControl ItemsSource="{Binding GettingStartedSteps}">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate DataType="vm:HelpStep">
+                                <Grid ColumnDefinitions="Auto,*"
+                                      ColumnSpacing="12"
+                                      Margin="0,0,0,8">
+                                    <Border Classes="pm-help-badge"
+                                            Width="28"
+                                            Height="28"
+                                            VerticalAlignment="Top">
+                                        <TextBlock Text="{Binding Number}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold"/>
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1"
+                                                Spacing="2">
+                                        <TextBlock Text="{Binding Title}"
+                                                   Classes="pm-help-item-title"/>
+                                        <TextBlock Text="{Binding Description}"
+                                                   Classes="pm-muted"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="pm-card"
+                    Padding="16">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Automatic Choices"
+                               Classes="pm-section-title"/>
+
+                    <ItemsControl ItemsSource="{Binding AutomaticChoices}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:HelpNote">
+                                <Border Classes="pm-inset"
+                                        Margin="0,0,0,8">
+                                    <StackPanel Spacing="2">
+                                        <TextBlock Text="{Binding Title}"
+                                                   Classes="pm-help-item-title"/>
+                                        <TextBlock Text="{Binding Description}"
+                                                   Classes="pm-muted"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="pm-card"
+                    Padding="16">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Quick Tips"
+                               Classes="pm-section-title"/>
+
+                    <ItemsControl ItemsSource="{Binding QuickTips}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:HelpNote">
                                 <Grid ColumnDefinitions="Auto,*"
                                       ColumnSpacing="12"
                                       Margin="0,0,0,8">
                                     <Border Classes="pm-help-badge"
                                             Width="24"
                                             Height="24"
-                                            VerticalAlignment="Center">
-                                        <TextBlock Text="•"
+                                            VerticalAlignment="Top">
+                                        <TextBlock Text="i"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
                                                    FontWeight="SemiBold"/>
                                     </Border>
 
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding .}"
-                                               Classes="pm-muted"
-                                               TextWrapping="Wrap"
-                                               VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="1"
+                                                Spacing="2">
+                                        <TextBlock Text="{Binding Title}"
+                                                   Classes="pm-help-item-title"/>
+                                        <TextBlock Text="{Binding Description}"
+                                                   Classes="pm-muted"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

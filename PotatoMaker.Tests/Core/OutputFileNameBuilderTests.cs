@@ -54,4 +54,39 @@ public sealed class OutputFileNameBuilderTests
                 $"{new string('p', EncodeSettings.MaxOutputNameAffixLength)}clip{new string('s', EncodeSettings.MaxOutputNameAffixLength)}.mp4"),
             outputPath);
     }
+
+    [Fact]
+    public void BuildOutputPath_ForTrimmedClip_AppendsClipTimeRange()
+    {
+        string outputPath = OutputFileNameBuilder.BuildOutputPath(
+            "C:\\encoded",
+            "clip",
+            new EncodeSettings
+            {
+                OutputNameSuffix = "_mobile"
+            },
+            clipRange: new VideoClipRange(TimeSpan.FromSeconds(10.5), TimeSpan.FromSeconds(40.25)));
+
+        Assert.Equal(
+            Path.Combine("C:\\encoded", "clip_000010500-000040250_mobile.mp4"),
+            outputPath);
+    }
+
+    [Fact]
+    public void BuildOutputPath_ForTrimmedSplitOutput_AppendsClipTimeRangeBeforePartNumber()
+    {
+        string outputPath = OutputFileNameBuilder.BuildOutputPath(
+            "C:\\encoded",
+            "clip",
+            new EncodeSettings
+            {
+                OutputNameSuffix = "_mobile"
+            },
+            partNumber: 2,
+            clipRange: new VideoClipRange(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(40)));
+
+        Assert.Equal(
+            Path.Combine("C:\\encoded", "clip_000010000-000040000_mobile_part2.mp4"),
+            outputPath);
+    }
 }

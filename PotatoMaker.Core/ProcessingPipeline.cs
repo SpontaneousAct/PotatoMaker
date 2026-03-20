@@ -123,7 +123,11 @@ public class ProcessingPipeline
     private async Task<ProcessingPipelineResult> RunSingleAsync(int videoBitrateKbps, string? videoFilter, VideoClipRange effectiveRange, CancellationToken ct)
     {
         _logger.LogInformation("--- Encoding ----------------------------------------");
-        string outputPath = OutputFileNameBuilder.BuildOutputPath(_outputDir, _outputBase, _settings);
+        string outputPath = OutputFileNameBuilder.BuildOutputPath(
+            _outputDir,
+            _outputBase,
+            _settings,
+            clipRange: _clipRange is null ? null : effectiveRange);
 
         var job = new EncodeJob(
             InputPath: _inputPath,
@@ -166,7 +170,12 @@ public class ProcessingPipeline
         {
             for (int i = 0; i < parts; i++)
             {
-                string outputPath = OutputFileNameBuilder.BuildOutputPath(_outputDir, _outputBase, _settings, i + 1);
+                string outputPath = OutputFileNameBuilder.BuildOutputPath(
+                    _outputDir,
+                    _outputBase,
+                    _settings,
+                    i + 1,
+                    _clipRange is null ? null : effectiveRange);
                 outputPaths.Add(outputPath);
 
                 _logger.LogInformation("--- Part {Part}/{Total} ------------------------------------------", i + 1, parts);
