@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using PotatoMaker.GUI.DependencyInjection;
 
 namespace PotatoMaker.GUI.ViewModels;
 
@@ -26,16 +27,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private CancellationTokenSource? _recentVideosThumbnailCts;
 
     public MainWindowViewModel()
+        : this(CreateDefaultShellGraph())
+    {
+    }
+
+    private MainWindowViewModel(DefaultGuiComposition.ShellGraph graph)
         : this(
-            new EncodeWorkspaceViewModel(),
-            new AvaloniaThemeService(),
+            graph.Workspace,
+            graph.ThemeService,
             null,
-            new RecentVideoDiscoveryService(),
-            new RecentVideoThumbnailService(),
-            DisabledProcessedVideoTracker.Instance,
-            new CompressionQueueViewModel(),
-            new DisabledAppUpdateService(),
-            new AssemblyAppVersionService())
+            graph.RecentVideoDiscoveryService,
+            graph.RecentVideoThumbnailService,
+            graph.ProcessedVideoTracker,
+            graph.CompressionQueue,
+            graph.UpdateService,
+            graph.AppVersionService)
     {
     }
 
@@ -694,4 +700,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         Downloading,
         PendingRestart
     }
+
+    private static DefaultGuiComposition.ShellGraph CreateDefaultShellGraph() =>
+        DefaultGuiComposition.CreateShellGraph();
 }

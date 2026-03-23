@@ -4,6 +4,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PotatoMaker.Core;
+using PotatoMaker.GUI.DependencyInjection;
 using PotatoMaker.GUI.Services;
 
 namespace PotatoMaker.GUI.ViewModels;
@@ -36,18 +37,23 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private string? _detectedCropFilter;
 
     public EncodeWorkspaceViewModel()
+        : this(CreateDefaultWorkspaceGraph())
+    {
+    }
+
+    private EncodeWorkspaceViewModel(DefaultGuiComposition.WorkspaceGraph graph)
         : this(
-            new VideoAnalysisService(),
-            new VideoEncodingService(),
-            new VideoPlayerViewModel(initializePlayer: false),
-            new EncoderCapabilityService(),
+            graph.AnalysisService,
+            graph.EncodingService,
+            graph.VideoPlayer,
+            graph.EncoderCapabilityService,
             null,
-            new CompressionQueueViewModel(),
-            new EncodeExecutionCoordinator(),
+            graph.CompressionQueue,
+            graph.ExecutionCoordinator,
             initializeEncoderSupport: true,
-            NoOpEncodeCompletionNotifier.Instance,
+            graph.EncodeCompletionNotifier,
             null,
-            DisabledProcessedVideoTracker.Instance)
+            graph.ProcessedVideoTracker)
     {
     }
 
@@ -947,4 +953,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         _executionCoordinator.PropertyChanged -= OnExecutionCoordinatorChanged;
         VideoPlayer.Dispose();
     }
+
+    private static DefaultGuiComposition.WorkspaceGraph CreateDefaultWorkspaceGraph() =>
+        DefaultGuiComposition.CreateWorkspaceGraph();
 }

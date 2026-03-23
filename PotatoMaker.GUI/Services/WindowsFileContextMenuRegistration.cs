@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using PotatoMaker.Core;
 using Velopack.Locators;
 
 namespace PotatoMaker.GUI.Services;
@@ -12,25 +13,8 @@ internal static class WindowsFileContextMenuRegistration
     internal const string VerbName = "PotatoMaker.Compress";
     internal const string MainExecutableName = "PotatoMaker.GUI.exe";
 
-    private static readonly string[] SupportedVideoExtensions =
-    [
-        ".mp4",
-        ".m4v",
-        ".mov",
-        ".mkv",
-        ".webm",
-        ".avi",
-        ".wmv",
-        ".mpeg",
-        ".mpg",
-        ".ts",
-        ".m2ts",
-        ".flv",
-        ".3gp"
-    ];
-
     internal static IReadOnlyList<string> GetRegistryKeyPaths() =>
-        SupportedVideoExtensions
+        InputMediaSupport.SupportedExtensions
             .Select(extension => $@"Software\Classes\SystemFileAssociations\{extension}\shell\{VerbName}")
             .ToArray();
 

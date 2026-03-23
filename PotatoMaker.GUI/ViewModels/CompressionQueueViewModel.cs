@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging.Abstractions;
 using PotatoMaker.Core;
+using PotatoMaker.GUI.DependencyInjection;
 using PotatoMaker.GUI.Services;
 
 namespace PotatoMaker.GUI.ViewModels;
@@ -27,12 +28,17 @@ public partial class CompressionQueueViewModel : ViewModelBase, IDisposable
     private readonly ReadOnlyObservableCollection<CompressionQueueItemViewModel> _readonlyItems;
 
     public CompressionQueueViewModel()
+        : this(CreateDefaultQueueGraph())
+    {
+    }
+
+    private CompressionQueueViewModel(DefaultGuiComposition.QueueGraph graph)
         : this(
             null,
-            new VideoEncodingService(),
-            new EncodeExecutionCoordinator(),
-            NoOpEncodeCompletionNotifier.Instance,
-            DisabledProcessedVideoTracker.Instance)
+            graph.EncodingService,
+            graph.ExecutionCoordinator,
+            graph.EncodeCompletionNotifier,
+            graph.ProcessedVideoTracker)
     {
     }
 
@@ -403,4 +409,7 @@ public partial class CompressionQueueViewModel : ViewModelBase, IDisposable
             Dispatcher.UIThread.Post(() => item.UpdateProgress(value));
         }
     }
+
+    private static DefaultGuiComposition.QueueGraph CreateDefaultQueueGraph() =>
+        DefaultGuiComposition.CreateQueueGraph();
 }

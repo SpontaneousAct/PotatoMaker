@@ -1,3 +1,4 @@
+using PotatoMaker.Core;
 using PotatoMaker.GUI.Services;
 using Xunit;
 
@@ -20,6 +21,8 @@ public sealed class WindowsFileContextMenuRegistrationTests
 
         Assert.Contains(@"Software\Classes\SystemFileAssociations\.mp4\shell\PotatoMaker.Compress", keyPaths);
         Assert.Contains(@"Software\Classes\SystemFileAssociations\.mkv\shell\PotatoMaker.Compress", keyPaths);
+        Assert.DoesNotContain(@"Software\Classes\SystemFileAssociations\.m4v\shell\PotatoMaker.Compress", keyPaths);
+        Assert.Equal(InputMediaSupport.SupportedExtensions.Count, keyPaths.Count);
         Assert.All(keyPaths, path => Assert.Contains(@"\shell\PotatoMaker.Compress", path, StringComparison.Ordinal));
     }
 }
