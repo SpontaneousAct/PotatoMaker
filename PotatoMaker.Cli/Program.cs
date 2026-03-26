@@ -54,7 +54,7 @@ class Program
             Console.WriteLine("        potatomaker --cpu \"C:\\clips\\gameplay.mp4\"");
             Console.WriteLine();
             Console.WriteLine("Options:");
-            Console.WriteLine("  --cpu    Use libsvtav1 CPU two-pass encoder (default: av1_nvenc GPU)");
+            Console.WriteLine("  --cpu    Use libsvtav1 CPU two-pass encoder instead of av1_nvenc GPU");
             return 1;
         }
 
@@ -63,6 +63,19 @@ class Program
         {
             logger.LogError("Error: {Message}", validationError);
             return 1;
+        }
+
+        if (!useCpu)
+        {
+            logger.LogInformation("Checking AV1 NVENC support...");
+            bool nvencSupported = await Av1NvencSupportProbe.IsSupportedAsync(cts.Token);
+            if (!nvencSupported)
+            {
+                logger.LogError("AV1 NVENC is not available on this machine. Re-run with --cpu to use the libsvtav1 CPU encoder.");
+                return 1;
+            }
+
+            logger.LogInformation(PipelineEvents.Success, "AV1 NVENC is available.");
         }
 
         try

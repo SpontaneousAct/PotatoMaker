@@ -1,139 +1,172 @@
 # PotatoMaker
 
-PotatoMaker is a Windows desktop app for turning videos into small, shareable MP4s without hand-tuning `ffmpeg` settings.
+PotatoMaker is a small video compression tool for making clips easier to share.
 
-Drop in a clip, trim the section you want, and let the app decide the crop, resolution, bitrate, and whether the export should be split into multiple parts.
+Open a video, trim the part you want, let the app figure out a sensible export strategy, and save a smaller MP4 that is easier to post in chats, communities, and social apps.
 
 ## What It Does
 
-- Loads a video with drag and drop or a file picker
-- Lets you preview the source before exporting
-- Trims a clip visually with a timeline
+- Loads common video files such as `.mp4`, `.mkv`, `.avi`, `.mov`, `.webm`, `.wmv`, and `.flv`
+- Lets you trim a clip before exporting
 - Detects crop automatically when it helps
-- Uses AV1 NVENC when it is available through FFmpeg
-- Falls back to CPU AV1 when NVENC is unavailable or an NVENC encode fails
-- Splits long videos into multiple files when one file would be too large
-- Saves output as `.mp4`
-- Supports choosing an output folder and filename prefix/suffix
+- Chooses bitrate, resolution, and splitting strategy for you
+- Exports one MP4 or multiple parts when a single file would be too large
+- Supports both AV1 NVENC and SVT-AV1 CPU encoding
+- Includes both a desktop GUI and a CLI
 
-## Who It Is For
+## Why You Might Want It
 
-PotatoMaker is for people who want a quick "make this easier to share" workflow instead of a full video editor.
+PotatoMaker is built for the "I just need this video to be smaller and still watchable" workflow.
 
-It is especially useful when you want to:
+Instead of manually juggling FFmpeg commands, guessing bitrates, or re-exporting the same clip a few times, you can:
 
-- shrink gameplay clips or recordings
-- make videos easier to post in chat apps
-- avoid remembering encoder flags
-- trim and compress a clip in one pass
+1. Pick a file
+2. Trim the section you want
+3. Check the preview plan
+4. Click `Compress`
 
-## Quick Start
+## Screenshots
 
-1. Download the latest Windows build from [GitHub Releases](https://github.com/SpontaneousAct/PotatoMaker/releases).
-2. Launch `PotatoMaker.GUI.exe`, or install the packaged release if you want update support and Explorer integration.
-3. Drag a video into the window or click `Browse...`.
-4. Preview the video and set the start/end of the clip you want.
-5. Choose a different output folder if needed.
-6. Click `Start Compression`.
+Add your images here when you are ready.
 
-## Keyboard Shortcuts
+<!-- Replace this block with a real screenshot -->
+<!-- Example: ![Main window](docs/media/main-window.png) -->
 
-- `Space` plays or pauses preview playback
-- `A` sets the trim start at the current position
-- `D` sets the trim end at the current position
+`[ Screenshot placeholder: main app window ]`
 
-## Supported Input Formats
+`[ Screenshot placeholder: strategy preview / output settings ]`
 
-PotatoMaker currently accepts:
+## Demo GIFs
 
-- `.mp4`
-- `.mkv`
-- `.avi`
-- `.mov`
-- `.webm`
-- `.wmv`
-- `.flv`
+This section is intentionally left open for short workflow demos.
 
-## How PotatoMaker Chooses Settings
+<!-- Replace this block with a real GIF -->
+<!-- Example: ![Trim and compress demo](docs/media/trim-and-compress.gif) -->
 
-PotatoMaker is designed to be automatic by default.
+`[ GIF placeholder: drag a file in and trim it ]`
 
-For each video, it:
+`[ GIF placeholder: compressing a clip ]`
 
-1. probes the source file
-2. analyzes the selected clip length
-3. detects crop when useful
-4. picks an export resolution and bitrate
-5. decides whether the result should be one file or several parts
+## Main Workflow
 
-The goal is a small, share-friendly export with as little manual setup as possible.
+1. Open a video with `Browse...` or drag and drop it into the app.
+2. Preview the file and set trim start/end points.
+3. Review the generated strategy preview.
+4. Choose your output folder and naming options.
+5. Compress immediately or add the job to the queue.
 
-## Output Behavior
+## Desktop App Highlights
 
-- Output files are written as `.mp4`
-- By default, exports use the suffix `_discord`
-- If you do not choose a custom output folder, files are written next to the source video
-- Installed Windows builds can add a `Compress with PotatoMaker` Explorer context menu entry
+- User-friendly Windows GUI built with Avalonia
+- Built-in video preview
+- Keyboard shortcuts for quick trimming
+- Queue for lining up multiple compressions
+- Recent videos panel
+- Light/dark theme support
+- Built-in update plumbing for packaged releases
+
+### Keyboard Shortcuts
+
+- `Space`: play or pause
+- `Q`: jump back 10 seconds
+- `E`: jump forward 10 seconds
+- `A`: set trim start
+- `D`: set trim end
+
+## CLI Usage
+
+The repo also includes a command-line app for quick or scripted use.
+
+### Basic command
+
+```powershell
+dotnet run --project .\PotatoMaker.Cli -- "C:\clips\example.mp4"
+```
+
+### Force CPU encoding
+
+```powershell
+dotnet run --project .\PotatoMaker.Cli -- --cpu "C:\clips\example.mp4"
+```
+
+### CLI help summary
+
+```text
+potatomaker [--cpu] <video_file>
+```
+
+By default the CLI uses AV1 NVENC and exits with an error if it is unavailable. Use `--cpu` to select the SVT-AV1 CPU encoder instead.
 
 ## Requirements
 
-### For End Users
+### For end users
 
-- Windows is the primary supported platform for the GUI app
-- AV1 NVENC-capable NVIDIA hardware can make exports much faster
-- If FFmpeg cannot use AV1 NVENC on the current machine, PotatoMaker uses CPU AV1 instead
+- Windows for the desktop app
+- FFmpeg and FFprobe available either:
+  - from a bundled `ffmpeg` folder in the app/package, or
+  - from your system `PATH`
 
-### For Building From Source
+### For development
 
-- .NET SDK `10.0.103` or newer in the `10.0.x` line
-- Windows for the desktop app workflow
-- `ffmpeg` and `ffprobe` available on `PATH`, or bundled locally for packaging
+- .NET SDK `10.0.103`
+- PowerShell for the packaging scripts
 
-## Build From Source
-
-Clone the repository, then run:
-
-```powershell
-dotnet restore
-dotnet build
-dotnet test
-```
-
-To start the desktop app:
+## Running The GUI
 
 ```powershell
 dotnet run --project .\PotatoMaker.GUI
 ```
 
+## Building The Solution
+
+```powershell
+dotnet build .\PotatoMaker.slnx
+```
+
+## Running Tests
+
+```powershell
+dotnet test .\PotatoMaker.Tests
+```
+
 ## Packaging
 
-Portable publish (the script now prompts for publish options when you omit flags):
+### Portable build
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\publish-portable.ps1
+.\scripts\publish-portable.ps1
 ```
 
-Velopack installer/release packaging (the script will guide you through the remaining choices):
+### Velopack package
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\publish-velopack.ps1 -GitHubRepoUrl https://github.com/SpontaneousAct/PotatoMaker
+.\scripts\publish-velopack.ps1
 ```
 
-If you are packaging releases yourself, make sure `ffmpeg.exe` and `ffprobe.exe` are available either on `PATH` or in `third_party\ffmpeg\win-x64`.
+Both scripts can bundle FFmpeg if you provide it or keep it in the expected `third_party\ffmpeg\<runtime>` location.
 
-## Project Layout
+## Project Structure
 
-- `PotatoMaker.GUI` - Avalonia desktop app
-- `PotatoMaker.Core` - encoding, probing, crop detection, and planning logic
-- `PotatoMaker.Cli` - command-line wrapper around the core pipeline
-- `PotatoMaker.Tests` - automated tests
+```text
+PotatoMaker.Core   Core video analysis, planning, and encoding pipeline
+PotatoMaker.GUI    Desktop app
+PotatoMaker.Cli    Command-line app
+PotatoMaker.Tests  Unit tests
+scripts            Publishing and diagnostics scripts
+third_party        External runtime dependencies such as FFmpeg
+```
 
-## Attribution
+## Notes
 
-App icon attribution:
+- The default output suffix is `_discord`
+- Output files are written as `.mp4`
+- Trimmed clips include time markers in the output filename
+- If a clip would end up too large as a single file, PotatoMaker can split it into multiple parts
 
-<a href="https://www.flaticon.com/free-icons/potato" title="potato icons">Potato icons created by Freepik - Flaticon</a>
+## Contributing
+
+Issues and pull requests are welcome. If you are changing compression logic, output naming, or UI behavior, adding or updating tests in `PotatoMaker.Tests` will make the change much easier to review.
 
 ## License
 
-This project is licensed under the terms in [LICENSE.txt](./LICENSE.txt).
+This project is licensed under the MIT License. See [LICENSE.txt](LICENSE.txt).

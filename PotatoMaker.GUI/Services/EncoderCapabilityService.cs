@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using PotatoMaker.Core;
 
 namespace PotatoMaker.GUI.Services;
 
@@ -34,37 +34,6 @@ public sealed class EncoderCapabilityService : IEncoderCapabilityService
 
     private static async Task<bool> ProbeAv1NvencSupportAsync()
     {
-        try
-        {
-            string ffmpegPath = PotatoMaker.Core.FFmpegBinaries.FfmpegExecutable();
-            using var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = ffmpegPath,
-                    Arguments = "-hide_banner -loglevel error -f lavfi -i color=c=black:s=1920x1080:d=0.1 -frames:v 1 -c:v av1_nvenc -f null -",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-
-            if (!process.Start())
-                return false;
-
-            Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
-            Task<string> stderrTask = process.StandardError.ReadToEndAsync();
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            await process.WaitForExitAsync(timeoutCts.Token).ConfigureAwait(false);
-            _ = await stdoutTask.ConfigureAwait(false);
-            _ = await stderrTask.ConfigureAwait(false);
-
-            return process.ExitCode == 0;
-        }
-        catch
-        {
-            return false;
-        }
+        return await Av1NvencSupportProbe.IsSupportedAsync().ConfigureAwait(false);
     }
 }

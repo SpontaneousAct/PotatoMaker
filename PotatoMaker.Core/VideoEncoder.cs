@@ -21,32 +21,20 @@ public static class VideoEncoder
         FFmpegBinaries.EnsureConfigured();
         int normalizedSvtAv1Preset = EncodeSettings.NormalizeSvtAv1Preset(svtAv1Preset);
 
-        if (encoder == EncoderChoice.SvtAv1)
+        switch (encoder)
         {
-            logger.LogInformation("  Encoder: libsvtav1 (CPU two-pass, preset {Preset})", normalizedSvtAv1Preset);
-            await EncodeSvtAv1TwoPassAsync(job, normalizedSvtAv1Preset, logger, progress, label, ct);
-            logger.LogInformation(PipelineEvents.Success, "  [ok] libsvtav1 encode complete.");
-            return;
-        }
-
-        logger.LogInformation("  Trying av1_nvenc...");
-
-        try
-        {
-            await EncodeNvencAsync(job, logger, progress, label, ct);
-            logger.LogInformation(PipelineEvents.Success, "  [ok] NVENC AV1 encode complete.");
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning("  av1_nvenc not available.");
-            logger.LogWarning("    Reason: {Reason}", ex.Message.Split('\n')[0].Trim());
-            logger.LogInformation("  Falling back to libsvtav1 two-pass (CPU)...");
-            await EncodeSvtAv1TwoPassAsync(job, normalizedSvtAv1Preset, logger, progress, label, ct);
-            logger.LogInformation(PipelineEvents.Success, "  [ok] libsvtav1 encode complete.");
+            case EncoderChoice.SvtAv1:
+                logger.LogInformation("  Encoder: libsvtav1 (CPU two-pass, preset {Preset})", normalizedSvtAv1Preset);
+                await EncodeSvtAv1TwoPassAsync(job, normalizedSvtAv1Preset, logger, progress, label, ct);
+                logger.LogInformation(PipelineEvents.Success, "  [ok] libsvtav1 encode complete.");
+                return;
+            case EncoderChoice.Nvenc:
+                logger.LogInformation("  Encoder: av1_nvenc (GPU)");
+                await EncodeNvencAsync(job, logger, progress, label, ct);
+                logger.LogInformation(PipelineEvents.Success, "  [ok] NVENC AV1 encode complete.");
+                return;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(encoder), encoder, "Unknown encoder choice.");
         }
     }
 

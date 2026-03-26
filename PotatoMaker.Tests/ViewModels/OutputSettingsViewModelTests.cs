@@ -43,6 +43,30 @@ public sealed class OutputSettingsViewModelTests
     }
 
     [Fact]
+    public void UseNvencEncoder_CannotBeEnabledWhenNvencIsKnownUnavailable()
+    {
+        var viewModel = new OutputSettingsViewModel();
+
+        viewModel.SetNvencSupport(false);
+        viewModel.UseNvencEncoder = true;
+
+        Assert.False(viewModel.UseNvencEncoder);
+    }
+
+    [Fact]
+    public void SetNvencSupport_False_DisablesCurrentNvencSelection()
+    {
+        var viewModel = new OutputSettingsViewModel
+        {
+            UseNvencEncoder = true
+        };
+
+        viewModel.SetNvencSupport(false);
+
+        Assert.False(viewModel.UseNvencEncoder);
+    }
+
+    [Fact]
     public void FrameRateOptions_ExposeExpectedChoicesInRequestedOrder()
     {
         var viewModel = new OutputSettingsViewModel();
