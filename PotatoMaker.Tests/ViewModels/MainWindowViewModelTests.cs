@@ -727,6 +727,73 @@ public sealed class MainWindowViewModelTests
         public void Release() => _releaseTcs.TrySetResult();
     }
 
+    private sealed class NonCancelableBlockingRecentVideoDiscoveryService(
+        IReadOnlyList<RecentVideoFile> recentVideos) : IRecentVideoDiscoveryService
+    {
+        private readonly TaskCompletionSource _firstCallTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _firstReleaseTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _secondCallTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _callCount;
+        private int _maxConcurrentCalls;
+        private int _activeCalls;
+
+        public int CallCount => Volatile.Read(ref _callCount);
+
+        public int MaxConcurrentCalls => Volatile.Read(ref _maxConcurrentCalls);
+
+        public RecentVideoQuery? LastQuery { get; private set; }
+
+        public Task<IReadOnlyList<RecentVideoFile>> GetRecentVideosAsync(RecentVideoQuery query, CancellationToken ct = default)
+        {
+            LastQuery = query;
+            int callNumber = Interlocked.Increment(ref _callCount);
+            int activeCalls = Interlocked.Increment(ref _activeCalls);
+            UpdateMaxConcurrentCalls(activeCalls);
+            return RunAsync(callNumber, query);
+        }
+
+        public Task WaitForFirstCallAsync() => _firstCallTcs.Task;
+
+        public Task WaitForSecondCallAsync() => _secondCallTcs.Task;
+
+        public void ReleaseFirstCall() => _firstReleaseTcs.TrySetResult();
+
+        private async Task<IReadOnlyList<RecentVideoFile>> RunAsync(int callNumber, RecentVideoQuery query)
+        {
+            try
+            {
+                if (callNumber == 1)
+                {
+                    _firstCallTcs.TrySetResult();
+                    await _firstReleaseTcs.Task;
+                }
+                else if (callNumber == 2)
+                {
+                    _secondCallTcs.TrySetResult();
+                }
+
+                return recentVideos.Take(query.Limit).ToArray();
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _activeCalls);
+            }
+        }
+
+        private void UpdateMaxConcurrentCalls(int activeCalls)
+        {
+            while (true)
+            {
+                int currentMax = Volatile.Read(ref _maxConcurrentCalls);
+                if (activeCalls <= currentMax)
+                    return;
+
+                if (Interlocked.CompareExchange(ref _maxConcurrentCalls, activeCalls, currentMax) == currentMax)
+                    return;
+            }
+        }
+    }
+
     private sealed class RecordingRecentVideoThumbnailService : IRecentVideoThumbnailService
     {
         private readonly TaskCompletionSource<string> _requestTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -985,6 +1052,58 @@ public sealed class MainWindowViewModelTests
             await WaitForConditionAsync(
                 () => !viewModel.IsRecentVideosLoading && viewModel.RecentVideos.Count == 1,
                 "background recent videos discovery to complete");
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task RefreshingRecentVideos_CoalescesRequestsUntilCurrentScanCompletes()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var recentVideos = new NonCancelableBlockingRecentVideoDiscoveryService(
+            [
+                new RecentVideoFile(Path.GetFullPath(inputPath), Path.GetFileName(inputPath), DateTimeOffset.Now)
+            ]);
+            var workspace = new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+            var viewModel = new MainWindowViewModel(
+                workspace,
+                new RecordingThemeService(),
+                null,
+                recentVideos,
+                null);
+
+            viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+            await recentVideos.WaitForFirstCallAsync();
+
+            workspace.OutputSettings.OutputNamePrefix = "pm_";
+
+            await Assert.ThrowsAsync<TimeoutException>(() =>
+                recentVideos.WaitForSecondCallAsync().WaitAsync(TimeSpan.FromMilliseconds(100)));
+
+            Assert.Equal(1, recentVideos.CallCount);
+            Assert.Equal(1, recentVideos.MaxConcurrentCalls);
+
+            recentVideos.ReleaseFirstCall();
+            await recentVideos.WaitForSecondCallAsync();
+            await WaitForConditionAsync(
+                () => !viewModel.IsRecentVideosLoading && viewModel.RecentVideos.Count == 1,
+                "the queued recent video refresh to complete");
+
+            Assert.Equal(2, recentVideos.CallCount);
+            Assert.Equal(1, recentVideos.MaxConcurrentCalls);
+            Assert.Equal("pm_", recentVideos.LastQuery?.ExcludedPrefix);
         }
         finally
         {

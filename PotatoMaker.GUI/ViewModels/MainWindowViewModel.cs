@@ -24,6 +24,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly CompressionQueueViewModel _compressionQueue;
     private readonly CancellationTokenSource _lifetimeCts = new();
     private bool _isApplyingSettings;
+    private bool _isRecentVideosRefreshPending;
+    private bool _isRecentVideosRefreshRunning;
     private CancellationTokenSource? _recentVideosRefreshCts;
     private CancellationTokenSource? _recentVideosThumbnailCts;
 
@@ -280,6 +282,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         CancelRecentVideoRefresh();
         CancelRecentVideoThumbnailLoading();
+        _isRecentVideosRefreshPending = false;
         IsRecentVideosLoading = false;
         ClearRecentVideos();
     }
@@ -530,7 +533,36 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         if (!IsRecentVideosPanelOpen)
             return;
 
-        _ = RefreshRecentVideosAsync();
+        _isRecentVideosRefreshPending = true;
+
+        if (_isRecentVideosRefreshRunning)
+        {
+            _recentVideosRefreshCts?.Cancel();
+            return;
+        }
+
+        _ = ProcessRecentVideoRefreshQueueAsync();
+    }
+
+    private async Task ProcessRecentVideoRefreshQueueAsync()
+    {
+        if (_isRecentVideosRefreshRunning)
+            return;
+
+        _isRecentVideosRefreshRunning = true;
+
+        try
+        {
+            while (IsRecentVideosPanelOpen && _isRecentVideosRefreshPending)
+            {
+                _isRecentVideosRefreshPending = false;
+                await RefreshRecentVideosAsync();
+            }
+        }
+        finally
+        {
+            _isRecentVideosRefreshRunning = false;
+        }
     }
 
     private async Task RefreshRecentVideosAsync()
@@ -648,6 +680,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         CancelRecentVideoRefresh();
         CancelRecentVideoThumbnailLoading();
+        _isRecentVideosRefreshPending = false;
         ClearRecentVideos();
         _lifetimeCts.Cancel();
         _lifetimeCts.Dispose();
