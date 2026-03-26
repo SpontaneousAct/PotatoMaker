@@ -6,7 +6,7 @@ namespace PotatoMaker.Tests.Services;
 public sealed class RecentVideoDiscoveryServiceTests
 {
     [Fact]
-    public void GetRecentVideos_FiltersSortsAndLimitsSupportedFiles()
+    public async Task GetRecentVideos_FiltersSortsAndLimitsSupportedFiles()
     {
         string directory = Path.Combine(Path.GetTempPath(), $"potatomaker-recent-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
@@ -31,7 +31,7 @@ public sealed class RecentVideoDiscoveryServiceTests
 
             var service = new RecentVideoDiscoveryService();
 
-            IReadOnlyList<RecentVideoFile> results = service.GetRecentVideos(new RecentVideoQuery(directory));
+            IReadOnlyList<RecentVideoFile> results = await service.GetRecentVideosAsync(new RecentVideoQuery(directory));
 
             Assert.Equal(RecentVideoDiscoveryService.DefaultLimit, results.Count);
             Assert.Equal("clip-09.webm", results[0].FileName);
@@ -48,17 +48,17 @@ public sealed class RecentVideoDiscoveryServiceTests
     }
 
     [Fact]
-    public void GetRecentVideos_MissingDirectory_ReturnsEmptyList()
+    public async Task GetRecentVideos_MissingDirectory_ReturnsEmptyList()
     {
         var service = new RecentVideoDiscoveryService();
 
-        IReadOnlyList<RecentVideoFile> results = service.GetRecentVideos(new RecentVideoQuery(@"Z:\this\folder\should\not\exist"));
+        IReadOnlyList<RecentVideoFile> results = await service.GetRecentVideosAsync(new RecentVideoQuery(@"Z:\this\folder\should\not\exist"));
 
         Assert.Empty(results);
     }
 
     [Fact]
-    public void GetRecentVideos_ExcludesFilesMatchingConfiguredPrefixOrSuffix()
+    public async Task GetRecentVideos_ExcludesFilesMatchingConfiguredPrefixOrSuffix()
     {
         string directory = Path.Combine(Path.GetTempPath(), $"potatomaker-recent-{Guid.NewGuid():N}");
         Directory.CreateDirectory(directory);
@@ -72,7 +72,7 @@ public sealed class RecentVideoDiscoveryServiceTests
 
             var service = new RecentVideoDiscoveryService();
 
-            IReadOnlyList<RecentVideoFile> results = service.GetRecentVideos(new RecentVideoQuery(
+            IReadOnlyList<RecentVideoFile> results = await service.GetRecentVideosAsync(new RecentVideoQuery(
                 directory,
                 ExcludedPrefix: "pm_",
                 ExcludedSuffix: "_discord"));

@@ -24,6 +24,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly CompressionQueueViewModel _compressionQueue;
     private readonly CancellationTokenSource _lifetimeCts = new();
     private bool _isApplyingSettings;
+    private CancellationTokenSource? _recentVideosRefreshCts;
     private CancellationTokenSource? _recentVideosThumbnailCts;
 
     public MainWindowViewModel()
@@ -173,6 +174,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isRecentVideosPanelOpen;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRecentVideosEmpty))]
+    private bool _isRecentVideosLoading;
+
+    [ObservableProperty]
     private string _recentVideosDirectory = AppSettings.DefaultRecentVideosDirectory;
 
     [ObservableProperty]
@@ -207,7 +212,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public bool HasRecentVideos => RecentVideos.Count > 0;
 
-    public bool IsRecentVideosEmpty => RecentVideos.Count == 0;
+    public bool IsRecentVideosEmpty => !IsRecentVideosLoading && RecentVideos.Count == 0;
 
     public bool IsUpdateBadgeVisible => UpdateButtonState is UpdateIndicatorState.Available or UpdateIndicatorState.PendingRestart;
 
@@ -267,8 +272,16 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     partial void OnIsRecentVideosPanelOpenChanged(bool value)
     {
-        if (!value)
-            CancelRecentVideoThumbnailLoading();
+        if (value)
+        {
+            RequestRecentVideosRefresh();
+            return;
+        }
+
+        CancelRecentVideoRefresh();
+        CancelRecentVideoThumbnailLoading();
+        IsRecentVideosLoading = false;
+        ClearRecentVideos();
     }
 
     public bool TryLoadStartupFiles(IEnumerable<string> startupArgs)
@@ -360,7 +373,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         Settings.NotifyRecentVideosDirectoryChanged();
 
         if (IsRecentVideosPanelOpen)
-            RefreshRecentVideos();
+            RequestRecentVideosRefresh();
 
         if (_isApplyingSettings || _settingsCoordinator is null)
             return;
@@ -403,14 +416,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void ToggleRecentVideosPanel()
     {
-        if (IsRecentVideosPanelOpen)
-        {
-            IsRecentVideosPanelOpen = false;
-            return;
-        }
-
-        IsRecentVideosPanelOpen = true;
-        RefreshRecentVideos();
+        IsRecentVideosPanelOpen = !IsRecentVideosPanelOpen;
     }
 
     [RelayCommand(CanExecute = nameof(CanApplyUpdate), AllowConcurrentExecutions = false)]
@@ -519,40 +525,100 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool CanApplyUpdate() =>
         UpdateButtonState is UpdateIndicatorState.Available or UpdateIndicatorState.PendingRestart;
 
-    private void RefreshRecentVideos()
+    private void RequestRecentVideosRefresh()
     {
-        CancelRecentVideoThumbnailLoading();
+        if (!IsRecentVideosPanelOpen)
+            return;
 
-        IReadOnlyList<RecentVideoFile> recentVideos = _recentVideoDiscoveryService.GetRecentVideos(new RecentVideoQuery(
+        _ = RefreshRecentVideosAsync();
+    }
+
+    private async Task RefreshRecentVideosAsync()
+    {
+        CancellationTokenSource refreshCts = BeginRecentVideoRefresh();
+        RecentVideoQuery query = CreateRecentVideoQuery();
+
+        try
+        {
+            IReadOnlyList<RecentVideoFile> recentVideos = await _recentVideoDiscoveryService
+                .GetRecentVideosAsync(query, refreshCts.Token);
+
+            List<RecentVideoItemViewModel> recentItems = recentVideos
+                .Select(CreateRecentVideoItem)
+                .ToList();
+            bool shouldLoadThumbnails = false;
+            if (TryApplyRecentVideoItems(refreshCts, recentItems))
+                shouldLoadThumbnails = recentItems.Count > 0;
+
+            if (shouldLoadThumbnails)
+                _ = LoadRecentVideoThumbnailsAsync(recentItems, CreateRecentVideoThumbnailToken());
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch
+        {
+            if (!ReferenceEquals(_recentVideosRefreshCts, refreshCts))
+                return;
+
+            IsRecentVideosLoading = false;
+            ClearRecentVideos();
+        }
+        finally
+        {
+            CompleteRecentVideoRefresh(refreshCts);
+        }
+    }
+
+    private CancellationTokenSource BeginRecentVideoRefresh()
+    {
+        CancelRecentVideoRefresh();
+        CancelRecentVideoThumbnailLoading();
+        ClearRecentVideos();
+        IsRecentVideosLoading = true;
+
+        _recentVideosRefreshCts = CancellationTokenSource.CreateLinkedTokenSource(_lifetimeCts.Token);
+        return _recentVideosRefreshCts;
+    }
+
+    private RecentVideoQuery CreateRecentVideoQuery() => new(
             RecentVideosDirectory,
             Workspace.OutputSettings.OutputNamePrefix,
-            Workspace.OutputSettings.OutputNameSuffix));
+            Workspace.OutputSettings.OutputNameSuffix);
 
-        DisposeRecentVideoItems();
-        RecentVideos.Clear();
-        List<RecentVideoItemViewModel> recentItems = [];
-        foreach (RecentVideoFile video in recentVideos)
+    private RecentVideoItemViewModel CreateRecentVideoItem(RecentVideoFile video)
+    {
+        bool isProcessed = _processedVideoTracker.IsProcessed(video.FullPath, video.LastModified);
+        return new RecentVideoItemViewModel(
+            video.FullPath,
+            video.FileName,
+            video.LastModified,
+            isProcessed,
+            OpenRecentVideo);
+    }
+
+    private bool TryApplyRecentVideoItems(
+        CancellationTokenSource refreshCts,
+        IReadOnlyList<RecentVideoItemViewModel> recentItems)
+    {
+        if (!ReferenceEquals(_recentVideosRefreshCts, refreshCts) || refreshCts.IsCancellationRequested || !IsRecentVideosPanelOpen)
         {
-            bool isProcessed = _processedVideoTracker.IsProcessed(video.FullPath, video.LastModified);
-            var item = new RecentVideoItemViewModel(
-                video.FullPath,
-                video.FileName,
-                video.LastModified,
-                isProcessed,
-                OpenRecentVideo);
-            RecentVideos.Add(item);
-            recentItems.Add(item);
+            DisposeRecentVideoItems(recentItems);
+            return false;
         }
 
-        if (recentItems.Count > 0 && IsRecentVideosPanelOpen)
-            _ = LoadRecentVideoThumbnailsAsync(recentItems, CreateRecentVideoThumbnailToken());
+        foreach (RecentVideoItemViewModel item in recentItems)
+            RecentVideos.Add(item);
+
+        IsRecentVideosLoading = false;
+        return true;
     }
 
     private void OpenRecentVideo(string path)
     {
         if (!Workspace.FileInput.SetFile(path))
         {
-            RefreshRecentVideos();
+            RequestRecentVideosRefresh();
             return;
         }
 
@@ -580,8 +646,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        CancelRecentVideoRefresh();
         CancelRecentVideoThumbnailLoading();
-        DisposeRecentVideoItems();
+        ClearRecentVideos();
         _lifetimeCts.Cancel();
         _lifetimeCts.Dispose();
         RecentVideos.CollectionChanged -= OnRecentVideosCollectionChanged;
@@ -604,7 +671,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             return;
 
         if (e.PropertyName is nameof(OutputSettingsViewModel.OutputNamePrefix) or nameof(OutputSettingsViewModel.OutputNameSuffix))
-            RefreshRecentVideos();
+            RequestRecentVideosRefresh();
     }
 
     private void OnProcessedVideosChanged(object? sender, EventArgs e)
@@ -615,7 +682,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         Dispatcher.UIThread.Post(() =>
         {
             if (IsRecentVideosPanelOpen)
-                RefreshRecentVideos();
+                RequestRecentVideosRefresh();
         });
     }
 
@@ -668,6 +735,37 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
+    private void CancelRecentVideoRefresh()
+    {
+        if (_recentVideosRefreshCts is null)
+            return;
+
+        try
+        {
+            _recentVideosRefreshCts.Cancel();
+        }
+        catch
+        {
+        }
+        finally
+        {
+            _recentVideosRefreshCts.Dispose();
+            _recentVideosRefreshCts = null;
+        }
+    }
+
+    private void CompleteRecentVideoRefresh(CancellationTokenSource refreshCts)
+    {
+        if (!ReferenceEquals(_recentVideosRefreshCts, refreshCts))
+        {
+            refreshCts.Dispose();
+            return;
+        }
+
+        _recentVideosRefreshCts = null;
+        refreshCts.Dispose();
+    }
+
     private void CancelRecentVideoThumbnailLoading()
     {
         if (_recentVideosThumbnailCts is null)
@@ -687,9 +785,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void DisposeRecentVideoItems()
+    private void ClearRecentVideos()
     {
-        foreach (RecentVideoItemViewModel item in RecentVideos)
+        DisposeRecentVideoItems(RecentVideos);
+        RecentVideos.Clear();
+    }
+
+    private static void DisposeRecentVideoItems(IEnumerable<RecentVideoItemViewModel> items)
+    {
+        foreach (RecentVideoItemViewModel item in items)
             item.Dispose();
     }
 

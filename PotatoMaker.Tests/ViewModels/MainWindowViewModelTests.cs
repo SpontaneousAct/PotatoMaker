@@ -233,7 +233,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public void SelectingRecentVideo_LoadsFileAndReturnsToMainView()
+    public async Task SelectingRecentVideo_LoadsFileAndReturnsToMainView()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
         File.WriteAllText(inputPath, "video");
@@ -259,6 +259,7 @@ public sealed class MainWindowViewModelTests
 
             viewModel.ShowSettingsViewCommand.Execute(null);
             viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+            await WaitForConditionAsync(() => viewModel.RecentVideos.Count == 1, "the recent video to load");
             viewModel.RecentVideos[0].SelectCommand.Execute(null);
 
             Assert.Equal(1, recentVideos.CallCount);
@@ -273,7 +274,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public void OpeningRecentVideos_UsesCurrentOutputPrefixAndSuffixForExclusion()
+    public async Task OpeningRecentVideos_UsesCurrentOutputPrefixAndSuffixForExclusion()
     {
         var recentVideos = new RecordingRecentVideoDiscoveryService();
         var workspace = new EncodeWorkspaceViewModel(
@@ -293,6 +294,7 @@ public sealed class MainWindowViewModelTests
             null);
 
         viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+        await WaitForConditionAsync(() => recentVideos.LastQuery is not null, "the recent video query to start");
 
         Assert.NotNull(recentVideos.LastQuery);
         Assert.Equal("pm_", recentVideos.LastQuery!.ExcludedPrefix);
@@ -301,7 +303,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public void OpeningRecentVideos_MarksProcessedItems()
+    public async Task OpeningRecentVideos_MarksProcessedItems()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
         File.WriteAllText(inputPath, "video");
@@ -330,6 +332,7 @@ public sealed class MainWindowViewModelTests
                 null);
 
             viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+            await WaitForConditionAsync(() => viewModel.RecentVideos.Count == 1, "the processed recent video to load");
 
             Assert.Single(viewModel.RecentVideos);
             Assert.True(viewModel.RecentVideos[0].IsProcessed);
@@ -698,12 +701,30 @@ public sealed class MainWindowViewModelTests
 
         public RecentVideoQuery? LastQuery { get; private set; }
 
-        public IReadOnlyList<RecentVideoFile> GetRecentVideos(RecentVideoQuery query)
+        public Task<IReadOnlyList<RecentVideoFile>> GetRecentVideosAsync(RecentVideoQuery query, CancellationToken ct = default)
         {
             CallCount++;
             LastQuery = query;
-            return RecentVideos.Take(query.Limit).ToArray();
+            return Task.FromResult<IReadOnlyList<RecentVideoFile>>(RecentVideos.Take(query.Limit).ToArray());
         }
+    }
+
+    private sealed class BlockingRecentVideoDiscoveryService(
+        IReadOnlyList<RecentVideoFile> recentVideos) : IRecentVideoDiscoveryService
+    {
+        private readonly TaskCompletionSource _callTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _releaseTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task<IReadOnlyList<RecentVideoFile>> GetRecentVideosAsync(RecentVideoQuery query, CancellationToken ct = default)
+        {
+            _callTcs.TrySetResult();
+            await _releaseTcs.Task.WaitAsync(ct);
+            return recentVideos.Take(query.Limit).ToArray();
+        }
+
+        public Task WaitForCallAsync() => _callTcs.Task;
+
+        public void Release() => _releaseTcs.TrySetResult();
     }
 
     private sealed class RecordingRecentVideoThumbnailService : IRecentVideoThumbnailService
@@ -717,6 +738,19 @@ public sealed class MainWindowViewModelTests
         }
 
         public Task<string> WaitForRequestAsync() => _requestTcs.Task;
+    }
+
+    private static async Task WaitForConditionAsync(Func<bool> condition, string description)
+    {
+        for (int attempt = 0; attempt < 200; attempt++)
+        {
+            if (condition())
+                return;
+
+            await Task.Delay(10);
+        }
+
+        throw new TimeoutException($"Timed out waiting for {description}.");
     }
 
     private sealed class RecordingProcessedVideoTracker : IProcessedVideoTracker
@@ -914,5 +948,47 @@ public sealed class MainWindowViewModelTests
             settings,
             new VideoClipRange(TimeSpan.Zero, TimeSpan.FromSeconds(30)),
             123);
+    }
+
+    [Fact]
+    public async Task OpeningRecentVideos_LoadsInBackgroundUntilDiscoveryCompletes()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var recentVideos = new BlockingRecentVideoDiscoveryService(
+            [
+                new RecentVideoFile(Path.GetFullPath(inputPath), Path.GetFileName(inputPath), DateTimeOffset.Now)
+            ]);
+            var viewModel = new MainWindowViewModel(
+                new EncodeWorkspaceViewModel(
+                    new NoOpAnalysisService(),
+                    new NoOpEncodingService(),
+                    new StaticEncoderCapabilityService(),
+                    null,
+                    initializeEncoderSupport: false),
+                new RecordingThemeService(),
+                null,
+                recentVideos,
+                null);
+
+            viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+            await recentVideos.WaitForCallAsync();
+
+            Assert.True(viewModel.IsRecentVideosLoading);
+            Assert.Empty(viewModel.RecentVideos);
+
+            recentVideos.Release();
+
+            await WaitForConditionAsync(
+                () => !viewModel.IsRecentVideosLoading && viewModel.RecentVideos.Count == 1,
+                "background recent videos discovery to complete");
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
     }
 }

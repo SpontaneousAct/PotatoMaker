@@ -141,6 +141,13 @@
                     </StackPanel>
 
                     <Border Classes="pm-inset"
+                            IsVisible="{Binding IsRecentVideosLoading}">
+                        <TextBlock Text="Scanning for recent supported videos..."
+                                   Classes="pm-caption"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Border Classes="pm-inset"
                             IsVisible="{Binding IsRecentVideosEmpty}">
                         <TextBlock Text="No recent supported videos found."
                                    Classes="pm-caption"
