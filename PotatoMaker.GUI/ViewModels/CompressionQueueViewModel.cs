@@ -100,6 +100,16 @@ public partial class CompressionQueueViewModel : ViewModelBase, IDisposable
 
     public bool CanClearQueue => HasItems && !IsQueueProcessing;
 
+    public bool IsSourceQueued(string inputPath)
+    {
+        ArgumentNullException.ThrowIfNull(inputPath);
+
+        string normalizedInputPath = Path.GetFullPath(inputPath);
+        return Items.Any(item =>
+            item.BlocksDuplicateEntries &&
+            string.Equals(item.InputPath, normalizedInputPath, StringComparison.OrdinalIgnoreCase));
+    }
+
     public async Task<QueueEnqueueResult> AddAsync(QueuedCompressionItemDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);

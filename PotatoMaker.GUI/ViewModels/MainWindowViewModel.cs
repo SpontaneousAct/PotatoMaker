@@ -621,11 +621,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private RecentVideoItemViewModel CreateRecentVideoItem(RecentVideoFile video)
     {
         bool isProcessed = _processedVideoTracker.IsProcessed(video.FullPath, video.LastModified);
+        bool isQueued = _compressionQueue.IsSourceQueued(video.FullPath);
         return new RecentVideoItemViewModel(
             video.FullPath,
             video.FileName,
             video.LastModified,
             isProcessed,
+            isQueued,
             OpenRecentVideo);
     }
 
@@ -642,6 +644,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         foreach (RecentVideoItemViewModel item in recentItems)
             RecentVideos.Add(item);
 
+        RefreshRecentVideoIndicators();
         IsRecentVideosLoading = false;
         return true;
     }
@@ -712,11 +715,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         if (!IsRecentVideosPanelOpen)
             return;
 
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (IsRecentVideosPanelOpen)
-                RequestRecentVideosRefresh();
-        });
+        RefreshRecentVideoIndicators();
     }
 
     private void OnCompressionQueueChanged(object? sender, PropertyChangedEventArgs e)
@@ -727,6 +726,18 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             OnPropertyChanged(nameof(QueueBadgeCount));
             OnPropertyChanged(nameof(QueueBadgeText));
             OnPropertyChanged(nameof(IsQueueBadgeVisible));
+
+            if (IsRecentVideosPanelOpen)
+                RefreshRecentVideoIndicators();
+        }
+    }
+
+    private void RefreshRecentVideoIndicators()
+    {
+        foreach (RecentVideoItemViewModel item in RecentVideos)
+        {
+            item.SetProcessed(_processedVideoTracker.IsProcessed(item.FullPath, item.LastModified));
+            item.SetQueued(_compressionQueue.IsSourceQueued(item.FullPath));
         }
     }
 

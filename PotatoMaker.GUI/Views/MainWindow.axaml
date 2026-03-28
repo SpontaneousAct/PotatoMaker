@@ -185,6 +185,9 @@
                                                        TextTrimming="CharacterEllipsis"/>
                                             <StackPanel Orientation="Horizontal"
                                                         Spacing="6">
+                                                <Border Classes="pm-recent-queued-dot"
+                                                        IsVisible="{Binding IsQueued}"
+                                                        ToolTip.Tip="Already in queue"/>
                                                 <Border Classes="pm-recent-processed-dot"
                                                         IsVisible="{Binding IsProcessed}"
                                                         ToolTip.Tip="Already compressed"/>

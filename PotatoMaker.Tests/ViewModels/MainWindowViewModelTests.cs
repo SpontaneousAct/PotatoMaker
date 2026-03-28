@@ -344,6 +344,108 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task OpeningRecentVideos_MarksQueuedItems()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var recentVideos = new RecordingRecentVideoDiscoveryService(
+            [
+                new RecentVideoFile(Path.GetFullPath(inputPath), Path.GetFileName(inputPath), DateTimeOffset.Now)
+            ]);
+            var queue = new CompressionQueueViewModel(
+                null,
+                new NoOpEncodingService(),
+                new EncodeExecutionCoordinator());
+            var workspace = new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                queue,
+                new EncodeExecutionCoordinator(),
+                initializeEncoderSupport: false);
+            var viewModel = new MainWindowViewModel(
+                workspace,
+                new RecordingThemeService(),
+                null,
+                recentVideos,
+                DisabledRecentVideoThumbnailService.Instance,
+                DisabledProcessedVideoTracker.Instance,
+                queue,
+                null);
+
+            QueueEnqueueResult result = await queue.AddAsync(CreateQueueDraft(inputPath));
+
+            Assert.True(result.Succeeded);
+            viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+            await WaitForConditionAsync(() => viewModel.RecentVideos.Count == 1, "the queued recent video to load");
+
+            Assert.True(viewModel.RecentVideos[0].IsQueued);
+            Assert.False(viewModel.RecentVideos[0].IsProcessed);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task QueuedRecentVideoIndicator_UpdatesWhilePopupIsOpen()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            var recentVideos = new RecordingRecentVideoDiscoveryService(
+            [
+                new RecentVideoFile(Path.GetFullPath(inputPath), Path.GetFileName(inputPath), DateTimeOffset.Now)
+            ]);
+            var queue = new CompressionQueueViewModel(
+                null,
+                new NoOpEncodingService(),
+                new EncodeExecutionCoordinator());
+            var workspace = new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                queue,
+                new EncodeExecutionCoordinator(),
+                initializeEncoderSupport: false);
+            var viewModel = new MainWindowViewModel(
+                workspace,
+                new RecordingThemeService(),
+                null,
+                recentVideos,
+                DisabledRecentVideoThumbnailService.Instance,
+                DisabledProcessedVideoTracker.Instance,
+                queue,
+                null);
+
+            viewModel.ToggleRecentVideosPanelCommand.Execute(null);
+            await WaitForConditionAsync(() => viewModel.RecentVideos.Count == 1, "the recent video to load");
+            Assert.False(viewModel.RecentVideos[0].IsQueued);
+
+            QueueEnqueueResult result = await queue.AddAsync(CreateQueueDraft(inputPath));
+            Assert.True(result.Succeeded);
+            await WaitForConditionAsync(() => viewModel.RecentVideos[0].IsQueued, "the queued indicator to appear");
+
+            CompressionQueueItemViewModel queuedItem = Assert.Single(queue.Items);
+            queuedItem.MarkCompleted(new ProcessingPipelineResult(["D:\\encoded\\done.mp4"], 100));
+
+            await WaitForConditionAsync(() => !viewModel.RecentVideos[0].IsQueued, "the queued indicator to clear");
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task OpeningRecentVideos_RequestsThumbnailsForDisplayedVideos()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");

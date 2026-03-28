@@ -9,9 +9,11 @@ namespace PotatoMaker.GUI.ViewModels;
 public sealed class RecentVideoItemViewModel : ViewModelBase, IDisposable
 {
     private Bitmap? _thumbnail;
+    private bool _isProcessed;
+    private bool _isQueued;
 
     public RecentVideoItemViewModel(string fullPath, string fileName, DateTimeOffset lastModified, Action<string> onSelected)
-        : this(fullPath, fileName, lastModified, isProcessed: false, onSelected)
+        : this(fullPath, fileName, lastModified, isProcessed: false, isQueued: false, onSelected)
     {
     }
 
@@ -21,6 +23,17 @@ public sealed class RecentVideoItemViewModel : ViewModelBase, IDisposable
         DateTimeOffset lastModified,
         bool isProcessed,
         Action<string> onSelected)
+        : this(fullPath, fileName, lastModified, isProcessed, isQueued: false, onSelected)
+    {
+    }
+
+    public RecentVideoItemViewModel(
+        string fullPath,
+        string fileName,
+        DateTimeOffset lastModified,
+        bool isProcessed,
+        bool isQueued,
+        Action<string> onSelected)
     {
         ArgumentNullException.ThrowIfNull(fullPath);
         ArgumentNullException.ThrowIfNull(fileName);
@@ -28,8 +41,10 @@ public sealed class RecentVideoItemViewModel : ViewModelBase, IDisposable
 
         FullPath = fullPath;
         FileName = fileName;
+        LastModified = lastModified;
         ModifiedText = $"Modified {lastModified.LocalDateTime:g}";
-        IsProcessed = isProcessed;
+        _isProcessed = isProcessed;
+        _isQueued = isQueued;
         SelectCommand = new RelayCommand(() => onSelected(FullPath));
     }
 
@@ -37,9 +52,21 @@ public sealed class RecentVideoItemViewModel : ViewModelBase, IDisposable
 
     public string FileName { get; }
 
+    public DateTimeOffset LastModified { get; }
+
     public string ModifiedText { get; }
 
-    public bool IsProcessed { get; }
+    public bool IsProcessed
+    {
+        get => _isProcessed;
+        private set => SetProperty(ref _isProcessed, value);
+    }
+
+    public bool IsQueued
+    {
+        get => _isQueued;
+        private set => SetProperty(ref _isQueued, value);
+    }
 
     public Bitmap? Thumbnail
     {
@@ -69,6 +96,10 @@ public sealed class RecentVideoItemViewModel : ViewModelBase, IDisposable
         Thumbnail = thumbnail;
         previous?.Dispose();
     }
+
+    public void SetProcessed(bool isProcessed) => IsProcessed = isProcessed;
+
+    public void SetQueued(bool isQueued) => IsQueued = isQueued;
 
     public void Dispose() => SetThumbnail(null);
 }

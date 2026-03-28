@@ -66,6 +66,7 @@
                     <SolidColorBrush x:Key="PmHelpBadgeBackground">#FFD8E4F3</SolidColorBrush>
                     <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FFBACBDD</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdateDotBackground">#FF1E8E3E</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueDotBackground">#FFE08A1E</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBackground">#FFFFF2DE</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBorderBrush">#FFE8C98B</SolidColorBrush>
                     <LinearGradientBrush x:Key="PmQueueFeedbackBackground" StartPoint="0,0" EndPoint="1,1">
@@ -154,6 +155,7 @@
                     <SolidColorBrush x:Key="PmHelpBadgeBackground">#FF233246</SolidColorBrush>
                     <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FF3A4F68</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdateDotBackground">#FF5FC779</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueDotBackground">#FFFFB24A</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBackground">#FF2C2416</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBorderBrush">#FF6C5531</SolidColorBrush>
                     <LinearGradientBrush x:Key="PmQueueFeedbackBackground" StartPoint="0,0" EndPoint="1,1">
@@ -713,6 +715,16 @@
             <Setter Property="Height" Value="8"/>
             <Setter Property="CornerRadius" Value="999"/>
             <Setter Property="Background" Value="{DynamicResource PmUpdateDotBackground}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCardBackground}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Border.pm-recent-queued-dot">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="{DynamicResource PmQueueDotBackground}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PmCardBackground}"/>
             <Setter Property="BorderThickness" Value="1"/>
