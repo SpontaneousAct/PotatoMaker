@@ -376,6 +376,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             VideoSummary.Clear();
             VideoPlayer.Clear();
             ClipRange.Clear();
+            _isCropDetectionPending = true;
             VideoInfo info = await _analysisService.ProbeAsync(path, previewCts.Token);
             if (ShouldIgnorePreviewResult(previewCts, previewVersion, path))
                 return;
@@ -387,7 +388,6 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             ResetPreviewCommand.NotifyCanExecuteChanged();
 
             VideoSummary.SetStrategyPending();
-            _isCropDetectionPending = true;
             _detectedCropFilter = await _analysisService.DetectCropAsync(path, info, previewCts.Token);
             if (ShouldIgnorePreviewResult(previewCts, previewVersion, path))
                 return;

@@ -60,11 +60,16 @@ public static class StrategyAnalyzer
         if (effectiveDuration <= TimeSpan.Zero)
             throw new InvalidOperationException(EncodePlanner.InvalidDurationMessage);
 
-        int sourceHeightForPlan = EncodePlanner.ResolveSourceHeightForPlan(info.Height, cropFilter);
+        EncodePlanner.VideoFrameSize sourceFrameSizeForPlan = EncodePlanner.ResolveSourceFrameSizeForPlan(info.Width, info.Height, cropFilter);
         double outputFrameRate = EncodePlanner.ResolveOutputFrameRate(info.FrameRate, settings);
         string? frameRateFilter = EncodePlanner.BuildFrameRateFilter(info.FrameRate, settings);
         var plan = EncodePlanner.ApplySourceVideoBitrateCap(
-            EncodePlanner.PlanStrategy(effectiveDuration.TotalSeconds, sourceHeightForPlan, info.FrameRate, settings),
+            EncodePlanner.PlanStrategy(
+                effectiveDuration.TotalSeconds,
+                sourceFrameSizeForPlan.Width,
+                sourceFrameSizeForPlan.Height,
+                info.FrameRate,
+                settings),
             info.SourceVideoBitrateKbps);
 
         return new StrategyAnalysis(fullPath, cropFilter, frameRateFilter, outputFrameRate, plan);

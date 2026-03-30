@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using PotatoMaker.Core;
 
@@ -35,8 +36,18 @@ public sealed class CropModeOption
 /// </summary>
 public partial class VideoSummaryViewModel : ViewModelBase
 {
+    private const double NoOpCropAreaThreshold = 0.97d;
+    private static readonly CropModeOption[] AvailableCropOptions =
+    [
+        new("auto", "Auto"),
+        new("21:9", "21:9", 21, 9),
+        new("16:9", "16:9", 16, 9),
+        new("9:16", "9:16", 9, 16)
+    ];
+
     public VideoSummaryViewModel()
     {
+        RestoreCropOptions();
         SelectedCropOption = CropOptions[0];
     }
 
@@ -60,13 +71,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
     [ObservableProperty] private bool _hasStrategy;
     [ObservableProperty] private CropModeOption? _selectedCropOption;
 
-    public IReadOnlyList<CropModeOption> CropOptions { get; } =
-    [
-        new("auto", "Auto"),
-        new("21:9", "21:9", 21, 9),
-        new("16:9", "16:9", 16, 9),
-        new("9:16", "9:16", 9, 16)
-    ];
+    public ObservableCollection<CropModeOption> CropOptions { get; } = [];
 
     /// <summary>
     /// Gets the last successful probe result.
@@ -90,6 +95,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
             : info.Duration.ToString(@"m\:ss");
         Resolution = info.Width > 0 ? $"{info.Width}x{info.Height}" : "N/A";
         FrameRate = info.FrameRate > 0 ? $"{info.FrameRate:0.##} fps" : "N/A";
+        UpdateCropOptions(info);
         HasData = true;
     }
 
@@ -158,6 +164,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
         SelectedStart = null;
         SelectedEnd = null;
         SelectedDuration = null;
+        RestoreCropOptions();
         ClearStrategy();
     }
 
@@ -173,6 +180,51 @@ public partial class VideoSummaryViewModel : ViewModelBase
         value.TotalHours >= 1
             ? value.ToString(@"h\:mm\:ss\.f")
             : value.ToString(@"m\:ss\.f");
+
+    private void UpdateCropOptions(VideoInfo info)
+    {
+        CropModeOption? previousSelection = SelectedCropOption;
+        ReplaceCropOptions(AvailableCropOptions.Where(option => option.IsAuto || !MatchesSourceAspectRatio(info, option)));
+        SelectedCropOption = ResolveSelection(previousSelection);
+    }
+
+    private void RestoreCropOptions()
+    {
+        CropModeOption? previousSelection = SelectedCropOption;
+        ReplaceCropOptions(AvailableCropOptions);
+        SelectedCropOption = ResolveSelection(previousSelection);
+    }
+
+    private void ReplaceCropOptions(IEnumerable<CropModeOption> options)
+    {
+        CropOptions.Clear();
+        foreach (CropModeOption option in options)
+            CropOptions.Add(option);
+    }
+
+    private CropModeOption ResolveSelection(CropModeOption? previousSelection) =>
+        previousSelection is not null
+            ? CropOptions.FirstOrDefault(option => option.Id == previousSelection.Id) ?? CropOptions[0]
+            : CropOptions[0];
+
+    private static bool MatchesSourceAspectRatio(VideoInfo info, CropModeOption option)
+    {
+        if (option.IsAuto || info.Width <= 0 || info.Height <= 0)
+            return false;
+
+        string? cropFilter = EncodePlanner.BuildCenteredCropFilterForAspectRatio(
+            info.Width,
+            info.Height,
+            option.AspectRatioWidth!.Value,
+            option.AspectRatioHeight!.Value);
+        if (string.IsNullOrWhiteSpace(cropFilter))
+            return true;
+
+        EncodePlanner.VideoFrameSize croppedFrameSize = EncodePlanner.ResolveSourceFrameSizeForPlan(info.Width, info.Height, cropFilter);
+        double sourcePixelCount = info.Width * (double)info.Height;
+        double croppedPixelCount = croppedFrameSize.Width * (double)croppedFrameSize.Height;
+        return croppedPixelCount / sourcePixelCount >= NoOpCropAreaThreshold;
+    }
 
     private static string FormatCropSummary(string? cropFilter, CropModeOption cropMode)
     {

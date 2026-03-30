@@ -9,7 +9,7 @@ public sealed class EncodePlannerTests
     public void PlanStrategy_ZeroDuration_ThrowsFriendlyError()
     {
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            EncodePlanner.PlanStrategy(0, 1080, 60, new EncodeSettings()));
+            EncodePlanner.PlanStrategy(0, 1920, 1080, 60, new EncodeSettings()));
 
         Assert.Equal("The selected clip has no duration. Choose a valid source video or a longer clip.", ex.Message);
     }
@@ -22,7 +22,7 @@ public sealed class EncodePlannerTests
             FrameRateMode = EncodeFrameRateMode.Fps30
         };
 
-        EncodePlanner.EncodePlan plan = EncodePlanner.PlanStrategy(90, 1440, 60, settings);
+        EncodePlanner.EncodePlan plan = EncodePlanner.PlanStrategy(90, 2560, 1440, 60, settings);
 
         Assert.Equal(1, plan.Parts);
         Assert.Equal("1080p (downscaled)", plan.ResolutionLabel);
@@ -37,8 +37,8 @@ public sealed class EncodePlannerTests
             FrameRateMode = EncodeFrameRateMode.Fps30
         };
 
-        EncodePlanner.EncodePlan originalPlan = EncodePlanner.PlanStrategy(170, 1080, 60, originalSettings);
-        EncodePlanner.EncodePlan reducedFrameRatePlan = EncodePlanner.PlanStrategy(170, 1080, 60, reducedFrameRateSettings);
+        EncodePlanner.EncodePlan originalPlan = EncodePlanner.PlanStrategy(170, 1920, 1080, 60, originalSettings);
+        EncodePlanner.EncodePlan reducedFrameRatePlan = EncodePlanner.PlanStrategy(170, 1920, 1080, 60, reducedFrameRateSettings);
 
         Assert.True(originalPlan.Parts > 1);
         Assert.Equal(1, reducedFrameRatePlan.Parts);
@@ -48,7 +48,7 @@ public sealed class EncodePlannerTests
     [Fact]
     public void ApplySourceVideoBitrateCap_ShortClip_UsesSourceVideoBitrate()
     {
-        EncodePlanner.EncodePlan uncappedPlan = EncodePlanner.PlanStrategy(0.1, 1080, 60, new EncodeSettings());
+        EncodePlanner.EncodePlan uncappedPlan = EncodePlanner.PlanStrategy(0.1, 1920, 1080, 60, new EncodeSettings());
 
         EncodePlanner.EncodePlan cappedPlan = EncodePlanner.ApplySourceVideoBitrateCap(uncappedPlan, 4500);
 
@@ -91,5 +91,26 @@ public sealed class EncodePlannerTests
         string? cropFilter = EncodePlanner.BuildCenteredCropFilterForAspectRatio(3840, 2160, 21, 9);
 
         Assert.Equal("crop=3840:1644:0:258", cropFilter);
+    }
+
+    [Fact]
+    public void ResolveSourceFrameSizeForPlan_UsesCropDimensionsWhenPresent()
+    {
+        EncodePlanner.VideoFrameSize frameSize = EncodePlanner.ResolveSourceFrameSizeForPlan(1920, 1080, "crop=1920:820:0:130");
+
+        Assert.Equal(1920, frameSize.Width);
+        Assert.Equal(820, frameSize.Height);
+    }
+
+    [Fact]
+    public void PlanStrategy_CroppedSourceNeedsFewerPartsThanUncroppedSource()
+    {
+        EncodeSettings settings = new();
+
+        EncodePlanner.EncodePlan uncroppedPlan = EncodePlanner.PlanStrategy(150, 1920, 1080, 60, settings);
+        EncodePlanner.EncodePlan croppedPlan = EncodePlanner.PlanStrategy(150, 1920, 820, 60, settings);
+
+        Assert.True(uncroppedPlan.Parts > croppedPlan.Parts);
+        Assert.Equal("820p, 2 parts", croppedPlan.ResolutionLabel);
     }
 }

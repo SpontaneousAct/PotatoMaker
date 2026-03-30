@@ -34,6 +34,7 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal("1920x1080", workspace.VideoSummary.Resolution);
             Assert.Equal("0:00.0", workspace.VideoSummary.SelectedStart);
             Assert.Equal("1:35.0", workspace.VideoSummary.SelectedEnd);
+            Assert.DoesNotContain(workspace.VideoSummary.CropOptions, option => option.Id == "16:9");
             Assert.Equal("0:00.0 - 1:35.0", workspace.VideoSummary.SelectedRange);
             Assert.Equal("1:35.0", workspace.VideoSummary.SelectedDuration);
             Assert.Equal("59.94 fps", workspace.VideoSummary.StrategyOutputFrameRate);
@@ -203,6 +204,18 @@ public sealed class EncodeWorkspaceViewModelTests
         {
             File.Delete(inputPath);
         }
+    }
+
+    [Fact]
+    public void VideoSummary_HidesUltrawideCropOption_ForNear21By9Source()
+    {
+        var summary = new VideoSummaryViewModel();
+
+        summary.SetProbeResult(
+            Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4"),
+            new VideoInfo(TimeSpan.FromSeconds(60), 1920, 800, 24));
+
+        Assert.DoesNotContain(summary.CropOptions, option => option.Id == "21:9");
     }
 
     [Fact]

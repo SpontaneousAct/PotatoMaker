@@ -8,6 +8,12 @@ namespace PotatoMaker.Core;
 public static class EncodePlanner
 {
     internal const string InvalidDurationMessage = "The selected clip has no duration. Choose a valid source video or a longer clip.";
+    private const int FullHdWidth = 1920;
+    private const int FullHdHeight = 1080;
+    private const int HdWidth = 1280;
+    private const int HdHeight = 720;
+
+    public readonly record struct VideoFrameSize(int Width, int Height);
 
     /// <summary>
     /// Describes the chosen encode plan.
@@ -20,48 +26,49 @@ public static class EncodePlanner
         bool IsBitrateCappedToSource = false,
         int? SourceVideoBitrateKbps = null);
 
-    public static int ResolveSourceHeightForPlan(int originalHeight, string? cropFilter)
+    public static VideoFrameSize ResolveSourceFrameSizeForPlan(int originalWidth, int originalHeight, string? cropFilter)
     {
-        if (originalHeight <= 0 || string.IsNullOrWhiteSpace(cropFilter))
-            return originalHeight;
+        if (originalWidth <= 0 || originalHeight <= 0 || string.IsNullOrWhiteSpace(cropFilter))
+            return new VideoFrameSize(originalWidth, originalHeight);
 
         string filter = cropFilter.Trim();
         if (!filter.StartsWith("crop=", StringComparison.OrdinalIgnoreCase))
-            return originalHeight;
+            return new VideoFrameSize(originalWidth, originalHeight);
 
         string[] segments = filter["crop=".Length..].Split(':');
         if (segments.Length != 4)
-            return originalHeight;
+            return new VideoFrameSize(originalWidth, originalHeight);
 
-        return int.TryParse(segments[1], out int cropHeight) && cropHeight > 0
-            ? Math.Min(cropHeight, originalHeight)
-            : originalHeight;
+        if (!int.TryParse(segments[0], out int cropWidth) ||
+            !int.TryParse(segments[1], out int cropHeight) ||
+            cropWidth <= 0 ||
+            cropHeight <= 0)
+        {
+            return new VideoFrameSize(originalWidth, originalHeight);
+        }
+
+        return new VideoFrameSize(
+            Math.Min(cropWidth, originalWidth),
+            Math.Min(cropHeight, originalHeight));
     }
 
-    public static EncodePlan PlanStrategy(double durationSecs, int origHeight, double sourceFrameRate, EncodeSettings settings)
+    public static EncodePlan PlanStrategy(double durationSecs, int sourceWidth, int sourceHeight, double sourceFrameRate, EncodeSettings settings)
     {
         ValidateDuration(durationSecs);
         int bitrate = CalculateVideoBitrate(durationSecs, settings);
         double effectiveBitrate = CalculateEffectiveBitrateForPlanning(bitrate, sourceFrameRate, settings);
+        VideoFrameSize sourceFrameSize = NormalizeSourceFrameSize(sourceWidth, sourceHeight);
+        PlannedResolution highResolution = BuildResolutionPlan(sourceFrameSize, FullHdHeight, settings.FullHdFloorKbps, "1080p");
+        PlannedResolution mediumResolution = BuildResolutionPlan(sourceFrameSize, HdHeight, settings.HdFloorKbps, "720p");
 
-        if (effectiveBitrate >= settings.FullHdFloorKbps)
-        {
-            string label = origHeight <= 1080
-                ? $"{origHeight}p (original)"
-                : "1080p (downscaled)";
-            return new EncodePlan(bitrate, 1, ScaleFilter(1080), label);
-        }
+        if (effectiveBitrate >= highResolution.RequiredBitrateKbps)
+            return new EncodePlan(bitrate, 1, highResolution.ScaleFilter, highResolution.Label);
 
-        if (effectiveBitrate >= settings.HdFloorKbps)
-        {
-            string label = origHeight <= 720
-                ? $"{origHeight}p (original)"
-                : "720p (downscaled)";
-            return new EncodePlan(bitrate, 1, ScaleFilter(720), label);
-        }
+        if (effectiveBitrate >= mediumResolution.RequiredBitrateKbps)
+            return new EncodePlan(bitrate, 1, mediumResolution.ScaleFilter, mediumResolution.Label);
 
         int parts = 1;
-        while (effectiveBitrate < settings.FullHdFloorKbps && parts < settings.MaxParts)
+        while (effectiveBitrate < highResolution.RequiredBitrateKbps && parts < settings.MaxParts)
         {
             parts++;
             bitrate = CalculateVideoBitrate(durationSecs / parts, settings);
@@ -69,12 +76,8 @@ public static class EncodePlanner
         }
 
         bitrate = Math.Max(1, bitrate);
-
-        string splitLabel = origHeight <= 1080
-            ? $"{Math.Min(origHeight, 1080)}p, {parts} parts"
-            : $"1080p (downscaled), {parts} parts";
-
-        return new EncodePlan(bitrate, parts, ScaleFilter(1080), splitLabel);
+        string splitLabel = $"{highResolution.Label.Replace(" (original)", string.Empty, StringComparison.Ordinal).Replace(" (downscaled)", string.Empty, StringComparison.Ordinal)}, {parts} parts";
+        return new EncodePlan(bitrate, parts, highResolution.ScaleFilter, splitLabel);
     }
 
     public static EncodePlan ApplySourceVideoBitrateCap(EncodePlan plan, int? sourceVideoBitrateKbps)
@@ -202,6 +205,51 @@ public static class EncodePlanner
     private static int? NormalizeSourceVideoBitrate(int? sourceVideoBitrateKbps) =>
         sourceVideoBitrateKbps is > 0 ? sourceVideoBitrateKbps : null;
 
+    private static VideoFrameSize NormalizeSourceFrameSize(int sourceWidth, int sourceHeight) =>
+        new(
+            Math.Max(1, sourceWidth),
+            Math.Max(1, sourceHeight));
+
+    private static PlannedResolution BuildResolutionPlan(
+        VideoFrameSize sourceFrameSize,
+        int maxHeight,
+        int baseRequiredBitrateKbps,
+        string downscaledLabel)
+    {
+        bool usesOriginalResolution = sourceFrameSize.Height <= maxHeight;
+        VideoFrameSize outputFrameSize = usesOriginalResolution
+            ? sourceFrameSize
+            : ScaleFrameSize(sourceFrameSize, maxHeight);
+        int referencePixelCount = maxHeight switch
+        {
+            FullHdHeight => FullHdWidth * FullHdHeight,
+            HdHeight => HdWidth * HdHeight,
+            _ => maxHeight * maxHeight
+        };
+        int outputPixelCount = Math.Max(1, outputFrameSize.Width * outputFrameSize.Height);
+        int requiredBitrateKbps = Math.Max(
+            1,
+            (int)Math.Ceiling(baseRequiredBitrateKbps * (outputPixelCount / (double)referencePixelCount)));
+        string label = usesOriginalResolution
+            ? $"{outputFrameSize.Height}p (original)"
+            : $"{downscaledLabel} (downscaled)";
+        string? scaleFilter = usesOriginalResolution ? null : ScaleFilter(maxHeight);
+        return new PlannedResolution(requiredBitrateKbps, scaleFilter, label);
+    }
+
+    private static VideoFrameSize ScaleFrameSize(VideoFrameSize sourceFrameSize, int targetHeight)
+    {
+        if (sourceFrameSize.Height <= targetHeight)
+            return sourceFrameSize;
+
+        int scaledWidth = (int)Math.Round(sourceFrameSize.Width * (targetHeight / (double)sourceFrameSize.Height), MidpointRounding.AwayFromZero);
+        scaledWidth = Math.Max(2, scaledWidth);
+        if (scaledWidth % 2 != 0)
+            scaledWidth--;
+
+        return new VideoFrameSize(scaledWidth, targetHeight);
+    }
+
     private static int NormalizeCropDimension(int cropSize, int maxSize)
     {
         cropSize = Math.Clamp(cropSize, 1, maxSize);
@@ -226,4 +274,9 @@ public static class EncodePlanner
 
     // -2 preserves aspect ratio and keeps the width even for AV1 encoders.
     private static string ScaleFilter(int maxHeight) => $"scale=-2:min(ih\\,{maxHeight})";
+
+    private sealed record PlannedResolution(
+        int RequiredBitrateKbps,
+        string? ScaleFilter,
+        string Label);
 }
