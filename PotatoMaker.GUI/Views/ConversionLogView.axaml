@@ -21,7 +21,6 @@
             <Grid
                   ColumnDefinitions="*">
                 <TextBlock Text="{Binding StatusText}"
-                           FontFamily="Bahnschrift,Segoe UI Semibold"
                            FontSize="22"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"
@@ -38,7 +37,6 @@
                 <TextBlock
                            Text="{Binding ProgressText}"
                            IsVisible="{Binding ShowProgress}"
-                           FontFamily="Bahnschrift,Segoe UI Semibold"
                            FontSize="20"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Right"

@@ -260,7 +260,6 @@
         </Style>
 
         <Style Selector="TextBlock.pm-heading">
-            <Setter Property="FontFamily" Value="Bahnschrift,Segoe UI Semibold"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="20"/>
             <Setter Property="Foreground" Value="{DynamicResource PmHeadingForeground}"/>
