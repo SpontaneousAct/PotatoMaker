@@ -103,6 +103,9 @@
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FFCAD4E1</SolidColorBrush>
                     <SolidColorBrush x:Key="PmFieldBackground">#FFF8FAFD</SolidColorBrush>
                     <SolidColorBrush x:Key="PmFieldBorderBrush">#FFC7D2E0</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldDisabledBackground">#FFC3CCD9</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldDisabledBorderBrush">#FF97A5B8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldDisabledForeground">#FF4E5C70</SolidColorBrush>
                     <SolidColorBrush x:Key="PmFieldPointerOverBorderBrush">#FF3A86EA</SolidColorBrush>
                     <SolidColorBrush x:Key="PmSliderThumbBackground">#FF176FE5</SolidColorBrush>
                     <SolidColorBrush x:Key="PmSliderThumbPointerOverBackground">#FF267BEF</SolidColorBrush>
@@ -192,6 +195,9 @@
                     <SolidColorBrush x:Key="PmInsetBorderBrush">#FF312C27</SolidColorBrush>
                     <SolidColorBrush x:Key="PmFieldBackground">#FF1D1B19</SolidColorBrush>
                     <SolidColorBrush x:Key="PmFieldBorderBrush">#FF4B4136</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldDisabledBackground">#FF0D0C0A</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldDisabledBorderBrush">#FF2C2823</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldDisabledForeground">#FF7B7267</SolidColorBrush>
                     <SolidColorBrush x:Key="PmFieldPointerOverBorderBrush">#FFB87E47</SolidColorBrush>
                     <SolidColorBrush x:Key="PmSliderThumbBackground">#FF8F5F31</SolidColorBrush>
                     <SolidColorBrush x:Key="PmSliderThumbPointerOverBackground">#FFA06D3A</SolidColorBrush>
@@ -409,6 +415,13 @@
 
         <Style Selector="ComboBox:pointerover, ComboBox:focus-visible">
             <Setter Property="BorderBrush" Value="{DynamicResource PmFieldPointerOverBorderBrush}"/>
+        </Style>
+
+        <Style Selector="ComboBox:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmFieldDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldDisabledBorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmFieldDisabledForeground}"/>
+            <Setter Property="Opacity" Value="1"/>
         </Style>
 
         <Style Selector="Border.pm-control-cluster">

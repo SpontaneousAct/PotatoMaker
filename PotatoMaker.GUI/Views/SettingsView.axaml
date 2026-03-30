@@ -99,24 +99,6 @@
                           ColumnDefinitions="*,220"
                           ColumnSpacing="16">
                         <StackPanel Spacing="2">
-                            <TextBlock Text="Encoded frame rate"
-                                       Classes="pm-settings-label"/>
-                            <TextBlock Text="Set the output to 30 FPS, 60 FPS, or keep the source frame rate."
-                                       Classes="pm-caption"
-                                       TextWrapping="Wrap"/>
-                        </StackPanel>
-
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding OutputSettings.FrameRateOptions}"
-                                  SelectedItem="{Binding OutputSettings.SelectedFrameRateOption}"
-                                  HorizontalAlignment="Stretch"
-                                  VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <Grid Classes="pm-settings-row"
-                          ColumnDefinitions="*,220"
-                          ColumnSpacing="16">
-                        <StackPanel Spacing="2">
                             <TextBlock Text="CPU preset"
                                        Classes="pm-settings-label"/>
                             <TextBlock Text="Adjust CPU encode speed."

@@ -34,11 +34,12 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal("1920x1080", workspace.VideoSummary.Resolution);
             Assert.Equal("0:00.0", workspace.VideoSummary.SelectedStart);
             Assert.Equal("1:35.0", workspace.VideoSummary.SelectedEnd);
-            Assert.DoesNotContain(workspace.VideoSummary.CropOptions, option => option.Id == "16:9");
+            Assert.Contains(workspace.VideoSummary.CropOptions, option => option.Id == "16:9");
+            Assert.Contains(workspace.VideoSummary.CropOptions, option => option.Id == "32:9");
             Assert.Equal("0:00.0 - 1:35.0", workspace.VideoSummary.SelectedRange);
             Assert.Equal("1:35.0", workspace.VideoSummary.SelectedDuration);
             Assert.Equal("59.94 fps", workspace.VideoSummary.StrategyOutputFrameRate);
-            Assert.Equal("Auto (crop=1920:800:0:140)", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal("Auto", workspace.VideoSummary.StrategyCrop);
             Assert.Equal("crop=1920:800:0:140,scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
             Assert.Equal("Ready", workspace.ConversionLog.StatusText);
         }
@@ -160,7 +161,7 @@ public sealed class EncodeWorkspaceViewModelTests
             await analysisService.WaitForStrategyCountAsync(1);
 
             Assert.True(workspace.VideoSummary.HasStrategy);
-            Assert.Equal("Auto (crop=1920:800:0:140)", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal("Auto", workspace.VideoSummary.StrategyCrop);
             Assert.Equal(TimeSpan.FromSeconds(15), analysisService.LastRequestedClipRange?.Start);
             Assert.Equal(TimeSpan.FromSeconds(45), analysisService.LastRequestedClipRange?.End);
             Assert.Equal(1, analysisService.DetectCropCallCount);
@@ -197,8 +198,73 @@ public sealed class EncodeWorkspaceViewModelTests
             await analysisService.WaitForStrategyCountAsync(2);
 
             Assert.Equal("crop=1920:820:0:130", workspace.VideoSummary.StrategyAnalysis!.CropFilter);
-            Assert.Equal("21:9 (crop=1920:820:0:130)", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal("21:9", workspace.VideoSummary.StrategyCrop);
             Assert.Equal("crop=1920:820:0:130,scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task ChangingCropMode_To32By9_RebuildsStrategyWithExpectedCropFilter()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            workspace.VideoSummary.SelectedCropOption = workspace.VideoSummary.CropOptions.Single(option => option.Id == "32:9");
+
+            await analysisService.WaitForStrategyCountAsync(2);
+
+            Assert.Equal("crop=1920:540:0:270", workspace.VideoSummary.StrategyAnalysis!.CropFilter);
+            Assert.Equal("32:9", workspace.VideoSummary.StrategyCrop);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task ChangingCropMode_ToSourceAspectRatio_RebuildsStrategyWithoutCropFilter()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            workspace.VideoSummary.SelectedCropOption = workspace.VideoSummary.CropOptions.Single(option => option.Id == "16:9");
+
+            await analysisService.WaitForStrategyCountAsync(2);
+
+            Assert.Null(workspace.VideoSummary.StrategyAnalysis!.CropFilter);
+            Assert.Equal("16:9", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal("scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
         }
         finally
         {
@@ -216,6 +282,86 @@ public sealed class EncodeWorkspaceViewModelTests
             new VideoInfo(TimeSpan.FromSeconds(60), 1920, 800, 24));
 
         Assert.DoesNotContain(summary.CropOptions, option => option.Id == "21:9");
+    }
+
+    [Fact]
+    public void VideoSummary_ShowsSourceAspectRatioCropOption_ForMatchingSourceAspectRatio()
+    {
+        var summary = new VideoSummaryViewModel();
+
+        summary.SetProbeResult(
+            Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4"),
+            new VideoInfo(TimeSpan.FromSeconds(60), 1920, 1080, 24));
+
+        Assert.Contains(summary.CropOptions, option => option.Id == "16:9");
+        Assert.Contains(summary.CropOptions, option => option.Id == "32:9");
+    }
+
+    [Fact]
+    public void VideoSummary_StartsWithEmptyDisabledDropdowns()
+    {
+        var summary = new VideoSummaryViewModel();
+
+        Assert.Empty(summary.CropOptions);
+        Assert.Empty(summary.FrameRateOptions);
+        Assert.False(summary.CanSelectCropMode);
+        Assert.False(summary.CanSelectFrameRate);
+        Assert.Null(summary.SelectedCropOption);
+        Assert.Null(summary.SelectedFrameRateOption);
+    }
+
+    [Fact]
+    public void VideoSummary_ShowsSourceFrameRateOption_ForMatchingSourceFrameRate()
+    {
+        var outputSettings = new OutputSettingsViewModel();
+        var summary = new VideoSummaryViewModel(outputSettings);
+
+        outputSettings.SetFrameRateMode(EncodeFrameRateMode.Fps60);
+        summary.SetProbeResult(
+            Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4"),
+            new VideoInfo(TimeSpan.FromSeconds(60), 1920, 1080, 60));
+
+        EncodeFrameRateMode[] modes = summary.FrameRateOptions.Select(option => option.Value).ToArray();
+
+        Assert.Equal([EncodeFrameRateMode.Fps30, EncodeFrameRateMode.Original], modes);
+        Assert.Equal(EncodeFrameRateMode.Original, summary.SelectedFrameRateOption?.Value);
+        Assert.Equal("60 FPS", summary.SelectedFrameRateOption?.Label);
+        Assert.Equal(EncodeFrameRateMode.Fps60, outputSettings.FrameRateMode);
+    }
+
+    [Fact]
+    public void VideoSummary_HidesNoOpHigherFrameRateOptions_ForNonIntegerSourceFrameRate()
+    {
+        var outputSettings = new OutputSettingsViewModel();
+        var summary = new VideoSummaryViewModel(outputSettings);
+
+        outputSettings.SetFrameRateMode(EncodeFrameRateMode.Fps60);
+        summary.SetProbeResult(
+            Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4"),
+            new VideoInfo(TimeSpan.FromSeconds(60), 1920, 1080, 59.94));
+
+        EncodeFrameRateMode[] modes = summary.FrameRateOptions.Select(option => option.Value).ToArray();
+
+        Assert.Equal(
+        [
+            EncodeFrameRateMode.Fps30,
+            EncodeFrameRateMode.Original
+        ], modes);
+        Assert.Equal(EncodeFrameRateMode.Original, summary.SelectedFrameRateOption?.Value);
+        Assert.Equal("59.94 FPS", summary.SelectedFrameRateOption?.Label);
+    }
+
+    [Fact]
+    public void VideoSummary_UsesSharedOutputSettingsInstance()
+    {
+        var workspace = new EncodeWorkspaceViewModel(
+            new RecordingAnalysisService(),
+            new NoOpEncodingService(),
+            new StaticEncoderCapabilityService(),
+            null,
+            initializeEncoderSupport: false);
+
+        Assert.Same(workspace.OutputSettings, workspace.VideoSummary.OutputSettings);
     }
 
     [Fact]
@@ -782,6 +928,48 @@ public sealed class EncodeWorkspaceViewModelTests
         Assert.Equal("_mobile", workspace.OutputSettings.OutputNameSuffix);
         Assert.Equal(initialFrameRateMode, workspace.OutputSettings.FrameRateMode);
         Assert.Equal("C:\\encoded", workspace.OutputSettings.CustomOutputFolder);
+    }
+
+    [Fact]
+    public async Task LoadingFile_DefaultsFrameRateModeToSourceFpsWithoutPersistingSetting()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings
+            {
+                Theme = AppTheme.Light,
+                UseNvencEncoder = false,
+                OutputNamePrefix = "clip_",
+                OutputNameSuffix = "_mobile",
+                FrameRateMode = EncodeFrameRateMode.Fps30,
+                PreviewVolumePercent = 100,
+                SvtAv1Preset = 6
+            });
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                settingsCoordinator,
+                initializeEncoderSupport: false);
+
+            Assert.Equal(EncodeFrameRateMode.Fps30, workspace.OutputSettings.FrameRateMode);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            Assert.Equal(EncodeFrameRateMode.Original, workspace.OutputSettings.FrameRateMode);
+            Assert.Equal(EncodeFrameRateMode.Original, analysisService.LastRequestedSettings?.FrameRateMode);
+            Assert.Equal(EncodeFrameRateMode.Fps30, settingsCoordinator.Current.FrameRateMode);
+            Assert.Equal("59.94 FPS", workspace.VideoSummary.SelectedFrameRateOption?.Label);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
     }
 
     [Fact]

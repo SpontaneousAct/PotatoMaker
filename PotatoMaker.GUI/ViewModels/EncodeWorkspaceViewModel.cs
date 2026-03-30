@@ -156,6 +156,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         _executionCoordinator = executionCoordinator ?? new EncodeExecutionCoordinator();
         _initializeEncoderSupport = initializeEncoderSupport;
         _cancelledStatusDuration = cancelledStatusDuration ?? TimeSpan.FromSeconds(5);
+        OutputSettings = new OutputSettingsViewModel();
+        VideoSummary = new VideoSummaryViewModel(OutputSettings);
 
         FileInput.FileSelected += OnFileSelected;
         FileInput.FileCleared += OnFileCleared;
@@ -182,13 +184,13 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
     public FileInputViewModel FileInput { get; } = new();
 
-    public VideoSummaryViewModel VideoSummary { get; } = new();
+    public VideoSummaryViewModel VideoSummary { get; }
 
     public VideoPlayerViewModel VideoPlayer { get; }
 
     public ClipRangeViewModel ClipRange { get; } = new();
 
-    public OutputSettingsViewModel OutputSettings { get; } = new();
+    public OutputSettingsViewModel OutputSettings { get; }
 
     public ConversionLogViewModel ConversionLog { get; } = new();
 
@@ -370,6 +372,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         try
         {
             OutputSettings.SetSourceFolder(Path.GetDirectoryName(Path.GetFullPath(path)));
+            ResetFrameRateModeToSourceDefault();
 
             _detectedCropFilter = null;
             _isCropDetectionPending = false;
@@ -601,7 +604,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
     private string? GetEffectiveCropFilter(VideoInfo info)
     {
-        CropModeOption cropMode = VideoSummary.SelectedCropOption ?? VideoSummary.CropOptions[0];
+        CropModeOption cropMode = VideoSummary.SelectedCropOption ?? new CropModeOption("auto", "Auto");
         return cropMode.IsAuto
             ? _detectedCropFilter
             : EncodePlanner.BuildCenteredCropFilterForAspectRatio(
@@ -629,6 +632,20 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         finally
         {
             _isApplyingSettings = false;
+        }
+    }
+
+    private void ResetFrameRateModeToSourceDefault()
+    {
+        bool wasApplyingSettings = _isApplyingSettings;
+        _isApplyingSettings = true;
+        try
+        {
+            OutputSettings.SetFrameRateMode(EncodeFrameRateMode.Original);
+        }
+        finally
+        {
+            _isApplyingSettings = wasApplyingSettings;
         }
     }
 
