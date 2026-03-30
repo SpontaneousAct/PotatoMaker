@@ -166,15 +166,28 @@
                                             IsVisible="{Binding HasPrimaryAction}"
                                             ToolTip.Tip="{Binding PrimaryActionToolTip}"
                                             Command="{Binding PrimaryActionCommand}">
-                                        <TextBlock Text="{Binding PrimaryActionIconGlyph}"
-                                                   Classes="pm-queue-action-icon"/>
+                                        <Grid Width="14"
+                                              Height="14">
+                                            <Path Classes="pm-control-icon"
+                                                  Data="{StaticResource PmIconDismissGeometry}"
+                                                  IsVisible="{Binding CanCancel}"/>
+                                            <Path Classes="pm-control-icon"
+                                                  Data="{StaticResource PmIconArrowCounterclockwiseGeometry}"
+                                                  IsVisible="{Binding CanRestart}"/>
+                                        </Grid>
                                     </Button>
                                     <Button Grid.Column="1"
                                             Classes="pm-queue-action"
                                             ToolTip.Tip="Remove from queue"
                                             Command="{Binding RemoveCommand}">
-                                        <TextBlock Text="&#xE711;"
-                                                   Classes="pm-queue-action-icon"/>
+                                        <Viewbox Width="14"
+                                                 Height="14"
+                                                 Stretch="Uniform"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center">
+                                            <Path Classes="pm-control-icon"
+                                                  Data="{StaticResource PmIconDismissGeometry}"/>
+                                        </Viewbox>
                                     </Button>
                                 </Grid>
                             </Grid>

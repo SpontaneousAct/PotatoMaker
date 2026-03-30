@@ -34,8 +34,11 @@
                                 Classes.pm-nav-active="{Binding IsMainViewSelected}"
                                 Command="{Binding ShowMainViewCommand}"
                                 ToolTip.Tip="Main">
-                            <TextBlock Text="&#xE80F;"
-                                       Classes="pm-nav-icon"/>
+                            <Grid Classes="pm-nav-icon"
+                                  Margin="0,-1,0,0">
+                                <Path Classes="pm-nav-icon-fill"
+                                      Data="{StaticResource PmIconHomeGeometry}"/>
+                            </Grid>
                         </Button>
 
                         <Button x:Name="RecentVideosButton"
@@ -43,8 +46,10 @@
                                 Classes.pm-nav-active="{Binding IsRecentVideosPanelOpen}"
                                 Command="{Binding ToggleRecentVideosPanelCommand}"
                                 ToolTip.Tip="Recent videos">
-                            <TextBlock Text="&#xE714;"
-                                       Classes="pm-nav-icon"/>
+                            <Grid Classes="pm-nav-icon">
+                                <Path Classes="pm-nav-icon-fill"
+                                      Data="{StaticResource PmIconHistoryGeometry}"/>
+                            </Grid>
                         </Button>
 
                         <Button Classes="pm-nav-button"
@@ -53,8 +58,11 @@
                                 ToolTip.Tip="Queue">
                             <Grid Width="46"
                                   Height="46">
-                                <TextBlock Text="&#xE8FD;"
-                                           Classes="pm-nav-icon"/>
+                                <Grid Classes="pm-nav-icon"
+                                      Margin="0,1,0,0">
+                                    <Path Classes="pm-nav-icon-fill"
+                                          Data="{StaticResource PmIconQueueGeometry}"/>
+                                </Grid>
                                 <Border Classes="pm-nav-count-badge"
                                         IsVisible="{Binding IsQueueBadgeVisible}"
                                         HorizontalAlignment="Right"
@@ -72,8 +80,10 @@
                                 ToolTip.Tip="Settings">
                             <Grid Width="46"
                                   Height="46">
-                                <TextBlock Text="&#xE713;"
-                                           Classes="pm-nav-icon"/>
+                                <Grid Classes="pm-nav-icon">
+                                    <Path Classes="pm-nav-icon-fill"
+                                          Data="{StaticResource PmIconSettingsGeometry}"/>
+                                </Grid>
                                 <Border Classes="pm-update-dot"
                                         IsVisible="{Binding IsUpdateBadgeVisible}"
                                         HorizontalAlignment="Right"
@@ -86,8 +96,10 @@
                                 Classes.pm-nav-active="{Binding IsHelpViewSelected}"
                                 Command="{Binding ShowHelpViewCommand}"
                                 ToolTip.Tip="Help">
-                            <TextBlock Text="&#xE897;"
-                                       Classes="pm-nav-icon"/>
+                            <Grid Classes="pm-nav-icon">
+                                <Path Classes="pm-nav-icon-fill"
+                                      Data="{StaticResource PmIconHelpGeometry}"/>
+                            </Grid>
                         </Button>
                     </StackPanel>
 
@@ -171,9 +183,11 @@
                                                 <Image Source="{Binding Thumbnail}"
                                                        Classes="pm-recent-thumbnail-image"
                                                        IsVisible="{Binding HasThumbnail}"/>
-                                                <TextBlock Text="&#xE714;"
-                                                           Classes="pm-recent-thumbnail-placeholder"
-                                                           IsVisible="{Binding IsThumbnailMissing}"/>
+                                                <Viewbox Classes="pm-recent-thumbnail-placeholder"
+                                                         IsVisible="{Binding IsThumbnailMissing}">
+                                                    <Path Classes="pm-recent-thumbnail-placeholder"
+                                                          Data="{StaticResource PmIconVideoGeometry}"/>
+                                                </Viewbox>
                                             </Grid>
                                         </Border>
 

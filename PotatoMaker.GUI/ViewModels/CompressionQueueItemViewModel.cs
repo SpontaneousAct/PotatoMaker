@@ -11,8 +11,6 @@ namespace PotatoMaker.GUI.ViewModels;
 public partial class CompressionQueueItemViewModel : ViewModelBase
 {
     private const string WaitingInQueueText = "Ready";
-    private const string CancelGlyph = "\uE71A";
-    private const string RestartGlyph = "\uE768";
     private CancellationTokenSource? _encodeCts;
     private Action<CompressionQueueItemViewModel>? _cancelAction;
     private Func<CompressionQueueItemViewModel, Task>? _restartAction;
@@ -104,12 +102,6 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
 
     public bool HasPrimaryAction => CanCancel || CanRestart;
 
-    public string PrimaryActionIconGlyph => CanCancel
-        ? CancelGlyph
-        : CanRestart
-            ? RestartGlyph
-            : string.Empty;
-
     public string PrimaryActionToolTip => CanCancel
         ? "Cancel encode"
         : CanRestart
@@ -134,7 +126,6 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CanRestart))]
     [NotifyPropertyChangedFor(nameof(CanRemove))]
     [NotifyPropertyChangedFor(nameof(HasPrimaryAction))]
-    [NotifyPropertyChangedFor(nameof(PrimaryActionIconGlyph))]
     [NotifyPropertyChangedFor(nameof(PrimaryActionToolTip))]
     [NotifyPropertyChangedFor(nameof(PersistsAcrossSessions))]
     private CompressionQueueItemStatus _status;

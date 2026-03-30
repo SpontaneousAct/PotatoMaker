@@ -60,7 +60,6 @@
                 </StackPanel>
 
                 <Button Grid.Column="4"
-                        Content="X"
                         Command="{Binding FileInput.ClearFileCommand}"
                         IsVisible="{Binding FileInput.HasFile}"
                         Width="28"
@@ -71,7 +70,20 @@
                         FontWeight="Bold"
                         HorizontalContentAlignment="Center"
                         VerticalContentAlignment="Center"
-                        ToolTip.Tip="Remove selected file"/>
+                        ToolTip.Tip="Remove selected file">
+                    <Grid Width="12"
+                          Height="12"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center">
+                        <Path Data="{StaticResource PmIconDismissGeometry}"
+                              Width="12"
+                              Height="12"
+                              Stretch="Uniform"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              Fill="{DynamicResource PmSectionTitleForeground}"/>
+                    </Grid>
+                </Button>
             </Grid>
 
             <TextBlock Grid.Row="1"
@@ -254,7 +266,7 @@
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center">
                                 <Path Classes="pm-control-icon"
-                                      Data="M2.998 3.5c0-0.276 0.224-0.5 0.5-0.5s0.5 0.224 0.5 0.5v2.206c0.913-1.034 2.084-1.822 3.406-2.275 1.837-0.629 3.839-0.568 5.634 0.17 1.794 0.74 3.26 2.106 4.121 3.845 0.123 0.247 0.022 0.547-0.226 0.67-0.247 0.122-0.547 0.021-0.67-0.226-0.754-1.522-2.036-2.717-3.606-3.363-1.57-0.647-3.322-0.7-4.929-0.15C6.315 4.861 5.1 5.782 4.252 7h3.246c0.276 0 0.5 0.224 0.5 0.5S7.774 8 7.498 8h-4c-0.276 0-0.5-0.224-0.5-0.5v-4zM8 10.5c0-0.184-0.101-0.354-0.264-0.44-0.163-0.088-0.36-0.078-0.513 0.024l-1.5 1c-0.23 0.153-0.292 0.464-0.139 0.693 0.153 0.23 0.464 0.292 0.693 0.139L7 11.434V16.5C7 16.776 7.224 17 7.5 17S8 16.776 8 16.5v-6zm4.503-0.5c-0.935 0-1.597 0.437-1.996 1.13-0.376 0.653-0.504 1.507-0.504 2.37 0 0.863 0.128 1.717 0.504 2.37 0.399 0.693 1.061 1.13 1.996 1.13s1.597-0.437 1.996-1.13c0.376-0.653 0.504-1.507 0.504-2.37 0-0.863-0.128-1.717-0.504-2.37C14.1 10.436 13.438 10 12.503 10zm-1.5 3.5c0-0.793 0.122-1.44 0.37-1.872C11.6 11.235 11.939 11 12.504 11s0.903 0.235 1.13 0.628c0.248 0.432 0.37 1.079 0.37 1.872 0 0.793-0.122 1.44-0.37 1.872C13.405 15.765 13.067 16 12.502 16s-0.903-0.235-1.13-0.628c-0.248-0.432-0.37-1.079-0.37-1.872z"/>
+                                      Data="{StaticResource PmIconSkipBack10Geometry}"/>
                             </Viewbox>
                         </Button>
 
@@ -266,18 +278,10 @@
                                   Height="14"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center">
-                                <TextBlock Classes="pm-control-symbol pm-icon-play-glyph"
-                                           FontSize="12"
-                                           Text="&#xE768;"
-                                           Width="14"
-                                           Height="14"
-                                           LineHeight="14"/>
-                                <TextBlock Classes="pm-control-symbol pm-icon-pause-glyph"
-                                           FontSize="12"
-                                           Text="&#xE769;"
-                                           Width="14"
-                                           Height="14"
-                                           LineHeight="14"/>
+                                <Path Classes="pm-control-icon pm-icon-play"
+                                      Data="{StaticResource PmIconPlayGeometry}"/>
+                                <Path Classes="pm-control-icon pm-icon-pause"
+                                      Data="{StaticResource PmIconPauseGeometry}"/>
                             </Grid>
                         </Button>
 
@@ -290,7 +294,7 @@
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center">
                                 <Path Classes="pm-control-icon"
-                                      Data="M 1 1 H 9 V 9 H 1 Z"/>
+                                      Data="{StaticResource PmIconStopGeometry}"/>
                             </Viewbox>
                         </Button>
 
@@ -303,7 +307,7 @@
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center">
                                 <Path Classes="pm-control-icon"
-                                      Data="M16.999 3.5c0-0.276-0.224-0.5-0.5-0.5s-0.5 0.224-0.5 0.5v2.202c-0.912-1.032-2.082-1.819-3.403-2.27-1.836-0.63-3.838-0.569-5.633 0.17C5.168 4.34 3.703 5.707 2.84 7.446c-0.122 0.246-0.02 0.546 0.227 0.67 0.248 0.122 0.547 0.021 0.67-0.226 0.754-1.522 2.036-2.717 3.606-3.363 1.57-0.647 3.322-0.7 4.93-0.15C13.684 4.861 14.9 5.782 15.748 7h-3.25c-0.276 0-0.5 0.224-0.5 0.5s0.224 0.5 0.5 0.5h4c0.276 0 0.5-0.224 0.5-0.5v-4zm-6.493 7.63c0.399-0.693 1.061-1.13 1.996-1.13s1.597 0.437 1.996 1.13c0.376 0.653 0.504 1.507 0.504 2.37 0 0.863-0.128 1.717-0.504 2.37-0.399 0.693-1.061 1.13-1.996 1.13s-1.597-0.437-1.996-1.13c-0.376-0.653-0.504-1.507-0.504-2.37 0-0.863 0.128-1.717 0.504-2.37zm0.867 0.498c-0.249 0.432-0.371 1.079-0.371 1.872 0 0.793 0.122 1.44 0.37 1.872C11.6 15.765 11.938 16 12.503 16s0.903-0.235 1.13-0.628c0.248-0.432 0.37-1.079 0.37-1.872 0-0.793-0.122-1.44-0.37-1.872C13.404 11.235 13.066 11 12.501 11s-0.903 0.235-1.13 0.628zM7.999 10.5c0-0.184-0.101-0.354-0.264-0.44-0.163-0.088-0.36-0.078-0.513 0.024l-1.5 1c-0.23 0.153-0.292 0.464-0.139 0.693 0.153 0.23 0.464 0.292 0.693 0.139L7 11.434V16.5C7 16.776 7.223 17 7.5 17S8 16.776 8 16.5v-6z"/>
+                                      Data="{StaticResource PmIconSkipForward10Geometry}"/>
                             </Viewbox>
                         </Button>
 
@@ -333,31 +337,10 @@
                                      VerticalAlignment="Center">
                                 <Grid Width="14"
                                       Height="12">
-                                    <Grid Classes="pm-icon-unmuted"
-                                          Width="14"
-                                          Height="12"
-                                          ColumnDefinitions="9,5">
-                                        <Path Classes="pm-control-icon"
-                                              Grid.Column="0"
-                                              Data="M 1 4.5 H 4.25 L 7.5 2 V 10 L 4.25 7.5 H 1 Z"/>
-                                    </Grid>
-                                    <Grid Classes="pm-icon-muted"
-                                          Width="14"
-                                          Height="12"
-                                          ColumnDefinitions="9,5">
-                                        <Path Classes="pm-control-icon"
-                                              Grid.Column="0"
-                                              Data="M 1 4.5 H 4.25 L 7.5 2 V 10 L 4.25 7.5 H 1 Z"/>
-                                        <Path Grid.Column="1"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Margin="0,-0.6,0,0"
-                                              Data="M 1.5 3.2 L 4.3 6 M 4.3 3.2 L 1.5 6"
-                                              Stroke="{DynamicResource PmSectionTitleForeground}"
-                                              StrokeThickness="1.1"
-                                              StrokeLineCap="Round"
-                                              Fill="Transparent"/>
-                                    </Grid>
+                                    <Path Classes="pm-control-icon pm-icon-unmuted"
+                                          Data="{StaticResource PmIconSpeakerGeometry}"/>
+                                    <Path Classes="pm-control-icon pm-icon-muted"
+                                          Data="{StaticResource PmIconSpeakerOffGeometry}"/>
                                 </Grid>
                             </Viewbox>
                         </Button>
