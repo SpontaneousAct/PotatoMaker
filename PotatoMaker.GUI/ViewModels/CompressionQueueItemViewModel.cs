@@ -48,7 +48,10 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
             : progressStateText;
         _outputSizeBytes = outputSizeBytes;
         _failureMessage = failureMessage;
-        PrimaryActionCommand = new AsyncRelayCommand(ExecutePrimaryActionAsync, CanExecutePrimaryAction);
+        PrimaryActionCommand = new AsyncRelayCommand(
+            ExecutePrimaryActionAsync,
+            CanExecutePrimaryAction,
+            AsyncRelayCommandOptions.AllowConcurrentExecutions);
         RemoveCommand = new AsyncRelayCommand(ExecuteRemoveAsync, CanExecuteRemove);
     }
 
@@ -210,10 +213,11 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
             draft.InputPath,
             draft.OutputDirectory,
             draft.ClipRange.Normalize(draft.Info.Duration),
-            draft.Settings);
+            draft.Settings,
+            draft.Strategy.CropFilter);
     }
 
-    public string DuplicateKey => BuildDuplicateKey(InputPath, OutputDirectory, ClipRange, Settings);
+    public string DuplicateKey => BuildDuplicateKey(InputPath, OutputDirectory, ClipRange, Settings, Strategy.CropFilter);
 
     public EncodeRequest BuildEncodeRequest() =>
         new(
@@ -337,10 +341,14 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
         string inputPath,
         string outputDirectory,
         VideoClipRange clipRange,
-        EncodeSettings settings)
+        EncodeSettings settings,
+        string? cropFilter)
     {
         string normalizedInputPath = Path.GetFullPath(inputPath);
         string normalizedOutputDirectory = Path.GetFullPath(outputDirectory);
+        string normalizedCropFilter = string.IsNullOrWhiteSpace(cropFilter)
+            ? "NO_CROP"
+            : cropFilter.Trim();
 
         return string.Join(
             "|",
@@ -352,7 +360,8 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
             settings.FrameRateMode,
             EncodeSettings.NormalizeOutputNameAffix(settings.OutputNamePrefix),
             EncodeSettings.NormalizeOutputNameAffix(settings.OutputNameSuffix),
-            EncodeSettings.NormalizeSvtAv1Preset(settings.SvtAv1Preset));
+            EncodeSettings.NormalizeSvtAv1Preset(settings.SvtAv1Preset),
+            normalizedCropFilter);
     }
 
     private static string ResolveDefaultProgressState(CompressionQueueItemStatus status, string? failureMessage) => status switch

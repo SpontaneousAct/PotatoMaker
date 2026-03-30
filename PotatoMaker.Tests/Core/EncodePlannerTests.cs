@@ -70,4 +70,26 @@ public sealed class EncodePlannerTests
         Assert.Equal("fps=30", EncodePlanner.BuildFrameRateFilter(60, cappedSettings));
         Assert.Null(EncodePlanner.BuildFrameRateFilter(29.97, cappedSettings));
     }
+
+    [Fact]
+    public void BuildCenteredCropFilterForAspectRatio_MatchingAspectRatio_ReturnsNull()
+    {
+        Assert.Null(EncodePlanner.BuildCenteredCropFilterForAspectRatio(1920, 1080, 16, 9));
+    }
+
+    [Fact]
+    public void BuildCenteredCropFilterForAspectRatio_LandscapeSource_UsesCenteredEvenCrop()
+    {
+        string? cropFilter = EncodePlanner.BuildCenteredCropFilterForAspectRatio(1920, 1080, 21, 9);
+
+        Assert.Equal("crop=1920:820:0:130", cropFilter);
+    }
+
+    [Fact]
+    public void BuildCenteredCropFilterForAspectRatio_4kSource_ScalesToSourceResolution()
+    {
+        string? cropFilter = EncodePlanner.BuildCenteredCropFilterForAspectRatio(3840, 2160, 21, 9);
+
+        Assert.Equal("crop=3840:1644:0:258", cropFilter);
+    }
 }

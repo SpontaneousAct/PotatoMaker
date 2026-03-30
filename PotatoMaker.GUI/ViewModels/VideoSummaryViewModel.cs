@@ -3,17 +3,51 @@ using PotatoMaker.Core;
 
 namespace PotatoMaker.GUI.ViewModels;
 
+public sealed class CropModeOption
+{
+    public CropModeOption(
+        string id,
+        string label,
+        int? aspectRatioWidth = null,
+        int? aspectRatioHeight = null)
+    {
+        Id = id;
+        Label = label;
+        AspectRatioWidth = aspectRatioWidth;
+        AspectRatioHeight = aspectRatioHeight;
+    }
+
+    public string Id { get; }
+
+    public string Label { get; }
+
+    public int? AspectRatioWidth { get; }
+
+    public int? AspectRatioHeight { get; }
+
+    public bool IsAuto => AspectRatioWidth is null || AspectRatioHeight is null;
+
+    public override string ToString() => Label;
+}
+
 /// <summary>
 /// Shows source media details and the planned strategy.
 /// </summary>
 public partial class VideoSummaryViewModel : ViewModelBase
 {
+    public VideoSummaryViewModel()
+    {
+        SelectedCropOption = CropOptions[0];
+    }
+
     [ObservableProperty] private string? _fileSize;
     [ObservableProperty] private string? _duration;
     [ObservableProperty] private string? _resolution;
     [ObservableProperty] private string? _frameRate;
     [ObservableProperty] private bool _hasData;
     [ObservableProperty] private string? _selectedRange;
+    [ObservableProperty] private string? _selectedStart;
+    [ObservableProperty] private string? _selectedEnd;
     [ObservableProperty] private string? _selectedDuration;
 
     [ObservableProperty] private string? _strategyStatus;
@@ -24,6 +58,15 @@ public partial class VideoSummaryViewModel : ViewModelBase
     [ObservableProperty] private string? _strategyCrop;
     [ObservableProperty] private string? _strategyFilter;
     [ObservableProperty] private bool _hasStrategy;
+    [ObservableProperty] private CropModeOption? _selectedCropOption;
+
+    public IReadOnlyList<CropModeOption> CropOptions { get; } =
+    [
+        new("auto", "Auto"),
+        new("21:9", "21:9", 21, 9),
+        new("16:9", "16:9", 16, 9),
+        new("9:16", "9:16", 9, 16)
+    ];
 
     /// <summary>
     /// Gets the last successful probe result.
@@ -53,7 +96,9 @@ public partial class VideoSummaryViewModel : ViewModelBase
     public void SetSelectedRange(VideoClipRange clipRange, TimeSpan totalDuration)
     {
         VideoClipRange normalized = clipRange.Normalize(totalDuration);
-        SelectedRange = $"{FormatTime(normalized.Start)} - {FormatTime(normalized.End)}";
+        SelectedStart = FormatTime(normalized.Start);
+        SelectedEnd = FormatTime(normalized.End);
+        SelectedRange = $"{SelectedStart} - {SelectedEnd}";
         SelectedDuration = FormatTime(normalized.Duration);
     }
 
@@ -65,6 +110,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
         StrategyResolution = null;
         StrategyBitrate = null;
         StrategyParts = null;
+        StrategyOutputFrameRate = null;
         StrategyCrop = null;
         StrategyFilter = null;
     }
@@ -82,7 +128,7 @@ public partial class VideoSummaryViewModel : ViewModelBase
         StrategyBitrate = $"{plan.VideoBitrateKbps} kbps{bitrateDetails}";
         StrategyParts = plan.Parts == 1 ? "Single file" : $"{plan.Parts} parts";
         StrategyOutputFrameRate = analysis.OutputFrameRate > 0 ? $"{analysis.OutputFrameRate:0.##} fps" : "Original";
-        StrategyCrop = string.IsNullOrWhiteSpace(analysis.CropFilter) ? "No crop detected" : analysis.CropFilter;
+        StrategyCrop = FormatCropSummary(analysis.CropFilter, SelectedCropOption ?? CropOptions[0]);
         StrategyFilter = analysis.VideoFilter ?? "None";
         HasStrategy = true;
     }
@@ -109,6 +155,8 @@ public partial class VideoSummaryViewModel : ViewModelBase
         FrameRate = null;
         HasData = false;
         SelectedRange = null;
+        SelectedStart = null;
+        SelectedEnd = null;
         SelectedDuration = null;
         ClearStrategy();
     }
@@ -125,4 +173,14 @@ public partial class VideoSummaryViewModel : ViewModelBase
         value.TotalHours >= 1
             ? value.ToString(@"h\:mm\:ss\.f")
             : value.ToString(@"m\:ss\.f");
+
+    private static string FormatCropSummary(string? cropFilter, CropModeOption cropMode)
+    {
+        if (cropMode.IsAuto)
+            return string.IsNullOrWhiteSpace(cropFilter) ? "Auto (no crop detected)" : $"Auto ({cropFilter})";
+
+        return string.IsNullOrWhiteSpace(cropFilter)
+            ? $"{cropMode.Label} (no crop needed)"
+            : $"{cropMode.Label} ({cropFilter})";
+    }
 }

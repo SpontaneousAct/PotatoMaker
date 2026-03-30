@@ -55,6 +55,46 @@ public sealed class CompressionQueueViewModelTests
     }
 
     [Fact]
+    public async Task AddAsync_AllowsSameClipWhenCropDiffers()
+    {
+        var queue = new CompressionQueueViewModel(
+            null,
+            new NoOpEncodingService(),
+            new EncodeExecutionCoordinator());
+
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        Directory.CreateDirectory(Path.GetDirectoryName(inputPath)!);
+        await File.WriteAllTextAsync(inputPath, new string('a', 1024));
+
+        try
+        {
+            QueuedCompressionItemDraft autoCropDraft = CreateDraft(
+                inputPath,
+                "D:\\encoded",
+                new VideoClipRange(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(40)),
+                256,
+                "crop=1920:800:0:140");
+            QueuedCompressionItemDraft manualCropDraft = CreateDraft(
+                inputPath,
+                "D:\\encoded",
+                new VideoClipRange(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(40)),
+                256,
+                "crop=1920:820:0:130");
+
+            QueueEnqueueResult firstResult = await queue.AddAsync(autoCropDraft);
+            QueueEnqueueResult secondResult = await queue.AddAsync(manualCropDraft);
+
+            Assert.True(firstResult.Succeeded);
+            Assert.True(secondResult.Succeeded);
+            Assert.Equal(2, queue.Items.Count);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task CompressAllAsync_ProcessesQueuedItemsSequentially_AndPersistsState()
     {
         string firstInputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
@@ -192,7 +232,8 @@ public sealed class CompressionQueueViewModelTests
         string inputPath,
         string outputDirectory,
         VideoClipRange clipRange,
-        long selectedSizeBytes)
+        long selectedSizeBytes,
+        string? cropFilter = "crop=1920:800:0:140")
     {
         VideoInfo info = new(TimeSpan.FromSeconds(100), 1920, 1080, 60, 4000);
         EncodeSettings settings = new()
@@ -205,7 +246,7 @@ public sealed class CompressionQueueViewModelTests
         };
         StrategyAnalysis strategy = new(
             Path.GetFullPath(inputPath),
-            "crop=1920:800:0:140",
+            cropFilter,
             null,
             60,
             new EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)"));

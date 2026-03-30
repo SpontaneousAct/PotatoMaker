@@ -32,10 +32,12 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.True(workspace.VideoSummary.HasData);
             Assert.True(workspace.VideoSummary.HasStrategy);
             Assert.Equal("1920x1080", workspace.VideoSummary.Resolution);
+            Assert.Equal("0:00.0", workspace.VideoSummary.SelectedStart);
+            Assert.Equal("1:35.0", workspace.VideoSummary.SelectedEnd);
             Assert.Equal("0:00.0 - 1:35.0", workspace.VideoSummary.SelectedRange);
             Assert.Equal("1:35.0", workspace.VideoSummary.SelectedDuration);
             Assert.Equal("59.94 fps", workspace.VideoSummary.StrategyOutputFrameRate);
-            Assert.Equal("crop=1920:800:0:140", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal("Auto (crop=1920:800:0:140)", workspace.VideoSummary.StrategyCrop);
             Assert.Equal("crop=1920:800:0:140,scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
             Assert.Equal("Ready", workspace.ConversionLog.StatusText);
         }
@@ -71,6 +73,8 @@ public sealed class EncodeWorkspaceViewModelTests
 
             Assert.Equal(TimeSpan.FromSeconds(30), analysisService.LastRequestedClipRange?.Duration);
             Assert.Equal(TimeSpan.FromSeconds(15), analysisService.LastRequestedClipRange?.Start);
+            Assert.Equal("0:15.0", workspace.VideoSummary.SelectedStart);
+            Assert.Equal("0:45.0", workspace.VideoSummary.SelectedEnd);
             Assert.Equal("0:15.0 - 0:45.0", workspace.VideoSummary.SelectedRange);
             Assert.Equal("0:30.0", workspace.VideoSummary.SelectedDuration);
             Assert.NotNull(workspace.VideoSummary.StrategyAnalysis);
@@ -155,12 +159,45 @@ public sealed class EncodeWorkspaceViewModelTests
             await analysisService.WaitForStrategyCountAsync(1);
 
             Assert.True(workspace.VideoSummary.HasStrategy);
-            Assert.Equal("crop=1920:800:0:140", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal("Auto (crop=1920:800:0:140)", workspace.VideoSummary.StrategyCrop);
             Assert.Equal(TimeSpan.FromSeconds(15), analysisService.LastRequestedClipRange?.Start);
             Assert.Equal(TimeSpan.FromSeconds(45), analysisService.LastRequestedClipRange?.End);
             Assert.Equal(1, analysisService.DetectCropCallCount);
             Assert.Equal(1, analysisService.StrategyCount);
             Assert.Equal(ConversionStatus.Idle, workspace.ConversionLog.Status);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task ChangingCropMode_RebuildsStrategyWithSelectedAspectRatio()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            workspace.VideoSummary.SelectedCropOption = workspace.VideoSummary.CropOptions.Single(option => option.Id == "21:9");
+
+            await analysisService.WaitForStrategyCountAsync(2);
+
+            Assert.Equal("crop=1920:820:0:130", workspace.VideoSummary.StrategyAnalysis!.CropFilter);
+            Assert.Equal("21:9 (crop=1920:820:0:130)", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal("crop=1920:820:0:130,scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
         }
         finally
         {
@@ -305,6 +342,49 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal(263, queuedItem.SelectedSizeBytes);
             Assert.True(workspace.IsQueueAddFeedbackVisible);
             Assert.Equal("Added", workspace.QueueAddFeedbackTitle);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task AddToQueue_AllowsSameClipAgainWhenCropModeChanges()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, new string('q', 1_000));
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var queue = new CompressionQueueViewModel(
+                null,
+                new NoOpEncodingService(),
+                new EncodeExecutionCoordinator());
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                queue,
+                new EncodeExecutionCoordinator(),
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            await ((IAsyncRelayCommand)workspace.AddToQueueCommand).ExecuteAsync(null);
+            Assert.Single(queue.Items);
+
+            workspace.VideoSummary.SelectedCropOption = workspace.VideoSummary.CropOptions.Single(option => option.Id == "21:9");
+            await analysisService.WaitForStrategyCountAsync(2);
+
+            await ((IAsyncRelayCommand)workspace.AddToQueueCommand).ExecuteAsync(null);
+
+            Assert.Equal(2, queue.Items.Count);
+            Assert.Equal("crop=1920:800:0:140", queue.Items[0].Strategy.CropFilter);
+            Assert.Equal("crop=1920:820:0:130", queue.Items[1].Strategy.CropFilter);
         }
         finally
         {

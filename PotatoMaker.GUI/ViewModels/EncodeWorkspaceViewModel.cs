@@ -167,6 +167,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         VideoPlayer.PropertyChanged += OnResetStateChanged;
         VideoPlayer.PropertyChanged += OnVideoPlayerSettingChanged;
         VideoSummary.PropertyChanged += OnEncodePrerequisiteChanged;
+        VideoSummary.PropertyChanged += OnVideoSummaryChanged;
         ConversionLog.PropertyChanged += OnEncodePrerequisiteChanged;
         OutputSettings.PropertyChanged += OnOutputSettingsChanged;
         _compressionQueue.PropertyChanged += OnCompressionQueueChanged;
@@ -392,7 +393,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 return;
 
             _isCropDetectionPending = false;
-            await RefreshStrategyPreviewAsync(path, info, _detectedCropFilter, previewCts, previewVersion, showPendingState: false);
+            await RefreshStrategyPreviewAsync(path, info, previewCts, previewVersion, showPendingState: false);
         }
         catch (OperationCanceledException) when (previewCts.IsCancellationRequested)
         {
@@ -459,6 +460,19 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         ClipRange.SetBoundary(boundary, VideoPlayer.CurrentPosition);
     }
 
+    private void OnVideoSummaryChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(VideoSummaryViewModel.SelectedCropOption) ||
+            FileInput.InputFilePath is not { } path ||
+            VideoSummary.Info is not { } info ||
+            _isCropDetectionPending)
+        {
+            return;
+        }
+
+        _ = RefreshStrategyPreviewForCurrentStateAsync(path, info, showPendingState: false);
+    }
+
     public void BeginTrimBoundaryPreview()
     {
         VideoPlayer.BeginTrimPreview();
@@ -521,7 +535,6 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private async Task RefreshStrategyPreviewAsync(
         string path,
         VideoInfo info,
-        string? cropFilter,
         CancellationTokenSource previewCts,
         int previewVersion,
         bool showPendingState)
@@ -535,7 +548,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             path,
             info,
             BuildEncodeSettings(),
-            cropFilter,
+            GetEffectiveCropFilter(info),
             ClipRange.Selection,
             previewCts.Token);
 
@@ -584,6 +597,18 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     {
         if (e.PropertyName == nameof(VideoPlayerViewModel.VolumePercent))
             PersistWorkspaceSettingsSafely();
+    }
+
+    private string? GetEffectiveCropFilter(VideoInfo info)
+    {
+        CropModeOption cropMode = VideoSummary.SelectedCropOption ?? VideoSummary.CropOptions[0];
+        return cropMode.IsAuto
+            ? _detectedCropFilter
+            : EncodePlanner.BuildCenteredCropFilterForAspectRatio(
+                info.Width,
+                info.Height,
+                cropMode.AspectRatioWidth!.Value,
+                cropMode.AspectRatioHeight!.Value);
     }
 
     private void ApplyInitialSettings()
@@ -906,7 +931,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 path,
                 info,
                 BuildEncodeSettings(),
-                _detectedCropFilter,
+                GetEffectiveCropFilter(info),
                 ClipRange.Selection);
 
             if (!string.Equals(FileInput.InputFilePath, path, StringComparison.OrdinalIgnoreCase) ||
@@ -947,6 +972,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         VideoPlayer.PropertyChanged -= OnResetStateChanged;
         VideoPlayer.PropertyChanged -= OnVideoPlayerSettingChanged;
         VideoSummary.PropertyChanged -= OnEncodePrerequisiteChanged;
+        VideoSummary.PropertyChanged -= OnVideoSummaryChanged;
         ConversionLog.PropertyChanged -= OnEncodePrerequisiteChanged;
         OutputSettings.PropertyChanged -= OnOutputSettingsChanged;
         _compressionQueue.PropertyChanged -= OnCompressionQueueChanged;

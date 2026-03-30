@@ -98,6 +98,52 @@ public static class EncodePlanner
         };
     }
 
+    public static string? BuildCenteredCropFilterForAspectRatio(
+        int sourceWidth,
+        int sourceHeight,
+        int aspectRatioWidth,
+        int aspectRatioHeight)
+    {
+        if (sourceWidth <= 0 ||
+            sourceHeight <= 0 ||
+            aspectRatioWidth <= 0 ||
+            aspectRatioHeight <= 0)
+        {
+            return null;
+        }
+
+        long widthScaled = (long)sourceWidth * aspectRatioHeight;
+        long heightScaled = (long)sourceHeight * aspectRatioWidth;
+        if (widthScaled == heightScaled)
+            return null;
+
+        int cropWidth = sourceWidth;
+        int cropHeight = sourceHeight;
+        if (widthScaled > heightScaled)
+        {
+            cropWidth = (int)Math.Floor(sourceHeight * (double)aspectRatioWidth / aspectRatioHeight);
+            cropWidth = NormalizeCropDimension(cropWidth, sourceWidth);
+            cropWidth = AdjustCropDimensionForCenteredOffset(cropWidth, sourceWidth);
+        }
+        else
+        {
+            cropHeight = (int)Math.Floor(sourceWidth * (double)aspectRatioHeight / aspectRatioWidth);
+            cropHeight = NormalizeCropDimension(cropHeight, sourceHeight);
+            cropHeight = AdjustCropDimensionForCenteredOffset(cropHeight, sourceHeight);
+        }
+
+        if (cropWidth <= 0 ||
+            cropHeight <= 0 ||
+            (cropWidth == sourceWidth && cropHeight == sourceHeight))
+        {
+            return null;
+        }
+
+        int offsetX = (sourceWidth - cropWidth) / 2;
+        int offsetY = (sourceHeight - cropHeight) / 2;
+        return $"crop={cropWidth}:{cropHeight}:{offsetX}:{offsetY}";
+    }
+
     public static double ResolveOutputFrameRate(double sourceFrameRate, EncodeSettings settings)
     {
         if (sourceFrameRate <= 0)
@@ -155,6 +201,28 @@ public static class EncodePlanner
 
     private static int? NormalizeSourceVideoBitrate(int? sourceVideoBitrateKbps) =>
         sourceVideoBitrateKbps is > 0 ? sourceVideoBitrateKbps : null;
+
+    private static int NormalizeCropDimension(int cropSize, int maxSize)
+    {
+        cropSize = Math.Clamp(cropSize, 1, maxSize);
+        if (cropSize == maxSize)
+            return cropSize;
+
+        return cropSize % 2 == 0
+            ? cropSize
+            : cropSize - 1;
+    }
+
+    private static int AdjustCropDimensionForCenteredOffset(int cropSize, int sourceSize)
+    {
+        if (cropSize <= 2 || cropSize >= sourceSize)
+            return cropSize;
+
+        int margin = sourceSize - cropSize;
+        return margin % 4 == 2
+            ? cropSize - 2
+            : cropSize;
+    }
 
     // -2 preserves aspect ratio and keeps the width even for AV1 encoders.
     private static string ScaleFilter(int maxHeight) => $"scale=-2:min(ih\\,{maxHeight})";

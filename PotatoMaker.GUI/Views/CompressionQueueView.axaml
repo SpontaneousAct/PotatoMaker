@@ -169,7 +169,7 @@
                                         <Grid Width="14"
                                               Height="14">
                                             <Path Classes="pm-control-icon"
-                                                  Data="{StaticResource PmIconDismissGeometry}"
+                                                  Data="{StaticResource PmIconStopGeometry}"
                                                   IsVisible="{Binding CanCancel}"/>
                                             <Path Classes="pm-control-icon"
                                                   Data="{StaticResource PmIconArrowCounterclockwiseGeometry}"

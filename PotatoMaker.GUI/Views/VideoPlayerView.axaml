@@ -19,7 +19,7 @@
         <Grid RowDefinitions="Auto,Auto,*,Auto,Auto"
               RowSpacing="6">
             <Grid Grid.Row="0"
-                  ColumnDefinitions="*,Auto,Auto,Auto,28"
+                  ColumnDefinitions="*,92,92,92,92,28"
                   ColumnSpacing="8">
                 <StackPanel Grid.Column="0"
                             Spacing="0">
@@ -33,33 +33,38 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1"
-                            Spacing="1"
-                            MinWidth="72">
-                    <TextBlock Text="Start"
+                            Spacing="1">
+                    <TextBlock Text="Size"
                                Classes="pm-caption"/>
-                    <TextBlock Text="{Binding ClipRange.StartDisplay}"
+                    <TextBlock Text="{Binding VideoSummary.FileSize, TargetNullValue=--}"
                                FontWeight="SemiBold"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2"
-                            Spacing="1"
-                            MinWidth="72">
-                    <TextBlock Text="End"
+                            Spacing="1">
+                    <TextBlock Text="Duration"
                                Classes="pm-caption"/>
-                    <TextBlock Text="{Binding ClipRange.EndDisplay}"
+                    <TextBlock Text="{Binding VideoSummary.Duration, TargetNullValue=--}"
                                FontWeight="SemiBold"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3"
-                            Spacing="1"
-                            MinWidth="72">
-                    <TextBlock Text="Length"
+                            Spacing="1">
+                    <TextBlock Text="Resolution"
                                Classes="pm-caption"/>
-                    <TextBlock Text="{Binding ClipRange.SelectedDurationDisplay}"
+                    <TextBlock Text="{Binding VideoSummary.Resolution, TargetNullValue=--}"
                                FontWeight="SemiBold"/>
                 </StackPanel>
 
-                <Button Grid.Column="4"
+                <StackPanel Grid.Column="4"
+                            Spacing="1">
+                    <TextBlock Text="FPS"
+                               Classes="pm-caption"/>
+                    <TextBlock Text="{Binding VideoSummary.FrameRate, TargetNullValue=--}"
+                               FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <Button Grid.Column="5"
                         Command="{Binding FileInput.ClearFileCommand}"
                         IsVisible="{Binding FileInput.HasFile}"
                         Width="28"

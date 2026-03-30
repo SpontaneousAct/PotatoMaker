@@ -407,7 +407,7 @@
             <Setter Property="MinHeight" Value="32"/>
         </Style>
 
-        <Style Selector="ComboBox:pointerover, ComboBox:focus">
+        <Style Selector="ComboBox:pointerover, ComboBox:focus-visible">
             <Setter Property="BorderBrush" Value="{DynamicResource PmFieldPointerOverBorderBrush}"/>
         </Style>
 

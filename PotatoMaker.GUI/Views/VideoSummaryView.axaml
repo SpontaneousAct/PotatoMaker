@@ -33,6 +33,12 @@
             <Setter Property="TextTrimming" Value="WordEllipsis"/>
             <Setter Property="MaxLines" Value="2"/>
         </Style>
+
+        <Style Selector="TextBlock.pm-summary-value.pm-summary-value-compact">
+            <Setter Property="MinHeight" Value="20"/>
+            <Setter Property="MaxLines" Value="1"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
     </UserControl.Styles>
 
     <Border Classes="pm-card"
@@ -40,46 +46,36 @@
         <Grid RowDefinitions="Auto,Auto,Auto,*"
               RowSpacing="6">
             <TextBlock Grid.Row="0"
-                       Text="Source Summary"
+                       Text="Selected Clip"
                        Classes="pm-summary-title"/>
 
             <Border Grid.Row="1"
                     Classes="pm-inset"
-                    Padding="8,6">
-                <Grid ColumnDefinitions="*,*"
-                      RowDefinitions="Auto,Auto"
-                      ColumnSpacing="10"
-                      RowSpacing="8">
-                    <StackPanel Grid.Row="0"
-                                Grid.Column="0"
-                                Spacing="1">
-                        <TextBlock Text="Size" Classes="pm-summary-caption"/>
-                        <TextBlock Text="{Binding FileSize, TargetNullValue=--}"
-                                   Classes="pm-summary-value"/>
+                    Padding="8,4">
+                <Grid ColumnDefinitions="*,*,*"
+                      ColumnSpacing="8">
+                    <StackPanel Grid.Column="0"
+                                Spacing="1"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="Start" Classes="pm-summary-caption"/>
+                        <TextBlock Text="{Binding SelectedStart, TargetNullValue=--}"
+                                   Classes="pm-summary-value pm-summary-value-compact"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="0"
-                                Grid.Column="1"
-                                Spacing="1">
-                        <TextBlock Text="Duration" Classes="pm-summary-caption"/>
-                        <TextBlock Text="{Binding Duration, TargetNullValue=--}"
-                                   Classes="pm-summary-value"/>
+                    <StackPanel Grid.Column="1"
+                                Spacing="1"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="End" Classes="pm-summary-caption"/>
+                        <TextBlock Text="{Binding SelectedEnd, TargetNullValue=--}"
+                                   Classes="pm-summary-value pm-summary-value-compact"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="1"
-                                Grid.Column="0"
-                                Spacing="1">
-                        <TextBlock Text="Resolution" Classes="pm-summary-caption"/>
-                        <TextBlock Text="{Binding Resolution, TargetNullValue=--}"
-                                   Classes="pm-summary-value"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Row="1"
-                                Grid.Column="1"
-                                Spacing="1">
-                        <TextBlock Text="FPS" Classes="pm-summary-caption"/>
-                        <TextBlock Text="{Binding FrameRate, TargetNullValue=--}"
-                                   Classes="pm-summary-value"/>
+                    <StackPanel Grid.Column="2"
+                                Spacing="1"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="Length" Classes="pm-summary-caption"/>
+                        <TextBlock Text="{Binding SelectedDuration, TargetNullValue=--}"
+                                   Classes="pm-summary-value pm-summary-value-compact"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -88,17 +84,11 @@
                         Spacing="2">
                 <TextBlock Text="Strategy Preview"
                            Classes="pm-summary-title"/>
-                <TextBlock Text="{Binding StrategyStatus, TargetNullValue=' '}"
-                           Classes="pm-summary-caption"
-                           LineHeight="16"
-                           MinHeight="32"
-                           MaxLines="2"
-                           TextWrapping="Wrap"/>
             </StackPanel>
 
             <Grid Grid.Row="3"
                   ColumnDefinitions="*,*"
-                  RowDefinitions="Auto,Auto,Auto,Auto"
+                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
                   RowSpacing="6"
                   ColumnSpacing="6">
                 <StackPanel Grid.Row="0"
@@ -148,6 +138,24 @@
                     <TextBlock Text="{Binding StrategyFilter, TargetNullValue=--}"
                                Classes="pm-summary-value"/>
                 </StackPanel>
+
+                <StackPanel Grid.Row="4"
+                            Grid.ColumnSpan="2"
+                            Spacing="4">
+                    <TextBlock Text="Crop mode" Classes="pm-summary-caption"/>
+                    <ComboBox ItemsSource="{Binding CropOptions}"
+                              SelectedItem="{Binding SelectedCropOption}"
+                              HorizontalAlignment="Stretch"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="5"
+                           Grid.ColumnSpan="2"
+                           Text="{Binding StrategyStatus, TargetNullValue=' '}"
+                           Classes="pm-summary-caption"
+                           LineHeight="16"
+                           MinHeight="32"
+                           MaxLines="2"
+                           TextWrapping="Wrap"/>
             </Grid>
         </Grid>
     </Border>
