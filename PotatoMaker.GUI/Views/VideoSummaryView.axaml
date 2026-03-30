@@ -119,10 +119,16 @@
                             Grid.Column="0"
                             Spacing="4">
                     <TextBlock Text="Crop mode" Classes="pm-summary-caption"/>
-                    <ComboBox ItemsSource="{Binding CropOptions}"
-                              SelectedItem="{Binding SelectedCropOption}"
-                              IsEnabled="{Binding CanSelectCropMode}"
-                              HorizontalAlignment="Stretch"/>
+                    <StackPanel Spacing="2">
+                        <ComboBox ItemsSource="{Binding CropOptions}"
+                                  SelectedItem="{Binding SelectedCropOption}"
+                                  IsEnabled="{Binding CanSelectCropMode}"
+                                  HorizontalAlignment="Stretch"/>
+                        <TextBlock Text="{Binding CropModeHelperText}"
+                                   IsVisible="{Binding IsCropModeHelperVisible}"
+                                   Classes="pm-summary-caption"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Row="2"

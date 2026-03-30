@@ -40,6 +40,8 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal("1:35.0", workspace.VideoSummary.SelectedDuration);
             Assert.Equal("59.94 fps", workspace.VideoSummary.StrategyOutputFrameRate);
             Assert.Equal("Auto", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal("1920x800", workspace.VideoSummary.CropModeHelperText);
+            Assert.True(workspace.VideoSummary.IsCropModeHelperVisible);
             Assert.Equal("crop=1920:800:0:140,scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
             Assert.Equal("Ready", workspace.ConversionLog.StatusText);
         }
@@ -162,6 +164,7 @@ public sealed class EncodeWorkspaceViewModelTests
 
             Assert.True(workspace.VideoSummary.HasStrategy);
             Assert.Equal("Auto", workspace.VideoSummary.StrategyCrop);
+            Assert.Equal("1920x800", workspace.VideoSummary.CropModeHelperText);
             Assert.Equal(TimeSpan.FromSeconds(15), analysisService.LastRequestedClipRange?.Start);
             Assert.Equal(TimeSpan.FromSeconds(45), analysisService.LastRequestedClipRange?.End);
             Assert.Equal(1, analysisService.DetectCropCallCount);
@@ -199,6 +202,8 @@ public sealed class EncodeWorkspaceViewModelTests
 
             Assert.Equal("crop=1920:820:0:130", workspace.VideoSummary.StrategyAnalysis!.CropFilter);
             Assert.Equal("21:9", workspace.VideoSummary.StrategyCrop);
+            Assert.Null(workspace.VideoSummary.CropModeHelperText);
+            Assert.False(workspace.VideoSummary.IsCropModeHelperVisible);
             Assert.Equal("crop=1920:820:0:130,scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
         }
         finally
@@ -265,6 +270,37 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Null(workspace.VideoSummary.StrategyAnalysis!.CropFilter);
             Assert.Equal("16:9", workspace.VideoSummary.StrategyCrop);
             Assert.Equal("scale=-2:min(ih\\,1080)", workspace.VideoSummary.StrategyFilter);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
+    public async Task AutoCropHelper_ShowsNoCropDetected_WhenDetectionReturnsNothing()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService
+            {
+                DetectedCropFilter = null
+            };
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            Assert.Equal("No crop detected", workspace.VideoSummary.CropModeHelperText);
+            Assert.True(workspace.VideoSummary.IsCropModeHelperVisible);
         }
         finally
         {
@@ -1161,6 +1197,8 @@ public sealed class EncodeWorkspaceViewModelTests
     {
         private readonly List<StrategyAnalysis> _strategies = [];
 
+        public string? DetectedCropFilter { get; set; } = "crop=1920:800:0:140";
+
         public Task<VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default) =>
             Task.FromResult(new VideoInfo(TimeSpan.FromSeconds(95), 1920, 1080, 59.94));
 
@@ -1184,7 +1222,7 @@ public sealed class EncodeWorkspaceViewModelTests
         public Task<string?> DetectCropAsync(string inputPath, VideoInfo info, CancellationToken ct = default)
         {
             DetectCropCallCount++;
-            return Task.FromResult<string?>("crop=1920:800:0:140");
+            return Task.FromResult(DetectedCropFilter);
         }
 
         public Task<StrategyAnalysis> AnalyzeStrategyAsync(

@@ -39,6 +39,8 @@ public partial class VideoSummaryViewModel : ViewModelBase
 {
     private const double NoOpCropAreaThreshold = 0.97d;
     private const double ExactFrameRateTolerance = 0.01d;
+    private bool _isCropDetectionResultKnown;
+    private string? _detectedCropFilter;
     private static readonly CropModeOption[] AvailableCropOptions =
     [
         new("auto", "Auto"),
@@ -80,11 +82,16 @@ public partial class VideoSummaryViewModel : ViewModelBase
     [ObservableProperty] private CropModeOption? _selectedCropOption;
     [ObservableProperty] private bool _canSelectCropMode;
     [ObservableProperty] private bool _canSelectFrameRate;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCropModeHelperVisible))]
+    private string? _cropModeHelperText;
 
     public ObservableCollection<CropModeOption> CropOptions { get; } = [];
     public ObservableCollection<FrameRateOption> FrameRateOptions { get; } = [];
 
     public OutputSettingsViewModel OutputSettings { get; }
+
+    public bool IsCropModeHelperVisible => !string.IsNullOrWhiteSpace(CropModeHelperText);
 
     public FrameRateOption? SelectedFrameRateOption
     {
@@ -196,6 +203,21 @@ public partial class VideoSummaryViewModel : ViewModelBase
         ClearCropOptions();
         ClearFrameRateOptions();
         ClearStrategy();
+        ClearCropDetectionState();
+    }
+
+    public void SetCropDetectionPending()
+    {
+        _isCropDetectionResultKnown = false;
+        _detectedCropFilter = null;
+        UpdateCropModeHelper();
+    }
+
+    public void SetCropDetectionResult(string? cropFilter)
+    {
+        _isCropDetectionResultKnown = true;
+        _detectedCropFilter = cropFilter;
+        UpdateCropModeHelper();
     }
 
     private static string FormatFileSize(long bytes) => bytes switch
@@ -210,6 +232,8 @@ public partial class VideoSummaryViewModel : ViewModelBase
         value.TotalHours >= 1
             ? value.ToString(@"h\:mm\:ss\.f")
             : value.ToString(@"m\:ss\.f");
+
+    partial void OnSelectedCropOptionChanged(CropModeOption? value) => UpdateCropModeHelper();
 
     private void UpdateCropOptions(VideoInfo info)
     {
@@ -330,6 +354,52 @@ public partial class VideoSummaryViewModel : ViewModelBase
             return "Auto";
 
         return cropMode.Label;
+    }
+
+    private void ClearCropDetectionState()
+    {
+        _isCropDetectionResultKnown = false;
+        _detectedCropFilter = null;
+        CropModeHelperText = null;
+    }
+
+    private void UpdateCropModeHelper()
+    {
+        if (!(SelectedCropOption?.IsAuto ?? false) || !_isCropDetectionResultKnown)
+        {
+            CropModeHelperText = null;
+            return;
+        }
+
+        CropModeHelperText = TryFormatDetectedCropSummary(_detectedCropFilter) ?? "No crop detected";
+    }
+
+    private static string? TryFormatDetectedCropSummary(string? cropFilter)
+    {
+        if (!TryParseCropSize(cropFilter, out int width, out int height))
+            return null;
+
+        return $"{width}x{height}";
+    }
+
+    private static bool TryParseCropSize(string? cropFilter, out int width, out int height)
+    {
+        width = 0;
+        height = 0;
+
+        if (string.IsNullOrWhiteSpace(cropFilter))
+            return false;
+
+        string cropExpression = cropFilter.Split(',', 2)[0].Trim();
+        if (!cropExpression.StartsWith("crop=", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        string[] values = cropExpression["crop=".Length..].Split(':');
+        return values.Length >= 2 &&
+               int.TryParse(values[0], out width) &&
+               int.TryParse(values[1], out height) &&
+               width > 0 &&
+               height > 0;
     }
 
     private static string FormatResolutionSummary(string resolutionLabel)

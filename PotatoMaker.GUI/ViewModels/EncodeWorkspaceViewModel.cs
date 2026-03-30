@@ -385,6 +385,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 return;
 
             VideoSummary.SetProbeResult(path, info);
+            VideoSummary.SetCropDetectionPending();
             ClipRange.SetSourceDuration(info.Duration);
             VideoPlayer.LoadSource(path, info.Duration, ClipRange.Selection);
             VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
@@ -396,6 +397,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 return;
 
             _isCropDetectionPending = false;
+            VideoSummary.SetCropDetectionResult(_detectedCropFilter);
             await RefreshStrategyPreviewAsync(path, info, previewCts, previewVersion, showPendingState: false);
         }
         catch (OperationCanceledException) when (previewCts.IsCancellationRequested)
