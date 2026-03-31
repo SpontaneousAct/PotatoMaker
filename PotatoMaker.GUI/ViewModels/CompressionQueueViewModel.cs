@@ -85,10 +85,6 @@ public partial class CompressionQueueViewModel : ViewModelBase, IDisposable
         ? "1 video"
         : $"{QueueCount} videos";
 
-    public string QueueSummaryText => HasItems
-        ? $"{WaitingItemCount} waiting, up to {MaxQueueSize} active items"
-        : $"Queue up to {MaxQueueSize} prepared videos";
-
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanCompressAll))]
     private bool _isQueueProcessing;
@@ -388,7 +384,6 @@ public partial class CompressionQueueViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(HasItems));
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(QueueCountText));
-        OnPropertyChanged(nameof(QueueSummaryText));
         OnPropertyChanged(nameof(CanCompressAll));
         OnPropertyChanged(nameof(CanClearQueue));
         OnPropertyChanged(nameof(IsBlockedByAnotherEncode));

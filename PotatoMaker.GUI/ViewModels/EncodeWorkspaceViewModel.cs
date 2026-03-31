@@ -914,8 +914,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     {
         if (e.PropertyName is nameof(CompressionQueueViewModel.QueueCount)
             or nameof(CompressionQueueViewModel.ActiveItemCount)
-            or nameof(CompressionQueueViewModel.CanCompressAll)
-            or nameof(CompressionQueueViewModel.QueueSummaryText))
+            or nameof(CompressionQueueViewModel.CanCompressAll))
         {
             AddToQueueCommand.NotifyCanExecuteChanged();
             NotifyQueueButtonStateChanged();

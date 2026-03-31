@@ -25,8 +25,6 @@
                                Classes="pm-page-title"/>
                     <TextBlock Text="{Binding QueueCountText}"
                                Classes="pm-section-title"/>
-                    <TextBlock Text="{Binding QueueSummaryText}"
-                               Classes="pm-caption"/>
                     <TextBlock Text="A running queue blocks one-off compression until the current batch finishes."
                                Classes="pm-caption"
                                IsVisible="{Binding IsBlockedByAnotherEncode}"/>
