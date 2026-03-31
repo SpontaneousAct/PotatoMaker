@@ -535,8 +535,9 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal("social_", queuedItem.Settings.OutputNamePrefix);
             Assert.Equal("_mobile", queuedItem.Settings.OutputNameSuffix);
             Assert.Equal(263, queuedItem.SelectedSizeBytes);
-            Assert.True(workspace.IsQueueAddFeedbackVisible);
-            Assert.Equal("Added", workspace.QueueAddFeedbackTitle);
+            Assert.True(workspace.IsCurrentSelectionQueued);
+            Assert.Equal(0d, workspace.QueueButtonAddOpacity);
+            Assert.Equal(1d, workspace.QueueButtonAddedOpacity);
         }
         finally
         {
@@ -571,9 +572,13 @@ public sealed class EncodeWorkspaceViewModelTests
 
             await ((IAsyncRelayCommand)workspace.AddToQueueCommand).ExecuteAsync(null);
             Assert.Single(queue.Items);
+            Assert.True(workspace.IsCurrentSelectionQueued);
+            Assert.False(workspace.AddToQueueCommand.CanExecute(null));
 
             workspace.VideoSummary.SelectedCropOption = workspace.VideoSummary.CropOptions.Single(option => option.Id == "21:9");
             await analysisService.WaitForStrategyCountAsync(2);
+            Assert.False(workspace.IsCurrentSelectionQueued);
+            Assert.True(workspace.AddToQueueCommand.CanExecute(null));
 
             await ((IAsyncRelayCommand)workspace.AddToQueueCommand).ExecuteAsync(null);
 

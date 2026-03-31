@@ -118,7 +118,14 @@ public sealed class CompressionQueueViewModelTests
                 processedVideoTracker: processedTracker);
 
             Assert.True((await queue.AddAsync(CreateDraft(firstInputPath, "D:\\encoded", new VideoClipRange(TimeSpan.Zero, TimeSpan.FromSeconds(20)), 100))).Succeeded);
-            Assert.True((await queue.AddAsync(CreateDraft(secondInputPath, "D:\\encoded", new VideoClipRange(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(35)), 80))).Succeeded);
+            Assert.True((await queue.AddAsync(CreateDraft(
+                secondInputPath,
+                "D:\\encoded",
+                new VideoClipRange(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(35)),
+                80,
+                cropFilter: "crop=1280:720:0:0",
+                outputFrameRate: 30,
+                parts: 3))).Succeeded);
 
             await queue.CompressAllCommand.ExecuteAsync(null);
 
@@ -127,9 +134,14 @@ public sealed class CompressionQueueViewModelTests
                 encodingService.Requests.Select(request => request.InputPath).ToArray());
             Assert.All(queue.Items, item => Assert.Equal(CompressionQueueItemStatus.Completed, item.Status));
             Assert.All(queue.Items, item => Assert.Equal("Done", item.ProgressText));
+            Assert.All(queue.Items, item => Assert.Equal("100%", item.ProgressPercentText));
             Assert.All(queue.Items, item => Assert.NotEqual("--", item.ElapsedText));
-            Assert.Equal("1.0 MB", queue.Items[0].OutputSizeText);
-            Assert.Equal("512 KB", queue.Items[1].OutputSizeText);
+            Assert.Equal("60", queue.Items[0].OutputFpsText);
+            Assert.Equal("12:5", queue.Items[0].CropText);
+            Assert.Equal("1", queue.Items[0].OutputPartsText);
+            Assert.Equal("30", queue.Items[1].OutputFpsText);
+            Assert.Equal("16:9", queue.Items[1].CropText);
+            Assert.Equal("3", queue.Items[1].OutputPartsText);
             Assert.Equal(0, queue.ActiveItemCount);
             Assert.Equal(1, notifier.NotificationCount);
             Assert.Equal(
@@ -160,6 +172,21 @@ public sealed class CompressionQueueViewModelTests
 
         Assert.Equal(CompressionQueueItemStatus.Completed, item.Status);
         Assert.Equal("Done", item.ProgressText);
+    }
+
+    [Fact]
+    public void CropText_SnapsNearCommonAspectRatios()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        CompressionQueueItemViewModel item = CompressionQueueItemViewModel.Create(
+            CreateDraft(
+                inputPath,
+                "D:\\encoded",
+                VideoClipRange.Full(TimeSpan.FromSeconds(100)),
+                123,
+                cropFilter: "crop=808:1440:0:0"));
+
+        Assert.Equal("9:16", item.CropText);
     }
 
     [Fact]
@@ -233,7 +260,9 @@ public sealed class CompressionQueueViewModelTests
         string outputDirectory,
         VideoClipRange clipRange,
         long selectedSizeBytes,
-        string? cropFilter = "crop=1920:800:0:140")
+        string? cropFilter = "crop=1920:800:0:140",
+        double outputFrameRate = 60,
+        int parts = 1)
     {
         VideoInfo info = new(TimeSpan.FromSeconds(100), 1920, 1080, 60, 4000);
         EncodeSettings settings = new()
@@ -248,8 +277,8 @@ public sealed class CompressionQueueViewModelTests
             Path.GetFullPath(inputPath),
             cropFilter,
             null,
-            60,
-            new EncodePlanner.EncodePlan(1800, 1, "scale=-2:min(ih\\,1080)", "1080p (original)"));
+            outputFrameRate,
+            new EncodePlanner.EncodePlan(1800, parts, "scale=-2:min(ih\\,1080)", parts == 1 ? "1080p (original)" : $"1080p, {parts} parts"));
 
         return new QueuedCompressionItemDraft(
             Path.GetFullPath(inputPath),

@@ -12,6 +12,56 @@
         <vm:EncodeWorkspaceViewModel/>
     </Design.DataContext>
 
+    <UserControl.Styles>
+        <Style Selector="Button.pm-queue-add-button">
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-add-button:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldPointerOverBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-add-button:disabled">
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-add-button.pm-queue-add-success">
+            <Setter Property="Background" Value="{DynamicResource PmUpdatePanelBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmUpdatePanelBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-add-button.pm-queue-add-success:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmUpdatePanelBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmUpdatePanelBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-add-button.pm-queue-add-success:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmUpdatePanelBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmUpdatePanelBorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="Path.pm-queue-button-icon">
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="Fill" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+    </UserControl.Styles>
+
     <Grid ColumnDefinitions="*,252"
           ColumnSpacing="12">
         <Grid Grid.Column="0"
@@ -36,94 +86,116 @@
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"/>
 
-            <StackPanel Grid.Row="1"
-                        Spacing="12"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Bottom">
-                <ContentControl Content="{Binding OutputSettings}"
+            <Grid Grid.Row="1"
+                  RowDefinitions="Auto,Auto"
+                  RowSpacing="12"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Bottom">
+                <ContentControl Grid.Row="0"
+                                Content="{Binding OutputSettings}"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Top"/>
 
-                <Grid ColumnDefinitions="*,*"
+                <Grid Grid.Row="1"
+                      ColumnDefinitions="*,*"
                       ColumnSpacing="8"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Bottom"
                       ClipToBounds="False">
-                    <Border Grid.Column="0"
-                            Classes="pm-queue-feedback"
-                            IsVisible="{Binding IsQueueAddFeedbackVisible}"
-                            Opacity="{Binding QueueAddFeedbackOpacity}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Top"
-                            Margin="0,-54,0,0"
-                            MaxWidth="132"
-                            IsHitTestVisible="False">
-                        <Border.RenderTransform>
-                            <TransformGroup>
-                                <ScaleTransform ScaleX="{Binding QueueAddFeedbackScale}"
-                                                ScaleY="{Binding QueueAddFeedbackScale}">
-                                    <ScaleTransform.Transitions>
-                                        <Transitions>
-                                            <DoubleTransition Property="ScaleX"
-                                                              Duration="0:0:0.22"/>
-                                            <DoubleTransition Property="ScaleY"
-                                                              Duration="0:0:0.22"/>
-                                        </Transitions>
-                                    </ScaleTransform.Transitions>
-                                </ScaleTransform>
-                                <TranslateTransform Y="{Binding QueueAddFeedbackOffsetY}">
-                                    <TranslateTransform.Transitions>
-                                        <Transitions>
-                                            <DoubleTransition Property="Y"
-                                                              Duration="0:0:0.22"/>
-                                        </Transitions>
-                                    </TranslateTransform.Transitions>
-                                </TranslateTransform>
-                            </TransformGroup>
-                        </Border.RenderTransform>
-                        <Border.Transitions>
-                            <Transitions>
-                                <DoubleTransition Property="Opacity"
-                                                  Duration="0:0:0.18"/>
-                            </Transitions>
-                        </Border.Transitions>
-
-                        <Grid ColumnDefinitions="Auto,*"
-                              ColumnSpacing="8">
-                            <Border Grid.Column="0"
-                                    Classes="pm-queue-feedback-badge">
-                                <TextBlock Text="✓"
-                                           FontSize="14"
-                                           FontWeight="Bold"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           TextAlignment="Center"/>
-                            </Border>
-
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding QueueAddFeedbackTitle}"
-                                       Classes="pm-queue-feedback-title"
-                                       VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
-
                     <Button Grid.Column="0"
-                            Content="Add to queue"
+                            Classes="pm-queue-add-button"
+                            Classes.pm-queue-add-success="{Binding IsCurrentSelectionQueued}"
                             Command="{Binding AddToQueueCommand}"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Bottom"
-                            MinHeight="34"
-                            Padding="10,6"/>
+                            ClipToBounds="False">
+                            <Button.RenderTransform>
+                                <ScaleTransform ScaleX="{Binding QueueButtonScale}"
+                                                ScaleY="{Binding QueueButtonScale}">
+                                    <ScaleTransform.Transitions>
+                                        <Transitions>
+                                            <DoubleTransition Property="ScaleX"
+                                                              Duration="0:0:0.18"/>
+                                            <DoubleTransition Property="ScaleY"
+                                                              Duration="0:0:0.18"/>
+                                        </Transitions>
+                                    </ScaleTransform.Transitions>
+                                </ScaleTransform>
+                            </Button.RenderTransform>
+
+                            <Grid ClipToBounds="False">
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="6"
+                                            Opacity="{Binding QueueButtonAddOpacity}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            IsHitTestVisible="False">
+                                    <StackPanel.Transitions>
+                                        <Transitions>
+                                            <DoubleTransition Property="Opacity"
+                                                              Duration="0:0:0.18"/>
+                                        </Transitions>
+                                    </StackPanel.Transitions>
+                                    <StackPanel.RenderTransform>
+                                        <TranslateTransform Y="{Binding QueueButtonAddOffsetY}">
+                                            <TranslateTransform.Transitions>
+                                                <Transitions>
+                                                    <DoubleTransition Property="Y"
+                                                                      Duration="0:0:0.18"/>
+                                                </Transitions>
+                                            </TranslateTransform.Transitions>
+                                        </TranslateTransform>
+                                    </StackPanel.RenderTransform>
+
+                                    <Path Classes="pm-queue-button-icon"
+                                          Data="{DynamicResource PmIconQueueGeometry}"/>
+                                    <TextBlock Text="Add to queue"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="6"
+                                            Opacity="{Binding QueueButtonAddedOpacity}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            IsHitTestVisible="False">
+                                    <StackPanel.Transitions>
+                                        <Transitions>
+                                            <DoubleTransition Property="Opacity"
+                                                              Duration="0:0:0.18"/>
+                                        </Transitions>
+                                    </StackPanel.Transitions>
+                                    <StackPanel.RenderTransform>
+                                        <TranslateTransform Y="{Binding QueueButtonAddedOffsetY}">
+                                            <TranslateTransform.Transitions>
+                                                <Transitions>
+                                                    <DoubleTransition Property="Y"
+                                                                      Duration="0:0:0.18"/>
+                                                </Transitions>
+                                            </TranslateTransform.Transitions>
+                                        </TranslateTransform>
+                                    </StackPanel.RenderTransform>
+
+                                    <Path Classes="pm-queue-button-icon"
+                                          Data="M7.854 5.646c0.195-0.195 0.195-0.511 0-0.707-0.196-0.195-0.512-0.195-0.708 0L4.5 7.586 3.354 6.439c-0.196-0.195-0.512-0.195-0.708 0-0.195 0.196-0.195 0.512 0 0.707l1.5 1.5c0.196 0.195 0.512 0.195 0.708 0l3-3z"/>
+                                    <TextBlock Text="Added"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                    </Button>
 
                     <Button Grid.Column="1"
                             Content="{Binding EncodeButtonText}"
                             Command="{Binding EncodeButtonCommand}"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Bottom"
-                            MinHeight="34"
+                            Height="36"
+                            MinHeight="36"
                             Padding="10,6"
                             Classes.pm-primary="{Binding IsEncodeIdle}"
                             Classes.pm-cancel="{Binding IsEncodeInProgress}"/>
                 </Grid>
-            </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

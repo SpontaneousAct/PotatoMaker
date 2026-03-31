@@ -24,11 +24,11 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private readonly EncodeExecutionCoordinator _executionCoordinator;
     private readonly bool _initializeEncoderSupport;
     private readonly TimeSpan _cancelledStatusDuration;
-    private readonly TimeSpan _queueFeedbackVisibleDuration = TimeSpan.FromMilliseconds(1250);
-    private readonly TimeSpan _queueFeedbackExitDuration = TimeSpan.FromMilliseconds(220);
+    private readonly TimeSpan _queueCelebrationPulseDuration = TimeSpan.FromMilliseconds(180);
+    private readonly TimeSpan _queueCelebrationVisibleDuration = TimeSpan.FromMilliseconds(650);
     private CancellationTokenSource? _encodeCts;
     private CancellationTokenSource? _previewCts;
-    private CancellationTokenSource? _queueFeedbackCts;
+    private CancellationTokenSource? _queueCelebrationCts;
     private CancellationTokenSource? _statusResetCts;
     private Stopwatch? _encodeStopwatch;
     private int _previewVersion;
@@ -205,19 +205,23 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     public ICommand EncodeButtonCommand => IsEncodeInProgress ? CancelEncodeCommand : StartEncodeCommand;
 
     [ObservableProperty]
-    private bool _isQueueAddFeedbackVisible;
+    private bool _isQueueButtonCelebrating;
 
     [ObservableProperty]
-    private string _queueAddFeedbackTitle = "Added";
+    private double _queueButtonScale = 1d;
 
-    [ObservableProperty]
-    private double _queueAddFeedbackOpacity;
+    public bool IsCurrentSelectionQueued =>
+        TryBuildQueueDraft(out QueuedCompressionItemDraft? draft) &&
+        draft is not null &&
+        _compressionQueue.ContainsDraft(draft);
 
-    [ObservableProperty]
-    private double _queueAddFeedbackScale = 0.96d;
+    public double QueueButtonAddOpacity => IsCurrentSelectionQueued ? 0d : 1d;
 
-    [ObservableProperty]
-    private double _queueAddFeedbackOffsetY = 10d;
+    public double QueueButtonAddOffsetY => IsCurrentSelectionQueued ? -5d : 0d;
+
+    public double QueueButtonAddedOpacity => IsCurrentSelectionQueued ? 1d : 0d;
+
+    public double QueueButtonAddedOffsetY => IsCurrentSelectionQueued ? 0d : 5d;
 
     [RelayCommand(CanExecute = nameof(CanStartEncode))]
     private async Task StartEncode()
@@ -315,7 +319,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         QueueEnqueueResult result = await _compressionQueue.AddAsync(draft!);
         ConversionLog.SetIdleText(result.Message);
         if (result.Succeeded)
-            TriggerQueueAddFeedback();
+            TriggerQueueButtonCelebration();
         NotifyEncodeStateChanged();
     }
 
@@ -323,11 +327,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         TryBuildQueueDraft(out QueuedCompressionItemDraft? draft) &&
         draft is not null &&
         _compressionQueue.ActiveItemCount < _compressionQueue.MaxQueueSize &&
-        !_compressionQueue.Items.Any(item => item.BlocksDuplicateEntries &&
-                                             string.Equals(
-                                                 item.DuplicateKey,
-                                                 CompressionQueueItemViewModel.BuildDuplicateKey(draft),
-                                                 StringComparison.Ordinal));
+        !_compressionQueue.ContainsDraft(draft);
 
     [RelayCommand(CanExecute = nameof(CanCancelEncode))]
     private void CancelEncode()
@@ -721,64 +721,64 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         StartEncodeCommand.NotifyCanExecuteChanged();
         CancelEncodeCommand.NotifyCanExecuteChanged();
         AddToQueueCommand.NotifyCanExecuteChanged();
+        NotifyQueueButtonStateChanged();
         OnPropertyChanged(nameof(IsEncodeInProgress));
         OnPropertyChanged(nameof(IsEncodeIdle));
         OnPropertyChanged(nameof(EncodeButtonText));
         OnPropertyChanged(nameof(EncodeButtonCommand));
     }
 
-    private void TriggerQueueAddFeedback()
+    private void TriggerQueueButtonCelebration()
     {
-        QueueAddFeedbackTitle = "Added";
+        _queueCelebrationCts?.Cancel();
+        _queueCelebrationCts?.Dispose();
 
-        _queueFeedbackCts?.Cancel();
-        _queueFeedbackCts?.Dispose();
-
-        var feedbackCts = new CancellationTokenSource();
-        _queueFeedbackCts = feedbackCts;
-        _ = RunQueueAddFeedbackAsync(feedbackCts);
+        var celebrationCts = new CancellationTokenSource();
+        _queueCelebrationCts = celebrationCts;
+        _ = RunQueueButtonCelebrationAsync(celebrationCts);
     }
 
-    private async Task RunQueueAddFeedbackAsync(CancellationTokenSource feedbackCts)
+    private async Task RunQueueButtonCelebrationAsync(CancellationTokenSource celebrationCts)
     {
         try
         {
-            IsQueueAddFeedbackVisible = true;
-            QueueAddFeedbackOpacity = 0d;
-            QueueAddFeedbackScale = 0.96d;
-            QueueAddFeedbackOffsetY = 10d;
+            IsQueueButtonCelebrating = true;
+            QueueButtonScale = 0.98d;
 
             await Task.Yield();
-            if (feedbackCts.IsCancellationRequested || !ReferenceEquals(_queueFeedbackCts, feedbackCts))
+            if (celebrationCts.IsCancellationRequested || !ReferenceEquals(_queueCelebrationCts, celebrationCts))
                 return;
 
-            QueueAddFeedbackOpacity = 1d;
-            QueueAddFeedbackScale = 1d;
-            QueueAddFeedbackOffsetY = 0d;
+            QueueButtonScale = 1.04d;
 
-            await Task.Delay(_queueFeedbackVisibleDuration, feedbackCts.Token);
-            QueueAddFeedbackOpacity = 0d;
-            QueueAddFeedbackScale = 0.985d;
-            QueueAddFeedbackOffsetY = -8d;
+            await Task.Delay(_queueCelebrationPulseDuration, celebrationCts.Token);
+            QueueButtonScale = 1d;
 
-            await Task.Delay(_queueFeedbackExitDuration, feedbackCts.Token);
+            await Task.Delay(_queueCelebrationVisibleDuration, celebrationCts.Token);
         }
         catch (OperationCanceledException)
         {
         }
         finally
         {
-            if (ReferenceEquals(_queueFeedbackCts, feedbackCts))
+            if (ReferenceEquals(_queueCelebrationCts, celebrationCts))
             {
-                QueueAddFeedbackOpacity = 0d;
-                QueueAddFeedbackScale = 0.96d;
-                QueueAddFeedbackOffsetY = 10d;
-                IsQueueAddFeedbackVisible = false;
-                _queueFeedbackCts = null;
+                QueueButtonScale = 1d;
+                IsQueueButtonCelebrating = false;
+                _queueCelebrationCts = null;
             }
 
-            feedbackCts.Dispose();
+            celebrationCts.Dispose();
         }
+    }
+
+    private void NotifyQueueButtonStateChanged()
+    {
+        OnPropertyChanged(nameof(IsCurrentSelectionQueued));
+        OnPropertyChanged(nameof(QueueButtonAddOpacity));
+        OnPropertyChanged(nameof(QueueButtonAddOffsetY));
+        OnPropertyChanged(nameof(QueueButtonAddedOpacity));
+        OnPropertyChanged(nameof(QueueButtonAddedOffsetY));
     }
 
     private void UpdateSourceSelectionState()
@@ -912,6 +912,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             or nameof(CompressionQueueViewModel.QueueSummaryText))
         {
             AddToQueueCommand.NotifyCanExecuteChanged();
+            NotifyQueueButtonStateChanged();
         }
     }
 
@@ -974,9 +975,9 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     {
         CancelPendingPreview();
         CancelPendingStatusReset();
-        _queueFeedbackCts?.Cancel();
-        _queueFeedbackCts?.Dispose();
-        _queueFeedbackCts = null;
+        _queueCelebrationCts?.Cancel();
+        _queueCelebrationCts?.Dispose();
+        _queueCelebrationCts = null;
         CancellationTokenSource? encodeCts = _encodeCts;
         _encodeCts = null;
         encodeCts?.Cancel();

@@ -1,3 +1,4 @@
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PotatoMaker.Core;
@@ -11,6 +12,18 @@ namespace PotatoMaker.GUI.ViewModels;
 public partial class CompressionQueueItemViewModel : ViewModelBase
 {
     private const string WaitingInQueueText = "Ready";
+    private const double CommonAspectRatioTolerance = 0.02d;
+    private static readonly (string Label, double Value)[] CommonAspectRatios =
+    [
+        ("32:9", 32d / 9d),
+        ("21:9", 21d / 9d),
+        ("16:9", 16d / 9d),
+        ("4:3", 4d / 3d),
+        ("1:1", 1d),
+        ("3:4", 3d / 4d),
+        ("9:16", 9d / 16d)
+    ];
+
     private CancellationTokenSource? _encodeCts;
     private Action<CompressionQueueItemViewModel>? _cancelAction;
     private Func<CompressionQueueItemViewModel, Task>? _restartAction;
@@ -75,17 +88,19 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
 
     public string FileName => Path.GetFileName(InputPath);
 
-    public string SelectedSizeText => FormatFileSize(SelectedSizeBytes);
-
-    public string OutputSizeText => OutputSizeBytes is long bytes
-        ? FormatFileSize(bytes)
-        : "--";
-
     public string ElapsedText => string.IsNullOrWhiteSpace(ElapsedDisplay)
         ? "--"
         : ElapsedDisplay;
 
+    public string ProgressPercentText => $"{ProgressPercent}%";
+
     public string ProgressText => ProgressStateText;
+
+    public string OutputFpsText => FormatFrameRate(Strategy.OutputFrameRate);
+
+    public string CropText => FormatCrop(Strategy.CropFilter);
+
+    public string OutputPartsText => Strategy.Plan.Parts.ToString(CultureInfo.InvariantCulture);
 
     public bool IsWaiting => Status == CompressionQueueItemStatus.Queued;
 
@@ -134,10 +149,10 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
     private CompressionQueueItemStatus _status;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ProgressPercentText))]
     private int _progressPercent;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(OutputSizeText))]
     private long? _outputSizeBytes;
 
     [ObservableProperty]
@@ -388,14 +403,6 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
             : "Encoding...";
     }
 
-    private static string FormatFileSize(long bytes) => bytes switch
-    {
-        >= 1_073_741_824 => $"{bytes / 1_073_741_824.0:F2} GB",
-        >= 1_048_576 => $"{bytes / 1_048_576.0:F1} MB",
-        >= 1024 => $"{bytes / 1024.0:F0} KB",
-        _ => $"{bytes} B"
-    };
-
     private static string FormatElapsed(TimeSpan value)
     {
         int roundedSeconds = Math.Max(1, (int)Math.Round(value.TotalSeconds, MidpointRounding.AwayFromZero));
@@ -404,6 +411,48 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
         return rounded.TotalHours >= 1
             ? rounded.ToString(@"h\:mm\:ss")
             : rounded.ToString(@"m\:ss");
+    }
+
+    private static string FormatFrameRate(double value)
+    {
+        if (value <= 0)
+            return "--";
+
+        double roundedInteger = Math.Round(value, MidpointRounding.AwayFromZero);
+        return Math.Abs(value - roundedInteger) < 0.01
+            ? roundedInteger.ToString("0", CultureInfo.InvariantCulture)
+            : value.ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
+    private static string FormatCrop(string? cropFilter)
+    {
+        if (string.IsNullOrWhiteSpace(cropFilter))
+            return "None";
+
+        string cropExpression = cropFilter.Split(',', 2)[0].Trim();
+        if (!cropExpression.StartsWith("crop=", StringComparison.OrdinalIgnoreCase))
+            return "Applied";
+
+        string[] values = cropExpression["crop=".Length..].Split(':');
+        return values.Length >= 2 &&
+               int.TryParse(values[0], out int width) &&
+               int.TryParse(values[1], out int height) &&
+               width > 0 &&
+               height > 0
+            ? FormatAspectRatio(width, height)
+            : "Applied";
+    }
+
+    private static string FormatAspectRatio(int width, int height)
+    {
+        double actualRatio = width / (double)height;
+        foreach ((string label, double presetRatio) in CommonAspectRatios)
+        {
+            if (Math.Abs(actualRatio - presetRatio) / presetRatio <= CommonAspectRatioTolerance)
+                return label;
+        }
+
+        return CropDetector.AspectLabel(width, height);
     }
 
     private bool CanExecutePrimaryAction() =>

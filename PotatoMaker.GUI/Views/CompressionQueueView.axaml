@@ -48,7 +48,7 @@
         </Border>
 
         <Grid Grid.Row="1"
-              ColumnDefinitions="3.1*,0.95*,2.1*,0.95*,0.85*,80"
+              ColumnDefinitions="3.25*,0.75*,0.95*,0.7*,0.8*,0.95*,80"
               ColumnSpacing="12"
               IsVisible="{Binding HasItems}">
             <TextBlock Grid.Column="0"
@@ -56,15 +56,15 @@
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="1"
-                       Text="SIZE"
+                       Text="FPS"
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="2"
-                       Text="PROGRESS"
+                       Text="CROP"
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="3"
-                       Text="OUTPUT"
+                       Text="PARTS"
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="4"
@@ -72,6 +72,10 @@
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="5"
+                       Text="PROGRESS"
+                       Classes="pm-caption"
+                       FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="6"
                        Text="ACTIONS"
                        Classes="pm-caption"
                        FontWeight="SemiBold"
@@ -103,7 +107,7 @@
                         <Border Classes="pm-card"
                                 Margin="0,0,0,10"
                                 Padding="16,14">
-                            <Grid ColumnDefinitions="3.1*,0.95*,2.1*,0.95*,0.85*,80"
+                            <Grid ColumnDefinitions="3.25*,0.75*,0.95*,0.7*,0.8*,0.95*,80"
                                   ColumnSpacing="12">
                                 <StackPanel Grid.Column="0"
                                             Spacing="4"
@@ -118,35 +122,22 @@
                                 </StackPanel>
 
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding SelectedSizeText}"
+                                           Text="{Binding OutputFpsText}"
                                            VerticalAlignment="Center"
                                            MinWidth="0"
                                            FontWeight="SemiBold"/>
 
-                                <Grid Grid.Column="2"
-                                      RowDefinitions="Auto,Auto"
-                                      RowSpacing="6"
-                                      VerticalAlignment="Center"
-                                      HorizontalAlignment="Stretch"
-                                      MinWidth="0">
-                                    <ProgressBar Minimum="0"
-                                                 Maximum="100"
-                                                 Value="{Binding ProgressPercent}"
-                                                 HorizontalAlignment="Stretch"/>
-                                    <TextBlock Grid.Row="1"
-                                               Text="{Binding ProgressText}"
-                                               Classes="pm-caption"
-                                               HorizontalAlignment="Left"
-                                               TextAlignment="Left"
-                                               TextTrimming="CharacterEllipsis"
-                                               MaxLines="1"/>
-                                </Grid>
-
-                                <TextBlock Grid.Column="3"
-                                           Text="{Binding OutputSizeText}"
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding CropText}"
                                            VerticalAlignment="Center"
                                            MinWidth="0"
                                            TextTrimming="CharacterEllipsis"
+                                           FontWeight="SemiBold"/>
+
+                                <TextBlock Grid.Column="3"
+                                           Text="{Binding OutputPartsText}"
+                                           VerticalAlignment="Center"
+                                           MinWidth="0"
                                            FontWeight="SemiBold"/>
 
                                 <TextBlock Grid.Column="4"
@@ -156,6 +147,24 @@
                                            FontWeight="SemiBold"/>
 
                                 <Grid Grid.Column="5"
+                                      RowDefinitions="Auto,Auto"
+                                      RowSpacing="4"
+                                      VerticalAlignment="Center"
+                                      HorizontalAlignment="Stretch"
+                                      MinWidth="0">
+                                    <TextBlock Text="{Binding ProgressPercentText}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Row="1"
+                                               Text="{Binding ProgressText}"
+                                               Classes="pm-caption"
+                                               HorizontalAlignment="Left"
+                                               TextAlignment="Left"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxLines="1"/>
+                                </Grid>
+
+                                <Grid Grid.Column="6"
                                       ColumnDefinitions="36,36"
                                       ColumnSpacing="8"
                                       HorizontalAlignment="Center"

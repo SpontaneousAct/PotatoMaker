@@ -110,6 +110,15 @@ public partial class CompressionQueueViewModel : ViewModelBase, IDisposable
             string.Equals(item.InputPath, normalizedInputPath, StringComparison.OrdinalIgnoreCase));
     }
 
+    public bool ContainsDraft(QueuedCompressionItemDraft draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        string duplicateKey = CompressionQueueItemViewModel.BuildDuplicateKey(draft);
+        return Items.Any(item => item.BlocksDuplicateEntries &&
+                                 string.Equals(item.DuplicateKey, duplicateKey, StringComparison.Ordinal));
+    }
+
     public async Task<QueueEnqueueResult> AddAsync(QueuedCompressionItemDraft draft)
     {
         ArgumentNullException.ThrowIfNull(draft);
@@ -117,9 +126,7 @@ public partial class CompressionQueueViewModel : ViewModelBase, IDisposable
         if (ActiveItemCount >= MaxQueueSize)
             return new QueueEnqueueResult(false, $"Queue is full. Remove an item before adding more than {MaxQueueSize} videos.");
 
-        string duplicateKey = CompressionQueueItemViewModel.BuildDuplicateKey(draft);
-        if (Items.Any(item => item.BlocksDuplicateEntries &&
-                              string.Equals(item.DuplicateKey, duplicateKey, StringComparison.Ordinal)))
+        if (ContainsDraft(draft))
         {
             return new QueueEnqueueResult(false, "This exact video selection is already in the queue.");
         }
