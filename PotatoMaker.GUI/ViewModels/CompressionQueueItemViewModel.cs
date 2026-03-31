@@ -92,9 +92,17 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
         ? "--"
         : ElapsedDisplay;
 
-    public string ProgressPercentText => $"{ProgressPercent}%";
+    public string ProgressSummaryText => Status == CompressionQueueItemStatus.Completed
+        ? string.IsNullOrWhiteSpace(ElapsedDisplay)
+            ? "Done"
+            : $"Done in {ElapsedDisplay}"
+        : $"{ProgressPercent}%";
 
-    public string ProgressText => ProgressStateText;
+    public string ProgressText => Status == CompressionQueueItemStatus.Completed
+        ? string.Empty
+        : ProgressStateText;
+
+    public bool HasProgressText => !string.IsNullOrWhiteSpace(ProgressText);
 
     public string OutputFpsText => FormatFrameRate(Strategy.OutputFrameRate);
 
@@ -146,10 +154,13 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(HasPrimaryAction))]
     [NotifyPropertyChangedFor(nameof(PrimaryActionToolTip))]
     [NotifyPropertyChangedFor(nameof(PersistsAcrossSessions))]
+    [NotifyPropertyChangedFor(nameof(ProgressSummaryText))]
+    [NotifyPropertyChangedFor(nameof(ProgressText))]
+    [NotifyPropertyChangedFor(nameof(HasProgressText))]
     private CompressionQueueItemStatus _status;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ProgressPercentText))]
+    [NotifyPropertyChangedFor(nameof(ProgressSummaryText))]
     private int _progressPercent;
 
     [ObservableProperty]
@@ -157,6 +168,7 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ProgressText))]
+    [NotifyPropertyChangedFor(nameof(HasProgressText))]
     private string _progressStateText;
 
     [ObservableProperty]
@@ -164,6 +176,7 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ElapsedText))]
+    [NotifyPropertyChangedFor(nameof(ProgressSummaryText))]
     private string? _elapsedDisplay;
 
     public static CompressionQueueItemViewModel Create(QueuedCompressionItemDraft draft)
@@ -393,14 +406,10 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
         if (!string.IsNullOrWhiteSpace(label) &&
             label.Contains("analy", StringComparison.OrdinalIgnoreCase))
         {
-            return progressPercent > 0
-                ? $"Analyzing... {progressPercent}%"
-                : "Analyzing...";
+            return "Analyzing...";
         }
 
-        return progressPercent > 0
-            ? $"Encoding... {progressPercent}%"
-            : "Encoding...";
+        return "Encoding...";
     }
 
     private static string FormatElapsed(TimeSpan value)

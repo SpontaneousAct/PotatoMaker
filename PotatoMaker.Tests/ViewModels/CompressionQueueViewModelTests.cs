@@ -133,9 +133,10 @@ public sealed class CompressionQueueViewModelTests
                 [Path.GetFullPath(firstInputPath), Path.GetFullPath(secondInputPath)],
                 encodingService.Requests.Select(request => request.InputPath).ToArray());
             Assert.All(queue.Items, item => Assert.Equal(CompressionQueueItemStatus.Completed, item.Status));
-            Assert.All(queue.Items, item => Assert.Equal("Done", item.ProgressText));
-            Assert.All(queue.Items, item => Assert.Equal("100%", item.ProgressPercentText));
+            Assert.All(queue.Items, item => Assert.False(item.HasProgressText));
+            Assert.All(queue.Items, item => Assert.Equal(string.Empty, item.ProgressText));
             Assert.All(queue.Items, item => Assert.NotEqual("--", item.ElapsedText));
+            Assert.All(queue.Items, item => Assert.StartsWith("Done in ", item.ProgressSummaryText));
             Assert.Equal("60", queue.Items[0].OutputFpsText);
             Assert.Equal("12:5", queue.Items[0].CropText);
             Assert.Equal("1", queue.Items[0].OutputPartsText);
@@ -171,7 +172,24 @@ public sealed class CompressionQueueViewModelTests
         item.UpdateProgress(new EncodeProgress("encoding", 100));
 
         Assert.Equal(CompressionQueueItemStatus.Completed, item.Status);
-        Assert.Equal("Done", item.ProgressText);
+        Assert.False(item.HasProgressText);
+        Assert.Equal(string.Empty, item.ProgressText);
+        Assert.Equal("Done", item.ProgressSummaryText);
+    }
+
+    [Fact]
+    public void UpdateProgress_ShowsPercentOnlyOnce()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        CompressionQueueItemViewModel item = CompressionQueueItemViewModel.Create(
+            CreateDraft(inputPath, "D:\\encoded", VideoClipRange.Full(TimeSpan.FromSeconds(100)), 123));
+
+        item.MarkEncoding();
+        item.UpdateProgress(new EncodeProgress("encoding", 42));
+
+        Assert.Equal("42%", item.ProgressSummaryText);
+        Assert.True(item.HasProgressText);
+        Assert.Equal("Encoding...", item.ProgressText);
     }
 
     [Fact]
@@ -243,7 +261,8 @@ public sealed class CompressionQueueViewModelTests
             await item.PrimaryActionCommand.ExecuteAsync(null);
 
             Assert.Equal(CompressionQueueItemStatus.Completed, item.Status);
-            Assert.Equal("Done", item.ProgressText);
+            Assert.False(item.HasProgressText);
+            Assert.StartsWith("Done in ", item.ProgressSummaryText);
             Assert.Single(encodingService.Requests);
             Assert.Equal(1, notifier.NotificationCount);
             Assert.NotNull(settingsCoordinator.Current.CompressionQueueItems);

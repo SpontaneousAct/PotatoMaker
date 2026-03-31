@@ -106,6 +106,8 @@
                             Classes="pm-queue-add-button"
                             Classes.pm-queue-add-success="{Binding IsCurrentSelectionQueued}"
                             Command="{Binding AddToQueueCommand}"
+                            ToolTip.Tip="{Binding AddToQueueToolTip}"
+                            ToolTip.ShowOnDisabled="True"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Bottom"
                             ClipToBounds="False">

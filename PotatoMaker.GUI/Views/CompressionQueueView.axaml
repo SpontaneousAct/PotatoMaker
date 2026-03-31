@@ -48,7 +48,7 @@
         </Border>
 
         <Grid Grid.Row="1"
-              ColumnDefinitions="3.25*,0.75*,0.95*,0.7*,0.8*,0.95*,80"
+              ColumnDefinitions="3.35*,0.75*,0.95*,0.7*,1.15*,80"
               ColumnSpacing="12"
               IsVisible="{Binding HasItems}">
             <TextBlock Grid.Column="0"
@@ -68,14 +68,10 @@
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="4"
-                       Text="TIME"
-                       Classes="pm-caption"
-                       FontWeight="SemiBold"/>
-            <TextBlock Grid.Column="5"
                        Text="PROGRESS"
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
-            <TextBlock Grid.Column="6"
+            <TextBlock Grid.Column="5"
                        Text="ACTIONS"
                        Classes="pm-caption"
                        FontWeight="SemiBold"
@@ -107,7 +103,7 @@
                         <Border Classes="pm-card"
                                 Margin="0,0,0,10"
                                 Padding="16,14">
-                            <Grid ColumnDefinitions="3.25*,0.75*,0.95*,0.7*,0.8*,0.95*,80"
+                            <Grid ColumnDefinitions="3.35*,0.75*,0.95*,0.7*,1.15*,80"
                                   ColumnSpacing="12">
                                 <StackPanel Grid.Column="0"
                                             Spacing="4"
@@ -140,23 +136,18 @@
                                            MinWidth="0"
                                            FontWeight="SemiBold"/>
 
-                                <TextBlock Grid.Column="4"
-                                           Text="{Binding ElapsedText}"
-                                           VerticalAlignment="Center"
-                                           MinWidth="0"
-                                           FontWeight="SemiBold"/>
-
-                                <Grid Grid.Column="5"
+                                <Grid Grid.Column="4"
                                       RowDefinitions="Auto,Auto"
                                       RowSpacing="4"
                                       VerticalAlignment="Center"
                                       HorizontalAlignment="Stretch"
                                       MinWidth="0">
-                                    <TextBlock Text="{Binding ProgressPercentText}"
+                                    <TextBlock Text="{Binding ProgressSummaryText}"
                                                VerticalAlignment="Center"
                                                FontWeight="SemiBold"/>
                                     <TextBlock Grid.Row="1"
                                                Text="{Binding ProgressText}"
+                                               IsVisible="{Binding HasProgressText}"
                                                Classes="pm-caption"
                                                HorizontalAlignment="Left"
                                                TextAlignment="Left"
@@ -164,7 +155,7 @@
                                                MaxLines="1"/>
                                 </Grid>
 
-                                <Grid Grid.Column="6"
+                                <Grid Grid.Column="5"
                                       ColumnDefinitions="36,36"
                                       ColumnSpacing="8"
                                       HorizontalAlignment="Center"

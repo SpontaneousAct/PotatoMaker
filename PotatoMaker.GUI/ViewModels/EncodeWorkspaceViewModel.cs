@@ -223,6 +223,11 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
 
     public double QueueButtonAddedOffsetY => IsCurrentSelectionQueued ? 0d : 5d;
 
+    public string? AddToQueueToolTip =>
+        _compressionQueue.ActiveItemCount >= _compressionQueue.MaxQueueSize
+            ? $"Queue is full. Remove an item before adding more than {_compressionQueue.MaxQueueSize} videos."
+            : null;
+
     [RelayCommand(CanExecute = nameof(CanStartEncode))]
     private async Task StartEncode()
     {
@@ -779,6 +784,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(QueueButtonAddOffsetY));
         OnPropertyChanged(nameof(QueueButtonAddedOpacity));
         OnPropertyChanged(nameof(QueueButtonAddedOffsetY));
+        OnPropertyChanged(nameof(AddToQueueToolTip));
     }
 
     private void UpdateSourceSelectionState()
