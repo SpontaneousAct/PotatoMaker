@@ -4,33 +4,48 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const steps = [
   {
     title: "Open",
-    description: "Drop in a clip and let PotatoMaker inspect it for a sensible export plan."
+    description: "Drop in a clip or choose from the latest videos."
   },
   {
     title: "Trim",
-    description: "Grab only the part you want instead of re-exporting the full source video."
+    description: "Grab only the part you want."
   },
   {
     title: "Compress",
-    description: "Export a smaller MP4 that is easier to post in chats, forums, and social apps."
+    description: "Export a file that will always be under 10 MB."
   }
 ];
 
 const capabilities = [
   {
-    title: "Trim the moment you want to keep",
-    description: "Pick the useful part of the recording before you export anything.",
-    placeholder: "Trim view"
+    title: "Trim the part you actually want",
+    description: "Cut straight to the highlight instead of exporting the whole recording.",
+    icon: "content_cut"
   },
   {
     title: "Queue up multiple clips",
-    description: "Line up more than one video so you can keep working without babysitting every export.",
-    placeholder: "Queue view"
+    description: "Line up a few exports and let them run without babysitting each one.",
+    icon: "queue_play_next"
   },
   {
-    title: "Adjust crop and frame rate",
-    description: "Fine-tune the output when you want tighter framing or a lower FPS to save space.",
-    placeholder: "Crop and FPS"
+    title: "Adjust crop and FPS",
+    description: "Tighten framing or lower frame rate when the raw capture is bigger than it needs to be.",
+    icon: "tune"
+  },
+  {
+    title: "Auto-detect crop for ultrawide",
+    description: "Works with ultrawide and super ultrawide footage so empty space does not waste size.",
+    icon: "crop"
+  },
+  {
+    title: "Built-in auto-updates",
+    description: "Keeps the desktop app current without making updates a chore.",
+    icon: "system_update_alt"
+  },
+  {
+    title: "Recent videos ready to pick",
+    description: "Jump back into your latest saved captures without digging through folders.",
+    icon: "video_library"
   }
 ];
 
@@ -48,7 +63,7 @@ const copyrightYear = new Date().getFullYear();
   title="PotatoMaker | Compress any video to under 10 MB"
   description="PotatoMaker helps you trim and compress videos into smaller shareable MP4 clips without manual FFmpeg tuning."
 >
-  <main class="mx-auto min-h-screen w-full max-w-6xl px-5 py-6 sm:px-8 lg:px-10">
+  <main id="home" class="mx-auto min-h-screen w-full max-w-6xl px-5 py-6 sm:px-8 lg:px-10">
     <div class="grid min-h-screen grid-rows-[auto_1fr]">
       <header class="flex items-center justify-between gap-4 border-b border-[#3b322b] pb-5">
         <a class="flex items-center gap-3 text-white" href={homeHref}>
@@ -63,14 +78,14 @@ const copyrightYear = new Date().getFullYear();
         </a>
       </header>
 
-      <section class="grid items-center gap-10 py-10 lg:grid-cols-[1fr_0.95fr] lg:gap-14 lg:py-12">
+      <section class="grid items-center gap-10 py-8 lg:-translate-y-5 lg:grid-cols-[1fr_0.95fr] lg:gap-14 lg:py-8">
         <div class="space-y-8">
           <div class="space-y-5">
             <h1 class="max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
               Compress any video to under <br /> 10 MB.
             </h1>
             <p class="max-w-2xl text-base leading-7 text-stone-300 sm:text-lg">
-              Open a clip, trim the part you want, and let PotatoMaker choose a practical export
+              Open a video, trim the part you want, and let PotatoMaker choose a practical export
               strategy.
             </p>
           </div>
@@ -105,45 +120,56 @@ const copyrightYear = new Date().getFullYear();
     >
       <div class="space-y-2">
         <p class="text-sm font-medium uppercase tracking-[0.26em] text-[#d7af81]">Workflow</p>
-        <h2 class="text-2xl font-semibold text-white sm:text-3xl">Built for the quick-share path</h2>
+        <h2 class="text-2xl font-semibold text-white sm:text-3xl">Built for quickly sharing clips</h2>
       </div>
 
       <div class="grid items-center">
-        <div class="grid gap-4 md:grid-cols-3">
-          {steps.map((step, index) => (
-            <article class="rounded-[1.5rem] border border-[#463a31] bg-[#1d1815]/90 p-6">
-              <div class="text-sm font-medium uppercase tracking-[0.24em] text-[#d5ac7e]">
-                0{index + 1}
+        <div class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div class="rounded-[2rem] border border-[#4d3f34] bg-[linear-gradient(180deg,_rgba(34,27,23,0.98)_0%,_rgba(24,19,17,0.98)_100%)] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
+            <div class="flex aspect-[16/10] items-center justify-center rounded-[1.5rem] border border-dashed border-[#5e4d3e] bg-[#1a1512] px-6 text-center">
+              <div class="space-y-3">
+                <div class="text-xs uppercase tracking-[0.24em] text-[#d7af81]">Workflow GIF</div>
+                <p class="text-lg font-medium text-white">Gameplay clip demo goes here</p>
+                <p class="max-w-md text-sm leading-7 text-stone-400">
+                  Reserve this space for a short GIF showing open, trim, and compress in one pass.
+                </p>
               </div>
-              <h3 class="mt-3 text-xl font-semibold text-white">{step.title}</h3>
-              <p class="mt-3 text-sm leading-6 text-stone-300">{step.description}</p>
-            </article>
-          ))}
+            </div>
+          </div>
+
+          <div class="grid gap-4">
+            {steps.map((step) => (
+              <article class="rounded-[1.25rem] border border-[#43382f] bg-[#1b1714] px-5 py-4">
+                <h3 class="text-xl font-semibold text-white">{step.title}</h3>
+                <p class="mt-3 text-sm leading-7 text-stone-300">{step.description}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="grid min-h-screen grid-rows-[auto_1fr] border-t border-[#332b25] py-10">
-      <div class="space-y-2">
-        <p class="text-sm font-medium uppercase tracking-[0.26em] text-[#d7af81]">Functionality</p>
-        <h2 class="text-2xl font-semibold text-white sm:text-3xl">A simple flow from clip to export</h2>
-        <p class="max-w-2xl text-sm leading-7 text-stone-300 sm:text-base">
-          This section can later hold real screenshots. For now it shows the three moments the app is built around.
-        </p>
-      </div>
+    <section class="border-t border-[#332b25] py-16">
+      <div class="space-y-8">
+        <div class="max-w-2xl space-y-3">
+          <h2 class="text-2xl font-semibold text-white sm:text-3xl">Everything you need to make a clip fit</h2>
+          <p class="text-sm leading-7 text-stone-300 sm:text-base">
+            The basics are built in, so you can go from raw capture to something postable without a lot of fiddling.
+          </p>
+        </div>
 
-      <div class="grid items-center">
-        <div class="grid gap-4 lg:grid-cols-3">
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {capabilities.map((item) => (
-            <article class="rounded-[1.75rem] border border-[#43382f] bg-[#1b1714] p-5">
-              <div class="flex aspect-[4/3] items-center justify-center rounded-[1.25rem] border border-dashed border-[#5a4a3d] bg-[#211b18] text-center">
-                <div class="space-y-2 px-4">
-                  <div class="text-xs uppercase tracking-[0.24em] text-[#d7af81]">Placeholder</div>
-                  <p class="text-base font-medium text-white">{item.placeholder}</p>
+            <article class="flex min-h-[148px] items-center rounded-[1.25rem] border border-[#43382f] bg-[#1b1714] px-5 py-4">
+              <div class="flex items-center gap-3">
+                <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.85rem] bg-[#211b18] text-[#efc594]">
+                  <span aria-hidden="true" class="material-symbols-rounded">{item.icon}</span>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-[15px] font-semibold leading-6 text-white">{item.title}</h3>
+                  <p class="mt-1 text-sm leading-6 text-stone-300">{item.description}</p>
                 </div>
               </div>
-              <h3 class="mt-5 text-xl font-semibold text-white">{item.title}</h3>
-              <p class="mt-3 text-sm leading-7 text-stone-300">{item.description}</p>
             </article>
           ))}
         </div>
@@ -155,6 +181,7 @@ const copyrightYear = new Date().getFullYear();
         <div class="flex flex-col gap-6 rounded-[1.75rem] border border-[#43382f] bg-[#171311]/90 px-6 py-6 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
           <p class="text-sm text-stone-500">Copyright (c) {copyrightYear} PotatoMaker</p>
           <nav class="flex flex-wrap gap-x-6 gap-y-3 text-sm text-stone-300">
+            <a class="hover:text-white" href="#home">Home</a>
             <a class="hover:text-white" href="mailto:your@email.com">Contact me</a>
             <a class="hover:text-white" href={privacyUrl}>Privacy policy</a>
             <a class="hover:text-white" href={githubUrl}>Source code</a>

@@ -40,3 +40,13 @@ button {
 img {
   display: block;
 }
+
+.material-symbols-rounded {
+  font-size: 1.4rem;
+  line-height: 1;
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 500,
+    "GRAD" 0,
+    "opsz" 24;
+}
