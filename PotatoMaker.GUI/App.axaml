@@ -3,7 +3,7 @@
              xmlns:vm="using:PotatoMaker.GUI.ViewModels"
              xmlns:views="using:PotatoMaker.GUI.Views"
              x:Class="PotatoMaker.GUI.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Dark">
 
     <Application.DataTemplates>
         <DataTemplate DataType="vm:EncodeWorkspaceViewModel">
@@ -36,55 +36,55 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
-                    <Color x:Key="SystemAccentColor">#FF176FE5</Color>
-                    <Color x:Key="SystemAccentColorDark1">#FF0E5EC8</Color>
-                    <Color x:Key="SystemAccentColorDark2">#FF0B4DA7</Color>
-                    <Color x:Key="SystemAccentColorDark3">#FF083D86</Color>
-                    <Color x:Key="SystemAccentColorLight1">#FF267BEF</Color>
-                    <Color x:Key="SystemAccentColorLight2">#FF4A92F3</Color>
-                    <Color x:Key="SystemAccentColorLight3">#FF71ACF7</Color>
-                    <SolidColorBrush x:Key="PmWindowBackground">#FFE8ECF2</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmCardBackground">#FFF7F9FC</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmCardBorderBrush">#FFC9D2DF</SolidColorBrush>
+                    <Color x:Key="SystemAccentColor">#FF8F5F31</Color>
+                    <Color x:Key="SystemAccentColorDark1">#FF774D27</Color>
+                    <Color x:Key="SystemAccentColorDark2">#FF613E20</Color>
+                    <Color x:Key="SystemAccentColorDark3">#FF4A3018</Color>
+                    <Color x:Key="SystemAccentColorLight1">#FFA06D3A</Color>
+                    <Color x:Key="SystemAccentColorLight2">#FFB98552</Color>
+                    <Color x:Key="SystemAccentColorLight3">#FFD0A474</Color>
+                    <SolidColorBrush x:Key="PmWindowBackground">#FFF0ECE6</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCardBackground">#FFFBF8F3</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmCardBorderBrush">#FFD9CFC2</SolidColorBrush>
                     <LinearGradientBrush x:Key="PmHeroBackground" StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FFE0E8F4" Offset="0"/>
-                        <GradientStop Color="#FFD2DDED" Offset="1"/>
+                        <GradientStop Color="#FFF3ECE2" Offset="0"/>
+                        <GradientStop Color="#FFE9DED0" Offset="1"/>
                     </LinearGradientBrush>
-                    <SolidColorBrush x:Key="PmHeroBorderBrush">#FFBACBDD</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmHeadingForeground">#FF151D2B</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSectionTitleForeground">#FF223045</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmMutedForeground">#FF5A667B</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavSurfaceBackground">#FFF0F4F9</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavSurfaceBorderBrush">#FFCDD7E4</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHeroBorderBrush">#FFD7C8B8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHeadingForeground">#FF2B241E</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSectionTitleForeground">#FF473A2F</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmMutedForeground">#FF75685C</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavSurfaceBackground">#FFF5F1EA</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavSurfaceBorderBrush">#FFDDD2C5</SolidColorBrush>
                     <SolidColorBrush x:Key="PmNavItemBackground">#00000000</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavItemPointerOver">#FFE1E9F4</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavItemSelectedBackground">#FFD4E2F5</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavItemSelectedBorderBrush">#FFADC4E2</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmNavItemForeground">#FF223045</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPageBannerBackground">#FFEEF3F9</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPageBannerBorderBrush">#FFCAD7E6</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmHelpBadgeBackground">#FFD8E4F3</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FFBACBDD</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemPointerOver">#FFEDE4D9</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemSelectedBackground">#FFE6D8C8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemSelectedBorderBrush">#FFCDB59A</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmNavItemForeground">#FF473A2F</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPageBannerBackground">#FFF4EFE7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPageBannerBorderBrush">#FFDDD1C3</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHelpBadgeBackground">#FFEBDDCB</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmHelpBadgeBorderBrush">#FFD8C7B3</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdateDotBackground">#FF1E8E3E</SolidColorBrush>
                     <SolidColorBrush x:Key="PmQueueDotBackground">#FFE08A1E</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBackground">#FFFFF2DE</SolidColorBrush>
                     <SolidColorBrush x:Key="PmUpdatePanelBorderBrush">#FFE8C98B</SolidColorBrush>
                     <LinearGradientBrush x:Key="PmQueueFeedbackBackground" StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#FF1A86FF" Offset="0"/>
-                        <GradientStop Color="#FF1666D8" Offset="1"/>
+                        <GradientStop Color="#FF8F5F31" Offset="0"/>
+                        <GradientStop Color="#FF6F4724" Offset="1"/>
                     </LinearGradientBrush>
-                    <SolidColorBrush x:Key="PmQueueFeedbackBorderBrush">#FF5DA3FF</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmQueueFeedbackBorderBrush">#FFBC8550</SolidColorBrush>
                     <SolidColorBrush x:Key="PmQueueFeedbackForeground">#FFFFFFFF</SolidColorBrush>
                     <SolidColorBrush x:Key="PmQueueFeedbackBadgeBackground">#2EFFFFFF</SolidColorBrush>
                     <SolidColorBrush x:Key="PmQueueFeedbackBadgeBorderBrush">#40FFFFFF</SolidColorBrush>
 
-                    <SolidColorBrush x:Key="PmPrimaryBackground">#FF176FE5</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryPointerOver">#FF267BEF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryPressed">#FF0E5EC8</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryBorder">#FF3A86EA</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FFD9E0EA</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FFC7D0DC</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF7A8699</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryBackground">#FF8F5F31</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPointerOver">#FFA06D3A</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryPressed">#FF774D27</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryBorder">#FFB87E47</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBackground">#FFE4D7C7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledBorder">#FFD2C0AB</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmPrimaryDisabledForeground">#FF8E7D6B</SolidColorBrush>
                     <SolidColorBrush x:Key="PmTrimStartBackground">#FF2FA36B</SolidColorBrush>
                     <SolidColorBrush x:Key="PmTrimRangeBackground">#FF9DDFB8</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCancelBackground">#FFD24B4B</SolidColorBrush>
@@ -92,30 +92,30 @@
                     <SolidColorBrush x:Key="PmCancelPressed">#FFB63F3F</SolidColorBrush>
                     <SolidColorBrush x:Key="PmCancelBorder">#FFCC6A6A</SolidColorBrush>
 
-                    <SolidColorBrush x:Key="PmDropzoneBackground">#FFF0F5FA</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmDropzoneBorderBrush">#FFAFBED4</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmDropzoneDragBackground">#FFE2EBF7</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmDropzoneDragBorderBrush">#FF4E7EB8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneBackground">#FFF6F1EA</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneBorderBrush">#FFC8B8A5</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBackground">#FFEEE3D6</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmDropzoneDragBorderBrush">#FFA67D54</SolidColorBrush>
 
-                    <SolidColorBrush x:Key="PmStatBackground">#FFEEF3F8</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatBorderBrush">#FFCAD5E3</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmInsetBackground">#FFECF1F7</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmInsetBorderBrush">#FFCAD4E1</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmFieldBackground">#FFF8FAFD</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmFieldBorderBrush">#FFC7D2E0</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmFieldDisabledBackground">#FFC3CCD9</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmFieldDisabledBorderBrush">#FF97A5B8</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmFieldDisabledForeground">#FF4E5C70</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmFieldPointerOverBorderBrush">#FF3A86EA</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSliderThumbBackground">#FF176FE5</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSliderThumbPointerOverBackground">#FF267BEF</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSliderThumbBorderBrush">#FFF8FAFD</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSliderFillBackground">#FF176FE5</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSliderFillPointerOverBackground">#FF176FE5</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSliderTrackBackground">#FF9E9E9E</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSliderDisabledThumbBackground">#FFBCC4D1</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmSliderDisabledTrackBackground">#FFC9D0DB</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmStatusIdleForeground">#FF334257</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatBackground">#FFF3EEE7</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatBorderBrush">#FFDDD1C3</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBackground">#FFF0EAE2</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmInsetBorderBrush">#FFDBCEC0</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldBackground">#FFFCFAF6</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldBorderBrush">#FFD2C6B9</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldDisabledBackground">#FFD7CEC4</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldDisabledBorderBrush">#FFAF9F90</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldDisabledForeground">#FF685B4F</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmFieldPointerOverBorderBrush">#FFB87E47</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderThumbBackground">#FF8F5F31</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderThumbPointerOverBackground">#FFA06D3A</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderThumbBorderBrush">#FFFCFAF6</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderFillBackground">#FF8F5F31</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderFillPointerOverBackground">#FF8F5F31</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderTrackBackground">#FFC2B2A0</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderDisabledThumbBackground">#FFD7C8B8</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmSliderDisabledTrackBackground">#FFE7DDD2</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmStatusIdleForeground">#FF52463B</SolidColorBrush>
                     <SolidColorBrush x:Key="PmStatusAnalysingForeground">#FF245B9A</SolidColorBrush>
                     <SolidColorBrush x:Key="PmStatusEncodingForeground">#FF1E6A45</SolidColorBrush>
                     <SolidColorBrush x:Key="PmStatusCancelledForeground">#FF8C5B15</SolidColorBrush>
@@ -123,7 +123,7 @@
                     <SolidColorBrush x:Key="PmStatusDoneForeground">#FF1E6A45</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBackground">#FF0B0E14</SolidColorBrush>
                     <SolidColorBrush x:Key="PmVideoSurfaceBorderBrush">#FF2B3340</SolidColorBrush>
-                    <SolidColorBrush x:Key="PmVideoEmptyBackground">#FFDDE6F1</SolidColorBrush>
+                    <SolidColorBrush x:Key="PmVideoEmptyBackground">#FFE6DDD1</SolidColorBrush>
                     <SolidColorBrush x:Key="PmErrorForeground">#FFBC3030</SolidColorBrush>
                 </ResourceDictionary>
 
