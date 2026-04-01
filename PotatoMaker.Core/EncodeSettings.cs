@@ -19,6 +19,8 @@ public record EncodeSettings
 
     public const int DefaultSvtAv1Preset = 6;
 
+    public const int DefaultMaxVideoBitrateKbps = 10_000;
+
     public EncoderChoice Encoder { get; init; } = EncoderChoice.Nvenc;
 
     public string OutputNamePrefix { get; init; } = DefaultOutputNamePrefix;
@@ -36,6 +38,8 @@ public record EncodeSettings
     public int SvtAv1Preset { get; init; } = DefaultSvtAv1Preset;
 
     public int MinVideoBitrateKbps { get; init; } = 100;
+
+    public int MaxVideoBitrateKbps { get; init; } = DefaultMaxVideoBitrateKbps;
 
     public int HdFloorKbps { get; init; } = 500;
 

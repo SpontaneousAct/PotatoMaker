@@ -60,6 +60,15 @@ public sealed class EncodePlannerTests
     }
 
     [Fact]
+    public void PlanStrategy_ShortClip_UsesGlobalMaxVideoBitrate()
+    {
+        EncodePlanner.EncodePlan plan = EncodePlanner.PlanStrategy(0.1, 1920, 1080, 60, new EncodeSettings());
+
+        Assert.Equal(EncodeSettings.DefaultMaxVideoBitrateKbps, plan.VideoBitrateKbps);
+        Assert.Equal(1, plan.Parts);
+    }
+
+    [Fact]
     public void BuildFrameRateFilter_OnlyReturnsFilterWhenFrameRateDrops()
     {
         EncodeSettings cappedSettings = new()

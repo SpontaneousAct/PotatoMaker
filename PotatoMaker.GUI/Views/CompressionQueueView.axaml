@@ -46,7 +46,7 @@
         </Border>
 
         <Grid Grid.Row="1"
-              ColumnDefinitions="3.35*,0.75*,0.95*,0.7*,1.15*,80"
+              ColumnDefinitions="3.05*,0.8*,0.75*,0.95*,0.7*,1.15*,80"
               ColumnSpacing="12"
               IsVisible="{Binding HasItems}">
             <TextBlock Grid.Column="0"
@@ -54,22 +54,26 @@
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="1"
-                       Text="FPS"
+                       Text="LENGTH"
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="2"
-                       Text="CROP"
+                       Text="FPS"
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="3"
-                       Text="PARTS"
+                       Text="CROP"
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="4"
-                       Text="PROGRESS"
+                       Text="PARTS"
                        Classes="pm-caption"
                        FontWeight="SemiBold"/>
             <TextBlock Grid.Column="5"
+                       Text="PROGRESS"
+                       Classes="pm-caption"
+                       FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="6"
                        Text="ACTIONS"
                        Classes="pm-caption"
                        FontWeight="SemiBold"
@@ -101,7 +105,7 @@
                         <Border Classes="pm-card"
                                 Margin="0,0,0,10"
                                 Padding="16,14">
-                            <Grid ColumnDefinitions="3.35*,0.75*,0.95*,0.7*,1.15*,80"
+                            <Grid ColumnDefinitions="3.05*,0.8*,0.75*,0.95*,0.7*,1.15*,80"
                                   ColumnSpacing="12">
                                 <StackPanel Grid.Column="0"
                                             Spacing="4"
@@ -116,25 +120,31 @@
                                 </StackPanel>
 
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding OutputFpsText}"
+                                           Text="{Binding ClipLengthText}"
                                            VerticalAlignment="Center"
                                            MinWidth="0"
                                            FontWeight="SemiBold"/>
 
                                 <TextBlock Grid.Column="2"
+                                           Text="{Binding OutputFpsText}"
+                                           VerticalAlignment="Center"
+                                           MinWidth="0"
+                                           FontWeight="SemiBold"/>
+
+                                <TextBlock Grid.Column="3"
                                            Text="{Binding CropText}"
                                            VerticalAlignment="Center"
                                            MinWidth="0"
                                            TextTrimming="CharacterEllipsis"
                                            FontWeight="SemiBold"/>
 
-                                <TextBlock Grid.Column="3"
+                                <TextBlock Grid.Column="4"
                                            Text="{Binding OutputPartsText}"
                                            VerticalAlignment="Center"
                                            MinWidth="0"
                                            FontWeight="SemiBold"/>
 
-                                <Grid Grid.Column="4"
+                                <Grid Grid.Column="5"
                                       RowDefinitions="Auto,Auto"
                                       RowSpacing="4"
                                       VerticalAlignment="Center"
@@ -153,7 +163,7 @@
                                                MaxLines="1"/>
                                 </Grid>
 
-                                <Grid Grid.Column="5"
+                                <Grid Grid.Column="6"
                                       ColumnDefinitions="36,36"
                                       ColumnSpacing="8"
                                       HorizontalAlignment="Center"

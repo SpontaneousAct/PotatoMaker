@@ -88,6 +88,8 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
 
     public string FileName => Path.GetFileName(InputPath);
 
+    public string ClipLengthText => FormatDuration(ClipRange.Duration);
+
     public string ElapsedText => string.IsNullOrWhiteSpace(ElapsedDisplay)
         ? "--"
         : ElapsedDisplay;
@@ -412,7 +414,7 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
         return "Encoding...";
     }
 
-    private static string FormatElapsed(TimeSpan value)
+    private static string FormatDuration(TimeSpan value)
     {
         int roundedSeconds = Math.Max(1, (int)Math.Round(value.TotalSeconds, MidpointRounding.AwayFromZero));
         var rounded = TimeSpan.FromSeconds(roundedSeconds);
@@ -421,6 +423,8 @@ public partial class CompressionQueueItemViewModel : ViewModelBase
             ? rounded.ToString(@"h\:mm\:ss")
             : rounded.ToString(@"m\:ss");
     }
+
+    private static string FormatElapsed(TimeSpan value) => FormatDuration(value);
 
     private static string FormatFrameRate(double value)
     {

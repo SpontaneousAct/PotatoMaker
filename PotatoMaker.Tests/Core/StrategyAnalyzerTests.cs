@@ -29,4 +29,29 @@ public sealed class StrategyAnalyzerTests
                 File.Delete(inputPath);
         }
     }
+
+    [Fact]
+    public void BuildAnalysis_ShortClip_UsesGlobalBitrateCapWhenSourceBitrateIsHigher()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        File.WriteAllText(inputPath, "video");
+
+        try
+        {
+            VideoInfo info = new(TimeSpan.FromSeconds(95), 1920, 1080, 59.94, 48_000);
+            VideoClipRange clipRange = new(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10.1));
+
+            StrategyAnalysis analysis = StrategyAnalyzer.BuildAnalysis(inputPath, info, new EncodeSettings(), cropFilter: null, clipRange);
+
+            Assert.Equal(EncodeSettings.DefaultMaxVideoBitrateKbps, analysis.Plan.VideoBitrateKbps);
+            Assert.False(analysis.Plan.IsBitrateCappedToSource);
+            Assert.Equal(48_000, analysis.Plan.SourceVideoBitrateKbps);
+            Assert.Equal(1, analysis.Plan.Parts);
+        }
+        finally
+        {
+            if (File.Exists(inputPath))
+                File.Delete(inputPath);
+        }
+    }
 }

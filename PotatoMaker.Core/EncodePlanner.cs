@@ -55,7 +55,7 @@ public static class EncodePlanner
     public static EncodePlan PlanStrategy(double durationSecs, int sourceWidth, int sourceHeight, double sourceFrameRate, EncodeSettings settings)
     {
         ValidateDuration(durationSecs);
-        int bitrate = CalculateVideoBitrate(durationSecs, settings);
+        int bitrate = ApplyGlobalVideoBitrateCap(CalculateVideoBitrate(durationSecs, settings), settings);
         double effectiveBitrate = CalculateEffectiveBitrateForPlanning(bitrate, sourceFrameRate, settings);
         VideoFrameSize sourceFrameSize = NormalizeSourceFrameSize(sourceWidth, sourceHeight);
         PlannedResolution highResolution = BuildResolutionPlan(sourceFrameSize, FullHdHeight, settings.FullHdFloorKbps, "1080p");
@@ -71,7 +71,7 @@ public static class EncodePlanner
         while (effectiveBitrate < highResolution.RequiredBitrateKbps && parts < settings.MaxParts)
         {
             parts++;
-            bitrate = CalculateVideoBitrate(durationSecs / parts, settings);
+            bitrate = ApplyGlobalVideoBitrateCap(CalculateVideoBitrate(durationSecs / parts, settings), settings);
             effectiveBitrate = CalculateEffectiveBitrateForPlanning(bitrate, sourceFrameRate, settings);
         }
 
@@ -185,6 +185,14 @@ public static class EncodePlanner
 
     private static int CalculateVideoBitrate(double durationSecs, EncodeSettings settings) =>
         (int)(settings.EffectiveTargetMb * 8192.0 / durationSecs) - settings.AudioBitrateKbps;
+
+    private static int ApplyGlobalVideoBitrateCap(int bitrateKbps, EncodeSettings settings)
+    {
+        int normalizedBitrate = Math.Max(1, bitrateKbps);
+        return settings.MaxVideoBitrateKbps > 0
+            ? Math.Min(normalizedBitrate, settings.MaxVideoBitrateKbps)
+            : normalizedBitrate;
+    }
 
     private static double CalculateEffectiveBitrateForPlanning(int actualBitrateKbps, double sourceFrameRate, EncodeSettings settings)
     {

@@ -137,9 +137,11 @@ public sealed class CompressionQueueViewModelTests
             Assert.All(queue.Items, item => Assert.Equal(string.Empty, item.ProgressText));
             Assert.All(queue.Items, item => Assert.NotEqual("--", item.ElapsedText));
             Assert.All(queue.Items, item => Assert.StartsWith("Done in ", item.ProgressSummaryText));
+            Assert.Equal("0:20", queue.Items[0].ClipLengthText);
             Assert.Equal("60", queue.Items[0].OutputFpsText);
             Assert.Equal("12:5", queue.Items[0].CropText);
             Assert.Equal("1", queue.Items[0].OutputPartsText);
+            Assert.Equal("0:25", queue.Items[1].ClipLengthText);
             Assert.Equal("30", queue.Items[1].OutputFpsText);
             Assert.Equal("16:9", queue.Items[1].CropText);
             Assert.Equal("3", queue.Items[1].OutputPartsText);
