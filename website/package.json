@@ -1,0 +1,17 @@
+{
+  "name": "potatomaker-website",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "astro": "^6.1.2",
+    "tailwindcss": "^4.2.2"
+  }
+}

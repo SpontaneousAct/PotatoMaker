@@ -1,0 +1,110 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const steps = [
+  {
+    title: "Open",
+    description: "Drop in a clip and let PotatoMaker inspect it for a sensible export plan."
+  },
+  {
+    title: "Trim",
+    description: "Grab only the part you want instead of re-exporting the full source video."
+  },
+  {
+    title: "Compress",
+    description: "Export a smaller MP4 that is easier to post in chats, forums, and social apps."
+  }
+];
+
+const homeHref = import.meta.env.BASE_URL;
+const githubUrl = "https://github.com/SpontaneousAct/PotatoMaker";
+const iconUrl = `${homeHref}potato.ico`;
+const screenshotUrl = `${homeHref}images/app-screenshot.png`;
+---
+
+<BaseLayout
+  title="PotatoMaker | Compress any video to under 10 MB"
+  description="PotatoMaker helps you trim and compress videos into smaller shareable MP4 clips without manual FFmpeg tuning."
+>
+  <main class="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
+    <div class="grid min-h-[calc(100dvh-3rem)] grid-rows-[auto_1fr]">
+      <header class="flex items-center justify-between gap-4 border-b border-[#3b322b] pb-5">
+        <a class="flex items-center gap-3 text-white" href={homeHref}>
+          <img alt="PotatoMaker icon" class="h-8 w-8 rounded-md" src={iconUrl} />
+          <span class="text-lg font-semibold tracking-tight">PotatoMaker</span>
+        </a>
+        <a
+          class="rounded-full border border-[#4c4036] px-4 py-2 text-sm text-stone-200 hover:border-[#8f6232] hover:text-white"
+          href={githubUrl}
+        >
+          GitHub
+        </a>
+      </header>
+
+      <section class="grid items-center gap-10 py-10 lg:grid-cols-[1fr_0.95fr] lg:gap-14 lg:py-12">
+        <div class="space-y-8">
+          <div class="space-y-5">
+            <h1 class="max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              Compress any video to under <br> 10 MB.
+            </h1>
+            <p class="max-w-2xl text-base leading-7 text-stone-300 sm:text-lg">
+              Open a clip, trim the part you want, and let PotatoMaker choose a practical export
+              strategy.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <a
+              class="rounded-full bg-[#a36b33] px-5 py-3 font-medium text-white hover:bg-[#b97a3c]"
+              href="#download"
+            >
+              Download soon
+            </a>
+            <a
+              class="rounded-full border border-[#4c4036] px-5 py-3 font-medium text-white hover:border-[#8f6232]"
+              href="#workflow"
+            >
+              Learn more
+            </a>
+          </div>
+        </div>
+
+          <img
+            alt="PotatoMaker app screenshot"
+            class="w-full rounded-[0.3rem] border border-[#5a4a3d] bg-[#1f1916]"
+            src={screenshotUrl}
+          />
+      </section>
+    </div>
+
+    <section id="workflow" class="space-y-6 border-t border-[#332b25] py-10">
+      <div class="space-y-2">
+        <p class="text-sm font-medium uppercase tracking-[0.26em] text-[#d7af81]">Workflow</p>
+        <h2 class="text-2xl font-semibold text-white sm:text-3xl">Built for the quick-share path</h2>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-3">
+        {steps.map((step, index) => (
+          <article class="rounded-[1.5rem] border border-[#463a31] bg-[#1d1815]/90 p-6">
+            <div class="text-sm font-medium uppercase tracking-[0.24em] text-[#d5ac7e]">
+              0{index + 1}
+            </div>
+            <h3 class="mt-3 text-xl font-semibold text-white">{step.title}</h3>
+            <p class="mt-3 text-sm leading-6 text-stone-300">{step.description}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="download" class="border-t border-[#332b25] py-10">
+      <div class="rounded-[1.75rem] border border-[#43382f] bg-[#1b1714] px-6 py-8 sm:px-8">
+        <p class="text-sm font-medium uppercase tracking-[0.26em] text-[#d7af81]">Download</p>
+        <h2 class="mt-2 text-2xl font-semibold text-white">Simple placeholder for release links</h2>
+        <p class="mt-3 max-w-2xl text-sm leading-6 text-stone-300">
+          This section is intentionally light for now. We can add Windows download links, install
+          notes, screenshots, and a FAQ once the basic shape feels right.
+        </p>
+      </div>
+    </section>
+  </main>
+</BaseLayout>
