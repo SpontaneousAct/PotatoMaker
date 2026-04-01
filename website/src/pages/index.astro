@@ -1,18 +1,26 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 
+const workflowLoopDuration = 20;
+
 const steps = [
   {
     title: "Open",
-    description: "Drop in a clip or choose from the latest videos."
+    description: "Drop in a clip or choose one from the latest videos.",
+    start: 0,
+    end: 3
   },
   {
     title: "Trim",
-    description: "Grab only the part you want."
+    description: "Grab only the part you want.",
+    start: 3,
+    end: 12
   },
   {
     title: "Compress",
-    description: "Export a file that will always be under 10 MB."
+    description: "Export a file that will always be under 10 MB.",
+    start: 12,
+    end: workflowLoopDuration
   }
 ];
 
@@ -53,10 +61,12 @@ const homeHref = import.meta.env.BASE_URL;
 const githubUrl = "https://github.com/SpontaneousAct/PotatoMaker";
 const iconUrl = `${homeHref}potato.ico`;
 const screenshotUrl = `${homeHref}images/app-screenshot.png`;
+const previewVideoUrl = `${homeHref}images/preview.mp4`;
 const privacyUrl = `${homeHref}privacy/`;
 const latestSetupUrl =
   "https://github.com/SpontaneousAct/PotatoMaker/releases/latest/download/PotatoMaker-win-x64-Setup.exe";
 const copyrightYear = new Date().getFullYear();
+const workflowDuration = workflowLoopDuration;
 ---
 
 <BaseLayout
@@ -124,24 +134,41 @@ const copyrightYear = new Date().getFullYear();
       </div>
 
       <div class="grid items-center">
-        <div class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
-          <div class="rounded-[2rem] border border-[#4d3f34] bg-[linear-gradient(180deg,_rgba(34,27,23,0.98)_0%,_rgba(24,19,17,0.98)_100%)] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
-            <div class="flex aspect-[16/10] items-center justify-center rounded-[1.5rem] border border-dashed border-[#5e4d3e] bg-[#1a1512] px-6 text-center">
-              <div class="space-y-3">
-                <div class="text-xs uppercase tracking-[0.24em] text-[#d7af81]">Workflow GIF</div>
-                <p class="text-lg font-medium text-white">Gameplay clip demo goes here</p>
-                <p class="max-w-md text-sm leading-7 text-stone-400">
-                  Reserve this space for a short GIF showing open, trim, and compress in one pass.
-                </p>
-              </div>
+        <div class="grid gap-5 lg:grid-cols-[minmax(0,1.38fr)_minmax(16rem,21rem)] lg:items-center lg:justify-between">
+          <div
+            class="w-full"
+            data-workflow-demo
+            data-workflow-duration={workflowDuration}
+          >
+            <div class="overflow-hidden rounded-[0.7rem]">
+              <video
+                aria-label="PotatoMaker workflow preview showing opening a file, trimming, and compressing"
+                autoplay
+                data-workflow-media
+                height="752"
+                loop
+                muted
+                playsinline
+                preload="auto"
+                width="1280"
+                class="h-auto w-full"
+              >
+                <source src={previewVideoUrl} type="video/mp4" />
+              </video>
             </div>
           </div>
 
-          <div class="grid gap-4">
-            {steps.map((step) => (
-              <article class="rounded-[1.25rem] border border-[#43382f] bg-[#1b1714] px-5 py-4">
-                <h3 class="text-xl font-semibold text-white">{step.title}</h3>
-                <p class="mt-3 text-sm leading-7 text-stone-300">{step.description}</p>
+          <div class="grid gap-2.5 lg:justify-self-end">
+            {steps.map((step, index) => (
+              <article
+                class="workflow-step rounded-[0.8rem] border border-[#43382f] bg-[#1b1714] px-3.5 py-2.5 sm:px-4 sm:py-3"
+                data-workflow-step
+                data-start={step.start}
+                data-end={step.end}
+                data-active={index === 0 ? "true" : "false"}
+              >
+                <h3 class="text-[1.05rem] font-semibold text-white sm:text-[1.3rem]">{step.title}</h3>
+                <p class="mt-1 text-[0.92rem] leading-5 text-stone-300">{step.description}</p>
               </article>
             ))}
           </div>
@@ -179,7 +206,7 @@ const copyrightYear = new Date().getFullYear();
     <section class="border-t border-[#332b25] py-8">
       <footer class="w-full">
         <div class="flex flex-col gap-6 rounded-[1.75rem] border border-[#43382f] bg-[#171311]/90 px-6 py-6 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
-          <p class="text-sm text-stone-500">Copyright (c) {copyrightYear} PotatoMaker</p>
+          <p class="text-sm text-stone-500">Copyright (c) {copyrightYear} SpontaneousAct</p>
           <nav class="flex flex-wrap gap-x-6 gap-y-3 text-sm text-stone-300">
             <a class="hover:text-white" href="#home">Home</a>
             <a class="hover:text-white" href="mailto:your@email.com">Contact me</a>
@@ -191,3 +218,96 @@ const copyrightYear = new Date().getFullYear();
     </section>
   </main>
 </BaseLayout>
+
+<script>
+  const workflowRoots = document.querySelectorAll("[data-workflow-demo]");
+
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+  const setActiveStep = (steps, progressBar, currentTime, duration) => {
+    const normalizedTime = duration > 0 ? currentTime % duration : 0;
+
+    steps.forEach((step, index) => {
+      const start = Number(step.dataset.start ?? 0);
+      const end = Number(step.dataset.end ?? duration);
+      const isLastStep = index === steps.length - 1;
+      const isActive = normalizedTime >= start && (normalizedTime < end || (isLastStep && normalizedTime <= end));
+
+      step.dataset.active = isActive ? "true" : "false";
+    });
+
+    if (progressBar) {
+      const progress = duration > 0 ? clamp(normalizedTime / duration, 0, 1) : 0;
+      progressBar.style.width = `${progress * 100}%`;
+    }
+  };
+
+  workflowRoots.forEach((root) => {
+    const duration = Number(root.dataset.workflowDuration ?? root.dataset.duration ?? 0);
+    const section = root.closest("section");
+    const steps = Array.from(section?.querySelectorAll("[data-workflow-step]") ?? []);
+    const progressBar = root.querySelector("[data-workflow-progress]");
+    const media = root.querySelector("[data-workflow-media]");
+
+    if (steps.length === 0 || duration <= 0) {
+      return;
+    }
+
+    if (prefersReducedMotion.matches) {
+      setActiveStep(steps, progressBar, 0, duration);
+      return;
+    }
+
+    if (media instanceof HTMLVideoElement) {
+      const syncFromVideo = () => {
+        const videoDuration = Number.isFinite(media.duration) && media.duration > 0 ? media.duration : duration;
+        setActiveStep(steps, progressBar, media.currentTime, videoDuration);
+      };
+
+      media.addEventListener("timeupdate", syncFromVideo);
+      media.addEventListener("play", syncFromVideo);
+      media.addEventListener("seeked", syncFromVideo);
+      media.addEventListener("loadedmetadata", syncFromVideo);
+      syncFromVideo();
+      return;
+    }
+
+    let loopStart = performance.now();
+    let animationFrame = 0;
+
+    const resetLoop = () => {
+      loopStart = performance.now();
+    };
+
+    const tick = (now) => {
+      setActiveStep(steps, progressBar, (now - loopStart) / 1000, duration);
+      animationFrame = window.requestAnimationFrame(tick);
+    };
+
+    if (media instanceof HTMLImageElement) {
+      if (media.complete) {
+        resetLoop();
+      } else {
+        media.addEventListener("load", resetLoop, { once: true });
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        resetLoop();
+      }
+    });
+
+    animationFrame = window.requestAnimationFrame(tick);
+
+    window.addEventListener(
+      "beforeunload",
+      () => {
+        window.cancelAnimationFrame(animationFrame);
+      },
+      { once: true }
+    );
+  });
+</script>
