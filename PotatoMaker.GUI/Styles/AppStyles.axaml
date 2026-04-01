@@ -1,0 +1,692 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        <Style Selector="Window">
+            <Setter Property="Background" Value="{DynamicResource PmWindowBackground}"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style Selector="Border.pm-card">
+            <Setter Property="Background" Value="{DynamicResource PmCardBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+
+        <Style Selector="Border.pm-hero">
+            <Setter Property="Background" Value="{DynamicResource PmHeroBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmHeroBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Border.pm-nav-surface">
+            <Setter Property="Background" Value="{DynamicResource PmNavSurfaceBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmNavSurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+        </Style>
+
+        <Style Selector="Border.pm-inset">
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+
+        <Style Selector="Border.pm-video-surface">
+            <Setter Property="Background" Value="{DynamicResource PmVideoSurfaceBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmVideoSurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-heading">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmHeadingForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-section-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-page-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmHeadingForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-nav-brand">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="Grid.pm-nav-icon">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Path.pm-nav-icon-path">
+            <Setter Property="Stroke" Value="{DynamicResource PmMutedForeground}"/>
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Path.pm-nav-icon-fill">
+            <Setter Property="Fill" Value="{DynamicResource PmMutedForeground}"/>
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Border.pm-sidebar-version">
+            <Setter Property="Background" Value="{DynamicResource PmHelpBadgeBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmHelpBadgeBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-sidebar-version-text">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmNavItemForeground}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-settings-label">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-muted">
+            <Setter Property="Opacity" Value="0.82"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-caption">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Opacity" Value="0.82"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusIdleForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-analysing">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusAnalysingForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-encoding">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusEncodingForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-cancelled">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusCancelledForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-error">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusErrorForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-status-accent.pm-status-done">
+            <Setter Property="Foreground" Value="{DynamicResource PmStatusDoneForeground}"/>
+        </Style>
+
+        <Style Selector="Button">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="MinHeight" Value="30"/>
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{DynamicResource PmFieldBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldBorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="MinHeight" Value="32"/>
+        </Style>
+
+        <Style Selector="TextBox:pointerover, TextBox:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldPointerOverBorderBrush}"/>
+        </Style>
+
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource PmFieldBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldBorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="MinHeight" Value="32"/>
+        </Style>
+
+        <Style Selector="ComboBox:pointerover, ComboBox:focus-visible">
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldPointerOverBorderBrush}"/>
+        </Style>
+
+        <Style Selector="ComboBox:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmFieldDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmFieldDisabledBorderBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmFieldDisabledForeground}"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <Style Selector="Border.pm-control-cluster">
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="7,3"/>
+        </Style>
+
+        <Style Selector="Border.pm-audio-cluster">
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="5,2"/>
+            <Setter Property="MinHeight" Value="36"/>
+        </Style>
+
+        <Style Selector="Button.pm-control-pill">
+            <Setter Property="MinWidth" Value="88"/>
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="Padding" Value="12,3"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style Selector="Button.pm-control-pill:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+
+        <Style Selector="Button.pm-control-pill:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action">
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="MinWidth" Value="30"/>
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="15"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action Path.pm-control-icon">
+            <Setter Property="Fill" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="Width" Value="12"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action:disabled Path.pm-control-icon">
+            <Setter Property="Fill" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action.pm-primary:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action.pm-primary Path.pm-control-icon">
+            <Setter Property="Fill" Value="White"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action.pm-primary:disabled Path.pm-control-icon">
+            <Setter Property="Fill" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action.pm-cancel Path.pm-control-icon">
+            <Setter Property="Fill" Value="White"/>
+        </Style>
+
+        <Style Selector="Button.pm-player-action.pm-cancel:disabled Path.pm-control-icon">
+            <Setter Property="Fill" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-audio-action">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="MinWidth" Value="26"/>
+            <Setter Property="MinHeight" Value="26"/>
+            <Setter Property="CornerRadius" Value="13"/>
+        </Style>
+
+        <Style Selector="Button.pm-audio-action Path.pm-control-icon">
+            <Setter Property="Width" Value="13"/>
+            <Setter Property="Height" Value="13"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider">
+            <Setter Property="Width" Value="84"/>
+            <Setter Property="MinWidth" Value="84"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryBackground}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryBackground}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Thumb">
+            <Setter Property="Background" Value="{DynamicResource PmSliderThumbBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmSliderThumbBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Thumb:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderThumbPointerOverBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmSliderThumbBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Thumb:pressed">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryPressed}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmSliderThumbBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Button#PART_DecreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderFillBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Button#PART_DecreaseButton:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderFillPointerOverBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ RepeatButton#PART_DecreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderFillBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ RepeatButton#PART_DecreaseButton:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderFillPointerOverBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Button#PART_IncreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ Button#PART_IncreaseButton:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ RepeatButton#PART_IncreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider /template/ RepeatButton#PART_IncreaseButton:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmSliderTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ Thumb">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledThumbBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmSliderThumbBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ Button#PART_DecreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ RepeatButton#PART_DecreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ Button#PART_IncreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Slider.pm-audio-slider:disabled /template/ RepeatButton#PART_IncreaseButton">
+            <Setter Property="Background" Value="{DynamicResource PmSliderDisabledTrackBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="Path.pm-icon-pause">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-playing Path.pm-icon-play">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-playing Path.pm-icon-pause">
+            <Setter Property="IsVisible" Value="True"/>
+        </Style>
+
+        <Style Selector="Path.pm-icon-muted">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-muted Path.pm-icon-unmuted">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.is-muted Path.pm-icon-muted">
+            <Setter Property="IsVisible" Value="True"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemBackground}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmNavItemForeground}"/>
+            <Setter Property="MinHeight" Value="46"/>
+            <Setter Property="MinWidth" Value="46"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button.pm-nav-active">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemSelectedBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmNavItemSelectedBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button.pm-nav-active Path.pm-nav-icon-path">
+            <Setter Property="Stroke" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-nav-button.pm-nav-active Path.pm-nav-icon-fill">
+            <Setter Property="Fill" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-recent-item">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="8,7"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="MinHeight" Value="0"/>
+        </Style>
+
+        <Style Selector="Button.pm-recent-item:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+
+        <Style Selector="Border.pm-recent-thumbnail">
+            <Setter Property="Background" Value="{DynamicResource PmInsetBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmInsetBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="7"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+        </Style>
+
+        <Style Selector="Image.pm-recent-thumbnail-image">
+            <Setter Property="Stretch" Value="UniformToFill"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="Viewbox.pm-recent-thumbnail-placeholder">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Path.pm-recent-thumbnail-placeholder">
+            <Setter Property="Fill" Value="{DynamicResource PmMutedForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-recent-item-title">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="Border.pm-recent-processed-dot">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="{DynamicResource PmUpdateDotBackground}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCardBackground}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Border.pm-recent-queued-dot">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Height" Value="8"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="{DynamicResource PmQueueDotBackground}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCardBackground}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Border.pm-update-dot">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="{DynamicResource PmUpdateDotBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCardBackground}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+
+        <Style Selector="Border.pm-nav-count-badge">
+            <Setter Property="MinWidth" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Padding" Value="5,0"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCardBackground}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-nav-count-badge-text">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-queue-file-name">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmSectionTitleForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-action">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="MinWidth" Value="32"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-action:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-action:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-action Path.pm-control-icon">
+            <Setter Property="Fill" Value="{DynamicResource PmSectionTitleForeground}"/>
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.pm-queue-action:disabled Path.pm-control-icon">
+            <Setter Property="Fill" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
+        </Style>
+
+        <Style Selector="Border.pm-update-panel">
+            <Setter Property="Background" Value="{DynamicResource PmUpdatePanelBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmUpdatePanelBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Border.pm-queue-feedback">
+            <Setter Property="Background" Value="{DynamicResource PmQueueFeedbackBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmQueueFeedbackBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Padding" Value="10,8"/>
+        </Style>
+
+        <Style Selector="Border.pm-queue-feedback-badge">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="CornerRadius" Value="999"/>
+            <Setter Property="Background" Value="{DynamicResource PmQueueFeedbackBadgeBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmQueueFeedbackBadgeBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Border.pm-queue-feedback-badge TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource PmQueueFeedbackForeground}"/>
+        </Style>
+
+        <Style Selector="TextBlock.pm-queue-feedback-title">
+            <Setter Property="Foreground" Value="{DynamicResource PmQueueFeedbackForeground}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <Style Selector="Button.pm-primary">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryBackground}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style Selector="Button.pm-primary:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryPointerOver}"/>
+        </Style>
+
+        <Style Selector="Button.pm-primary:pressed">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryPressed}"/>
+        </Style>
+
+        <Style Selector="Button.pm-primary:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
+        </Style>
+
+        <Style Selector="Button.pm-cancel">
+            <Setter Property="Background" Value="{DynamicResource PmCancelBackground}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmCancelBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style Selector="Button.pm-cancel:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmCancelPointerOver}"/>
+        </Style>
+
+        <Style Selector="Button.pm-cancel:pressed">
+            <Setter Property="Background" Value="{DynamicResource PmCancelPressed}"/>
+        </Style>
+
+        <Style Selector="Button.pm-cancel:disabled">
+            <Setter Property="Background" Value="{DynamicResource PmPrimaryDisabledBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPrimaryDisabledBorder}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryDisabledForeground}"/>
+        </Style>
+
+        <Style Selector="Border.pm-dropzone">
+            <Setter Property="Background" Value="{DynamicResource PmDropzoneBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmDropzoneBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+
+        <Style Selector="Border.pm-dropzone.drag-over">
+            <Setter Property="Background" Value="{DynamicResource PmDropzoneDragBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmDropzoneDragBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Border.pm-stat">
+            <Setter Property="Background" Value="{DynamicResource PmStatBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmStatBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="MinWidth" Value="0"/>
+        </Style>
+
+        <Style Selector="Border.pm-page-banner">
+            <Setter Property="Background" Value="{DynamicResource PmPageBannerBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmPageBannerBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Border.pm-help-badge">
+            <Setter Property="Background" Value="{DynamicResource PmHelpBadgeBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PmHelpBadgeBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+        </Style>
+
+        <Style Selector="ProgressBar">
+            <Setter Property="Height" Value="6"/>
+        </Style>
+</Styles>
