@@ -161,6 +161,25 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void HelpScreen_UsesInjectedAppVersion()
+    {
+        var viewModel = new MainWindowViewModel(
+            new EncodeWorkspaceViewModel(
+                new NoOpAnalysisService(),
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false),
+            new RecordingThemeService(),
+            null,
+            new RecordingRecentVideoDiscoveryService(),
+            updateService: null,
+            appVersionService: new StubAppVersionService("2.4.6"));
+
+        Assert.Equal("v2.4.6", viewModel.Help.VersionText);
+    }
+
+    [Fact]
     public async Task QueueBadge_ReflectsActiveQueuedItems()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");

@@ -2,6 +2,8 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 const homeHref = import.meta.env.BASE_URL;
+const helpUrl = `${homeHref}help/`;
+const githubUrl = "https://github.com/SpontaneousAct/PotatoMaker";
 ---
 
 <BaseLayout
@@ -9,8 +11,8 @@ const homeHref = import.meta.env.BASE_URL;
   description="Privacy policy for the PotatoMaker website and app."
 >
   <main class="mx-auto min-h-screen w-full max-w-4xl px-5 py-6 sm:px-8 lg:px-10">
-    <header class="border-b border-[#3b322b] pb-5">
-      <a class="text-sm text-stone-300 hover:text-white" href={homeHref}>Back to home</a>
+    <header class="flex flex-wrap items-center justify-between gap-4 border-b border-[#3b322b] pb-5">
+      <a class="text-sm text-stone-300 hover:text-white" href={homeHref}>Back</a>
     </header>
 
     <section class="space-y-5 py-8">
@@ -22,7 +24,7 @@ const homeHref = import.meta.env.BASE_URL;
         <p>
           This website does not ask you to create an account, submit personal information, or sign in
           to use it.
-          The PotatoMaker app also does not collect, store, or send personal data, analytics, or
+          The PotatoMaker app also does not collect, store, or send personal data, analytics, orz
           telemetry.
         </p>
 

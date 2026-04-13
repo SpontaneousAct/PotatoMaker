@@ -119,7 +119,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             () => RecentVideosDirectory,
             value => RecentVideosDirectory = value,
             ApplyUpdateCommand);
-        Help = new HelpViewModel();
+        Help = new HelpViewModel(appVersionService ?? new AssemblyAppVersionService());
         Queue = compressionQueue ?? new CompressionQueueViewModel();
         VersionText = (appVersionService ?? new AssemblyAppVersionService()).DisplayVersion;
         _themeService = themeService;

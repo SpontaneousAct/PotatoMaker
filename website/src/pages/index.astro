@@ -62,6 +62,7 @@ const githubUrl = "https://github.com/SpontaneousAct/PotatoMaker";
 const iconUrl = `${homeHref}potato.ico`;
 const screenshotUrl = `${homeHref}images/app-screenshot.png`;
 const previewVideoUrl = `${homeHref}images/preview.mp4`;
+const helpUrl = `${homeHref}help/`;
 const privacyUrl = `${homeHref}privacy/`;
 const latestSetupUrl =
   "https://github.com/SpontaneousAct/PotatoMaker/releases/latest/download/PotatoMaker-win-x64-Setup.exe";
@@ -80,12 +81,20 @@ const workflowDuration = workflowLoopDuration;
           <img alt="PotatoMaker icon" class="h-8 w-8 rounded-md" src={iconUrl} />
           <span class="text-lg font-semibold tracking-tight">PotatoMaker</span>
         </a>
-        <a
-          class="rounded-full border border-[#4c4036] px-4 py-2 text-sm text-stone-200 hover:border-[#8f6232] hover:text-white"
-          href={githubUrl}
-        >
-          GitHub
-        </a>
+        <nav class="flex flex-wrap items-center gap-3">
+          <a
+            class="rounded-full border border-[#4c4036] px-4 py-2 text-sm text-stone-200 hover:border-[#8f6232] hover:text-white"
+            href={helpUrl}
+          >
+            Help
+          </a>
+          <a
+            class="rounded-full border border-[#4c4036] px-4 py-2 text-sm text-stone-200 hover:border-[#8f6232] hover:text-white"
+            href={githubUrl}
+          >
+            GitHub
+          </a>
+        </nav>
       </header>
 
       <section class="grid items-center gap-10 py-8 lg:-translate-y-5 lg:grid-cols-[1fr_0.95fr] lg:gap-14 lg:py-8">
@@ -109,23 +118,25 @@ const workflowDuration = workflowLoopDuration;
             </a>
             <a
               class="rounded-full border border-[#4c4036] px-5 py-3 font-medium text-white hover:border-[#8f6232]"
-              href="#workflow"
+              href=#learn-more
             >
               Learn more
             </a>
           </div>
         </div>
 
-        <img
-          alt="PotatoMaker app screenshot"
-          class="w-full rounded-[0.3rem] border border-[#5a4a3d] bg-[#1f1916]"
-          src={screenshotUrl}
-        />
+        <div class="hero-image-shell">
+          <img
+            alt="PotatoMaker app screenshot"
+            class="hero-image w-full rounded-[0.2rem] border-1 border-[#5a4a3d] bg-[#2c241d]"
+            src={screenshotUrl}
+          />
+        </div>
       </section>
     </div>
 
     <section
-      id="workflow"
+      id="learn-more"
       class="grid min-h-screen grid-rows-[auto_1fr] border-t border-[#332b25] py-10"
     >
       <div class="space-y-2">
@@ -140,7 +151,7 @@ const workflowDuration = workflowLoopDuration;
             data-workflow-demo
             data-workflow-duration={workflowDuration}
           >
-            <div class="overflow-hidden rounded-[0.7rem]">
+            <div class="overflow-hidden rounded-[0.3rem]">
               <video
                 aria-label="PotatoMaker workflow preview showing opening a file, trimming, and compressing"
                 autoplay
@@ -209,7 +220,7 @@ const workflowDuration = workflowLoopDuration;
           <p class="text-sm text-stone-500">Copyright (c) {copyrightYear} SpontaneousAct</p>
           <nav class="flex flex-wrap gap-x-6 gap-y-3 text-sm text-stone-300">
             <a class="hover:text-white" href="#home">Home</a>
-            <a class="hover:text-white" href="mailto:your@email.com">Contact me</a>
+            <a class="hover:text-white" href={helpUrl}>Help</a>
             <a class="hover:text-white" href={privacyUrl}>Privacy policy</a>
             <a class="hover:text-white" href={githubUrl}>Source code</a>
           </nav>
