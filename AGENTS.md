@@ -59,7 +59,7 @@ Important: `ProcessingPipeline` executes encoding and output stages only. It sho
 - Preferred entry points:
   - GUI: `PotatoMaker.GUI`
   - CLI: `PotatoMaker.Cli`
-- Settings persistence lives in the GUI layer via `SettingsService`.
+- Settings persistence lives in the GUI layer via `IAppSettingsService` / `JsonAppSettingsService`, coordinated through `AppSettingsCoordinator`.
 - Runtime dependencies such as `ffmpeg` and `ffprobe` must remain discoverable at runtime, either from PATH or expected bundled locations.
 
 ### Website
