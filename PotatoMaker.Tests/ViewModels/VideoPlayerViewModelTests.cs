@@ -7,6 +7,17 @@ namespace PotatoMaker.Tests.ViewModels;
 
 public sealed class VideoPlayerViewModelTests
 {
+    [Fact]
+    public void SkipStep_IsFiveSeconds()
+    {
+        FieldInfo? field = typeof(VideoPlayerViewModel).GetField(
+            "SkipStep",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.NotNull(field);
+        Assert.Equal(TimeSpan.FromSeconds(5), field!.GetValue(null));
+    }
+
     [Theory]
     [InlineData(true, false, false, false, false, true, true)]
     [InlineData(true, true, false, false, false, false, false)]
@@ -57,6 +68,57 @@ public sealed class VideoPlayerViewModelTests
         bool result = Assert.IsType<bool>(method!.Invoke(null, [timelineSeconds, durationSeconds]));
 
         Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(9.9, 10, 20, true)]
+    [InlineData(10, 10, 20, false)]
+    [InlineData(15, 10, 20, false)]
+    [InlineData(19.999, 10, 20, true)]
+    [InlineData(20, 10, 20, true)]
+    [InlineData(5, 10, 10, false)]
+    public void ShouldRestartLoopPlayback_DetectsPositionsOutsideTheSelection(
+        double timelineSeconds,
+        double selectionStartSeconds,
+        double selectionEndSeconds,
+        bool expected)
+    {
+        MethodInfo? method = typeof(VideoPlayerViewModel).GetMethod(
+            "ShouldRestartLoopPlayback",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.NotNull(method);
+
+        bool result = Assert.IsType<bool>(method!.Invoke(
+            null,
+            [timelineSeconds, selectionStartSeconds, selectionEndSeconds]));
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(5, 10)]
+    [InlineData(15, 15)]
+    [InlineData(25, 20)]
+    public void ClampToSelection_KeepsStepSeekingInsideTheLoopRange(
+        double positionSeconds,
+        double expectedSeconds)
+    {
+        MethodInfo? method = typeof(VideoPlayerViewModel).GetMethod(
+            "ClampToSelection",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.NotNull(method);
+
+        TimeSpan result = Assert.IsType<TimeSpan>(method!.Invoke(
+            null,
+            [
+                TimeSpan.FromSeconds(positionSeconds),
+                TimeSpan.FromSeconds(10),
+                TimeSpan.FromSeconds(20)
+            ]));
+
+        Assert.Equal(TimeSpan.FromSeconds(expectedSeconds), result);
     }
 
     [Theory]

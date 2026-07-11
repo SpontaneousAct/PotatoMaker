@@ -352,12 +352,18 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private void ResetPreview()
     {
         VideoPlayer.ResetPlayback();
+    }
 
+    private bool CanResetPreview() => FileInput.HasFile && VideoPlayer.CanResetPlayback;
+
+    [RelayCommand(CanExecute = nameof(CanResetRange))]
+    private void ResetRange()
+    {
         if (ClipRange.CanResetSelection)
             ClipRange.ResetSelectionCommand.Execute(null);
     }
 
-    private bool CanResetPreview() => FileInput.HasFile && (VideoPlayer.CanResetPlayback || ClipRange.CanResetSelection);
+    private bool CanResetRange() => FileInput.HasFile && ClipRange.CanResetSelection;
 
     private async void OnFileSelected(string path)
     {
@@ -395,6 +401,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             VideoPlayer.LoadSource(path, info.Duration, ClipRange.Selection);
             VideoSummary.SetSelectedRange(ClipRange.Selection, info.Duration);
             ResetPreviewCommand.NotifyCanExecuteChanged();
+            ResetRangeCommand.NotifyCanExecuteChanged();
 
             VideoSummary.SetStrategyPending();
             _detectedCropFilter = await _analysisService.DetectCropAsync(path, info, previewCts.Token);
@@ -446,6 +453,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         VideoSummary.Clear();
         ConversionLog.Clear();
         ResetPreviewCommand.NotifyCanExecuteChanged();
+        ResetRangeCommand.NotifyCanExecuteChanged();
         NotifyEncodeStateChanged();
     }
 
@@ -454,6 +462,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         string? path = FileInput.InputFilePath;
         VideoInfo? info = VideoSummary.Info;
         ResetPreviewCommand.NotifyCanExecuteChanged();
+        ResetRangeCommand.NotifyCanExecuteChanged();
         if (path is null || info is null)
             return;
 
@@ -507,12 +516,14 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         if (sender is FileInputViewModel && e.PropertyName == nameof(FileInputViewModel.HasFile))
         {
             ResetPreviewCommand.NotifyCanExecuteChanged();
+            ResetRangeCommand.NotifyCanExecuteChanged();
             return;
         }
 
         if (sender is ClipRangeViewModel && e.PropertyName is nameof(ClipRangeViewModel.CanResetSelection) or nameof(ClipRangeViewModel.HasDuration))
         {
             ResetPreviewCommand.NotifyCanExecuteChanged();
+            ResetRangeCommand.NotifyCanExecuteChanged();
             return;
         }
 

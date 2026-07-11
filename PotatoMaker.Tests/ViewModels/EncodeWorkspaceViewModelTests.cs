@@ -738,6 +738,43 @@ public sealed class EncodeWorkspaceViewModelTests
     }
 
     [Fact]
+    public async Task ResetRange_RestoresTheFullClip()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var player = new VideoPlayerViewModel(initializePlayer: false);
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                player,
+                new StaticEncoderCapabilityService(),
+                null,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            workspace.ClipRange.StartSeconds = 18;
+            workspace.ClipRange.EndSeconds = 41;
+            Assert.True(workspace.ResetRangeCommand.CanExecute(null));
+
+            workspace.ResetRangeCommand.Execute(null);
+
+            Assert.Equal(TimeSpan.Zero, workspace.ClipRange.Start);
+            Assert.Equal(workspace.VideoSummary.Info!.Duration, workspace.ClipRange.End);
+            Assert.False(workspace.ResetRangeCommand.CanExecute(null));
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
+    }
+
+    [Fact]
     public async Task PreviewTrimBoundary_UpdatesPlaybackPositionWhileAdjustingSelection()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");

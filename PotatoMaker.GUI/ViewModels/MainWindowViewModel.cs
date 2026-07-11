@@ -359,14 +359,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             Key.Space when Workspace.VideoPlayer.TogglePlaybackCommand.CanExecute(null) =>
                 ExecuteShortcut(Workspace.VideoPlayer.TogglePlaybackCommand),
-            Key.Q when Workspace.VideoPlayer.SeekBackwardTenSecondsCommand.CanExecute(null) =>
-                ExecuteShortcut(Workspace.VideoPlayer.SeekBackwardTenSecondsCommand),
+            Key.Q when Workspace.VideoPlayer.SeekBackwardFiveSecondsCommand.CanExecute(null) =>
+                ExecuteShortcut(Workspace.VideoPlayer.SeekBackwardFiveSecondsCommand),
             Key.A when Workspace.VideoPlayer.SetTrimStartCommand.CanExecute(null) =>
                 ExecuteShortcut(Workspace.VideoPlayer.SetTrimStartCommand),
             Key.D when Workspace.VideoPlayer.SetTrimEndCommand.CanExecute(null) =>
                 ExecuteShortcut(Workspace.VideoPlayer.SetTrimEndCommand),
-            Key.E when Workspace.VideoPlayer.SeekForwardTenSecondsCommand.CanExecute(null) =>
-                ExecuteShortcut(Workspace.VideoPlayer.SeekForwardTenSecondsCommand),
+            Key.E when Workspace.VideoPlayer.SeekForwardFiveSecondsCommand.CanExecute(null) =>
+                ExecuteShortcut(Workspace.VideoPlayer.SeekForwardFiveSecondsCommand),
             _ => false
         };
     }

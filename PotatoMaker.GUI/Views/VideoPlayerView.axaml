@@ -258,9 +258,9 @@
                                Text="{Binding VideoPlayer.CurrentTimeDisplay}"
                                Classes="pm-caption"/>
                     <Grid Grid.Column="1"
-                          ColumnDefinitions="64,44"
+                          ColumnDefinitions="72,44"
                           ColumnSpacing="4"
-                          Width="112"
+                          Width="120"
                           Height="20"
                           HorizontalAlignment="Center">
                         <TextBlock x:Name="TimelineZoomStatus"
@@ -285,6 +285,50 @@
             <Grid Grid.Row="4"
                   ColumnDefinitions="*,Auto,*"
                   Margin="0,8,0,0">
+                <Border Grid.Column="0"
+                        Classes="pm-playback-options-cluster"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Stretch">
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="4"
+                                VerticalAlignment="Center">
+                        <ToggleButton Classes="pm-player-action"
+                                      IsChecked="{Binding VideoPlayer.IsLoopSelectionEnabled}"
+                                      IsEnabled="{Binding VideoPlayer.CanSeek}"
+                                      AutomationProperties.Name="Loop selected range"
+                                      ToolTip.Tip="Loop range">
+                            <Viewbox Width="16"
+                                     Height="16"
+                                     Stretch="Uniform"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center">
+                                <Viewbox.RenderTransform>
+                                    <TranslateTransform Y="1"/>
+                                </Viewbox.RenderTransform>
+                                <Path Classes="pm-control-icon"
+                                      Data="{StaticResource PmIconLoopGeometry}"/>
+                            </Viewbox>
+                        </ToggleButton>
+
+                        <Button Classes="pm-player-action"
+                                Command="{Binding ResetRangeCommand}"
+                                AutomationProperties.Name="Reset trim range"
+                                ToolTip.Tip="Reset range">
+                            <Viewbox Width="16"
+                                     Height="16"
+                                     Stretch="Uniform"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center">
+                                <Viewbox.RenderTransform>
+                                    <TranslateTransform X="1" Y="1"/>
+                                </Viewbox.RenderTransform>
+                                <Path Classes="pm-control-icon"
+                                      Data="{StaticResource PmIconArrowCounterclockwiseGeometry}"/>
+                            </Viewbox>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
                 <Border Grid.Column="1"
                         Classes="pm-control-cluster"
                         HorizontalAlignment="Center">
@@ -297,16 +341,12 @@
                                 ToolTip.Tip="Set trim start to the current playback position"/>
 
                         <Button Classes="pm-player-action"
-                                Command="{Binding VideoPlayer.SeekBackwardTenSecondsCommand}"
-                                ToolTip.Tip="Back 10 seconds">
-                            <Viewbox Width="18"
-                                     Height="18"
-                                     Stretch="Uniform"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center">
-                                <Path Classes="pm-control-icon"
-                                      Data="{StaticResource PmIconSkipBack10Geometry}"/>
-                            </Viewbox>
+                                Command="{Binding VideoPlayer.SeekBackwardFiveSecondsCommand}"
+                                ToolTip.Tip="Back 5 seconds">
+                            <Path Classes="pm-control-icon"
+                                  Data="{StaticResource PmIconSkipBack5Geometry}"
+                                  Width="18"
+                                  Height="18"/>
                         </Button>
 
                         <Button Classes="pm-player-action pm-primary"
@@ -326,7 +366,8 @@
 
                         <Button Classes="pm-player-action pm-cancel"
                                 Command="{Binding ResetPreviewCommand}"
-                                ToolTip.Tip="Stop and reset preview">
+                                AutomationProperties.Name="Stop"
+                                ToolTip.Tip="Stop">
                             <Viewbox Width="10"
                                      Height="10"
                                      Stretch="Uniform"
@@ -338,16 +379,12 @@
                         </Button>
 
                         <Button Classes="pm-player-action"
-                                Command="{Binding VideoPlayer.SeekForwardTenSecondsCommand}"
-                                ToolTip.Tip="Forward 10 seconds">
-                            <Viewbox Width="18"
-                                     Height="18"
-                                     Stretch="Uniform"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center">
-                                <Path Classes="pm-control-icon"
-                                      Data="{StaticResource PmIconSkipForward10Geometry}"/>
-                            </Viewbox>
+                                Command="{Binding VideoPlayer.SeekForwardFiveSecondsCommand}"
+                                ToolTip.Tip="Forward 5 seconds">
+                            <Path Classes="pm-control-icon"
+                                  Data="{StaticResource PmIconSkipForward5Geometry}"
+                                  Width="18"
+                                  Height="18"/>
                         </Button>
 
                         <Button Classes="pm-control-pill"
