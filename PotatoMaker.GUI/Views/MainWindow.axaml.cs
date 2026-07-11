@@ -5,6 +5,7 @@ using Avalonia.Controls.Platform;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using System.Runtime.InteropServices;
 using PotatoMaker.GUI.ViewModels;
 
@@ -59,6 +60,13 @@ public partial class MainWindow : Window
         if (e.Handled || DataContext is not MainWindowViewModel viewModel)
             return;
 
+        if (IsTimelineResetShortcut(e.Key, e.KeyModifiers))
+        {
+            VideoPlayerView? videoPlayerView = this.GetVisualDescendants().OfType<VideoPlayerView>().FirstOrDefault();
+            e.Handled = videoPlayerView?.ResetTimelineZoom() == true;
+            return;
+        }
+
         if (MainWindowViewModel.IsGlobalShortcut(e.Key, e.KeyModifiers) &&
             !_pressedShortcutKeys.Add(e.Key))
         {
@@ -69,6 +77,9 @@ public partial class MainWindow : Window
         if (viewModel.TryHandleGlobalShortcut(e.Key, e.KeyModifiers))
             e.Handled = true;
     }
+
+    internal static bool IsTimelineResetShortcut(Key key, KeyModifiers modifiers) =>
+        modifiers == KeyModifiers.Control && key is Key.D0 or Key.NumPad0;
 
     private void OnWindowKeyUp(object? sender, KeyEventArgs e)
     {

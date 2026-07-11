@@ -28,12 +28,15 @@ public partial class VideoPlayerView : UserControl
     private readonly Border _trimStartHandle;
     private readonly Border _trimEndHandle;
     private readonly Border _timelineThumb;
+    private readonly TextBlock _timelineZoomStatus;
+    private readonly Button _resetTimelineZoomButton;
     private readonly Border _playerDropZone;
     private bool _deferredPlayerInitializationQueued;
     private bool _isLoaded;
     private DragTarget _activeDragTarget;
     private double _playbackPointerPressedX;
     private bool _playbackSeekMovedDuringInteraction;
+    private TimelineViewport _timelineViewport = TimelineViewport.Full;
 
     public VideoPlayerView()
     {
@@ -48,13 +51,17 @@ public partial class VideoPlayerView : UserControl
         _trimStartHandle = this.FindControl<Border>("TrimStartHandle")!;
         _trimEndHandle = this.FindControl<Border>("TrimEndHandle")!;
         _timelineThumb = this.FindControl<Border>("TimelineThumb")!;
+        _timelineZoomStatus = this.FindControl<TextBlock>("TimelineZoomStatus")!;
+        _resetTimelineZoomButton = this.FindControl<Button>("ResetTimelineZoomButton")!;
         _playerDropZone = this.FindControl<Border>("PlayerDropZone")!;
 
         _timelineCanvas.PointerPressed += OnTimelineCanvasPressed;
         _timelineCanvas.PointerMoved += OnTimelineCanvasPointerMoved;
         _timelineCanvas.PointerReleased += OnTimelinePointerReleased;
         _timelineCanvas.PointerCaptureLost += OnTimelinePointerCaptureLost;
+        _timelineCanvas.PointerWheelChanged += OnTimelinePointerWheelChanged;
         _timelineCanvas.PropertyChanged += OnTimelineCanvasPropertyChanged;
+        _resetTimelineZoomButton.Click += OnResetTimelineZoomClicked;
         _timelineThumb.PointerPressed += OnTimelineThumbPressed;
         _timelineThumb.PointerReleased += OnTimelinePointerReleased;
         _timelineThumb.PointerCaptureLost += OnTimelinePointerCaptureLost;
@@ -76,6 +83,7 @@ public partial class VideoPlayerView : UserControl
         DetachFilePickerHandler(_workspace);
         Unsubscribe(_workspace);
         _workspace = DataContext as EncodeWorkspaceViewModel;
+        _timelineViewport = TimelineViewport.Full;
         Subscribe(_workspace);
         AttachFilePickerHandler(_workspace);
         RequestDeferredPlayerInitialization();
@@ -183,6 +191,47 @@ public partial class VideoPlayerView : UserControl
         EndActiveDrag(e.Pointer);
     }
 
+    private void OnTimelinePointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (_workspace?.VideoPlayer.CanSeek != true)
+            return;
+
+        double wheelDelta = Math.Abs(e.Delta.Y) >= Math.Abs(e.Delta.X)
+            ? e.Delta.Y
+            : e.Delta.X;
+
+        if (!e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
+            _workspace.ClipRange.HasDuration != true ||
+            _workspace.ClipRange.MaximumSeconds <= 0)
+        {
+            return;
+        }
+
+        double duration = _workspace.ClipRange.MaximumSeconds;
+        double startFraction = _workspace.ClipRange.StartSeconds / duration;
+        double endFraction = _workspace.ClipRange.EndSeconds / duration;
+        _timelineViewport = _timelineViewport.ZoomToRange(wheelDelta, startFraction, endFraction);
+
+        UpdateTimelineVisuals();
+        e.Handled = true;
+    }
+
+    private void OnResetTimelineZoomClicked(object? sender, RoutedEventArgs e)
+    {
+        ResetTimelineZoom();
+        e.Handled = true;
+    }
+
+    internal bool ResetTimelineZoom()
+    {
+        if (!_timelineViewport.IsZoomed)
+            return false;
+
+        _timelineViewport = TimelineViewport.Full;
+        UpdateTimelineVisuals();
+        return true;
+    }
+
     private void Subscribe(EncodeWorkspaceViewModel? workspace)
     {
         if (workspace is null)
@@ -234,6 +283,17 @@ public partial class VideoPlayerView : UserControl
 
     private void OnObservedPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if ((sender is VideoPlayerViewModel && e.PropertyName == nameof(VideoPlayerViewModel.DurationSeconds)) ||
+            (sender is ClipRangeViewModel && e.PropertyName == nameof(ClipRangeViewModel.MaximumSeconds)))
+        {
+            _timelineViewport = TimelineViewport.Full;
+        }
+
+        bool trimBoundaryChanged = sender is ClipRangeViewModel &&
+            e.PropertyName is nameof(ClipRangeViewModel.StartSeconds) or nameof(ClipRangeViewModel.EndSeconds);
+        if (trimBoundaryChanged && _activeDragTarget is not DragTarget.TrimStart and not DragTarget.TrimEnd)
+            CenterTimelineOnTrimRange();
+
         if (e.PropertyName is nameof(ClipRangeViewModel.StartSeconds)
             or nameof(ClipRangeViewModel.EndSeconds)
             or nameof(ClipRangeViewModel.MaximumSeconds)
@@ -261,6 +321,11 @@ public partial class VideoPlayerView : UserControl
         bool hasTrimRange = _workspace?.ClipRange.HasDuration == true && (_workspace?.ClipRange.MaximumSeconds ?? 0) > 0;
 
         _timelineCanvas.IsEnabled = _workspace?.VideoPlayer.CanSeek == true;
+        _timelineZoomStatus.IsVisible = hasDuration && _timelineViewport.IsZoomed;
+        _resetTimelineZoomButton.IsVisible = hasDuration && _timelineViewport.IsZoomed;
+        _timelineZoomStatus.Text = _timelineViewport.IsZoomed
+            ? $"{_timelineViewport.Zoom:0.#}× zoom"
+            : string.Empty;
         if (!canRenderTimeline)
             return;
 
@@ -272,32 +337,44 @@ public partial class VideoPlayerView : UserControl
         _trackBackground.Width = trackWidth;
 
         double currentSeconds = _workspace?.VideoPlayer.TimelineSeconds ?? 0;
-        double currentX = hasDuration
-            ? trackLeft + (trackWidth * Clamp(currentSeconds / duration, 0, 1))
-            : trackLeft;
+        double currentFraction = hasDuration ? Clamp(currentSeconds / duration, 0, 1) : 0;
+        double currentPosition = _timelineViewport.MapTimelineToViewportPosition(currentFraction);
+        double currentX = trackLeft + (trackWidth * currentPosition);
 
         Canvas.SetLeft(_timelineProgressBar, trackLeft);
-        _timelineProgressBar.Width = Math.Max(0, currentX - trackLeft);
+        _timelineProgressBar.Width = Clamp(currentX - trackLeft, 0, trackWidth);
         Canvas.SetLeft(_timelineThumb, Clamp(currentX - (_timelineThumb.Width / 2), trackLeft - (_timelineThumb.Width / 2), trackRight - (_timelineThumb.Width / 2)));
-        _timelineThumb.IsVisible = hasDuration;
+        _timelineThumb.IsVisible = hasDuration && _timelineViewport.Contains(currentFraction);
 
-        _trimRangeBar.IsVisible = hasTrimRange;
-        _trimStartStem.IsVisible = hasTrimRange;
-        _trimEndStem.IsVisible = hasTrimRange;
-        _trimStartHandle.IsVisible = hasTrimRange;
-        _trimEndHandle.IsVisible = hasTrimRange;
+        _trimRangeBar.IsVisible = false;
+        _trimStartStem.IsVisible = false;
+        _trimEndStem.IsVisible = false;
+        _trimStartHandle.IsVisible = false;
+        _trimEndHandle.IsVisible = false;
 
         if (!hasTrimRange)
             return;
 
         double trimDuration = _workspace!.ClipRange.MaximumSeconds;
-        double startX = trackLeft + (trackWidth * Clamp(_workspace.ClipRange.StartSeconds / trimDuration, 0, 1));
-        double endX = trackLeft + (trackWidth * Clamp(_workspace.ClipRange.EndSeconds / trimDuration, 0, 1));
-        double rangeLeft = Math.Min(startX, endX);
-        double rangeWidth = Math.Max(4, Math.Abs(endX - startX));
+        double startFraction = Clamp(_workspace.ClipRange.StartSeconds / trimDuration, 0, 1);
+        double endFraction = Clamp(_workspace.ClipRange.EndSeconds / trimDuration, 0, 1);
+        double startX = trackLeft + (trackWidth * _timelineViewport.MapTimelineToViewportPosition(startFraction));
+        double endX = trackLeft + (trackWidth * _timelineViewport.MapTimelineToViewportPosition(endFraction));
+        double rangeLeft = Clamp(Math.Min(startX, endX), trackLeft, trackRight);
+        double rangeRight = Clamp(Math.Max(startX, endX), trackLeft, trackRight);
+        bool isRangeVisible = Math.Max(startFraction, endFraction) >= _timelineViewport.Start &&
+            Math.Min(startFraction, endFraction) <= _timelineViewport.End;
 
-        Canvas.SetLeft(_trimRangeBar, Clamp(rangeLeft, trackLeft, trackRight));
-        _trimRangeBar.Width = Math.Min(rangeWidth, Math.Max(4, trackRight - rangeLeft));
+        _trimRangeBar.IsVisible = isRangeVisible;
+        Canvas.SetLeft(_trimRangeBar, rangeLeft);
+        _trimRangeBar.Width = Math.Min(Math.Max(4, rangeRight - rangeLeft), trackRight - rangeLeft);
+
+        bool isStartVisible = _timelineViewport.Contains(startFraction);
+        bool isEndVisible = _timelineViewport.Contains(endFraction);
+        _trimStartStem.IsVisible = isStartVisible;
+        _trimStartHandle.IsVisible = isStartVisible;
+        _trimEndStem.IsVisible = isEndVisible;
+        _trimEndHandle.IsVisible = isEndVisible;
         Canvas.SetLeft(_trimStartStem, Clamp(startX - (_trimStartStem.Width / 2), 0, Math.Max(0, width - _trimStartStem.Width)));
         Canvas.SetLeft(_trimEndStem, Clamp(endX - (_trimEndStem.Width / 2), 0, Math.Max(0, width - _trimEndStem.Width)));
         Canvas.SetLeft(_trimStartHandle, Clamp(startX - (_trimStartHandle.Width / 2), 0, Math.Max(0, width - _trimStartHandle.Width)));
@@ -339,6 +416,11 @@ public partial class VideoPlayerView : UserControl
 
     private double NormalizePointer(double pointerX)
     {
+        return _timelineViewport.MapViewportPositionToTimeline(GetPointerViewportPosition(pointerX));
+    }
+
+    private double GetPointerViewportPosition(double pointerX)
+    {
         double width = _timelineCanvas.Bounds.Width;
         double trackWidth = Math.Max(1, width - (TrackInset * 2));
         return Clamp((pointerX - TrackInset) / trackWidth, 0, 1);
@@ -362,7 +444,24 @@ public partial class VideoPlayerView : UserControl
         else if (dragTarget is DragTarget.TrimStart or DragTarget.TrimEnd)
         {
             _workspace?.EndTrimBoundaryPreview();
+            CenterTimelineOnTrimRange();
+            UpdateTimelineVisuals();
         }
+    }
+
+    private void CenterTimelineOnTrimRange()
+    {
+        if (!_timelineViewport.IsZoomed ||
+            _workspace?.ClipRange.HasDuration != true ||
+            _workspace.ClipRange.MaximumSeconds <= 0)
+        {
+            return;
+        }
+
+        double duration = _workspace.ClipRange.MaximumSeconds;
+        _timelineViewport = _timelineViewport.CenterOnRange(
+            _workspace.ClipRange.StartSeconds / duration,
+            _workspace.ClipRange.EndSeconds / duration);
     }
 
     private async void OpenFilePickerAsync()

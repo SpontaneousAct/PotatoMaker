@@ -12,6 +12,22 @@
         <vm:EncodeWorkspaceViewModel/>
     </Design.DataContext>
 
+    <UserControl.Styles>
+        <Style Selector="Button.pm-timeline-reset">
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="20"/>
+            <Setter Property="Padding" Value="6,0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PmPrimaryBackground}"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <Style Selector="Button.pm-timeline-reset:pointerover">
+            <Setter Property="Background" Value="{DynamicResource PmNavItemPointerOver}"/>
+        </Style>
+    </UserControl.Styles>
+
     <Border x:Name="PlayerDropZone"
             Classes="pm-card pm-dropzone"
             Padding="8"
@@ -162,7 +178,7 @@
                         Spacing="3">
                 <Canvas x:Name="PlaybackTimelineCanvas"
                         Height="52"
-                        ClipToBounds="False"
+                        ClipToBounds="True"
                         Background="Transparent"
                         Cursor="Hand"
                         IsEnabled="{Binding VideoPlayer.CanSeek}">
@@ -241,6 +257,24 @@
                     <TextBlock Grid.Column="0"
                                Text="{Binding VideoPlayer.CurrentTimeDisplay}"
                                Classes="pm-caption"/>
+                    <Grid Grid.Column="1"
+                          ColumnDefinitions="64,44"
+                          ColumnSpacing="4"
+                          Width="112"
+                          Height="20"
+                          HorizontalAlignment="Center">
+                        <TextBlock x:Name="TimelineZoomStatus"
+                                   Grid.Column="0"
+                                   Classes="pm-caption"
+                                   VerticalAlignment="Center"
+                                   TextAlignment="Right"
+                                   IsVisible="False"/>
+                        <Button x:Name="ResetTimelineZoomButton"
+                                Grid.Column="1"
+                                Classes="pm-timeline-reset"
+                                Content="Reset"
+                                IsVisible="False"/>
+                    </Grid>
                     <TextBlock Grid.Column="2"
                                Text="{Binding VideoPlayer.DurationDisplay}"
                                Classes="pm-caption"
