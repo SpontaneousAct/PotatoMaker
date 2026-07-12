@@ -1,0 +1,20 @@
+{
+  "runtime": "win-x64",
+  "version": "3.0.23",
+  "nugetPackage": "VideoLAN.LibVLC.Windows",
+  "nugetSha256": "39D3035CCC9DCF58206F9888959B78F47F52EB2EE79AF7F50B01C3342C279E7F",
+  "officialBinaryUrl": "https://download.videolan.org/pub/videolan/vlc/3.0.23/win64/vlc-3.0.23-win64.7z",
+  "officialBinarySha256": "EB4FD8A28291DA73608C733786A09610FEA865FBE94113BCB60B91C1EBB8404A",
+  "sourceArchiveName": "vlc-3.0.23.tar.xz",
+  "sourceUrl": "https://download.videolan.org/pub/videolan/vlc/3.0.23/vlc-3.0.23.tar.xz",
+  "sourceSha256": "E891CAE6AA3CCDA69BF94173D5105CBC55C7A7D9B1D21B9B21666E69EFF3E7E0",
+  "packagingCommit": "fd3640610e1878208dcb74ebe439c6397ab5faf9",
+  "packagingSourceArchiveName": "libvlc-nuget-fd3640610e1878208dcb74ebe439c6397ab5faf9.tar.gz",
+  "packagingSourceUrl": "https://code.videolan.org/api/v4/projects/videolan%2Flibvlc-nuget/repository/archive.tar.gz?sha=fd3640610e1878208dcb74ebe439c6397ab5faf9",
+  "packagingSourceSha256": "33CD2BAF59F923CDE38F21602A9B0FFCB8B97E4D85A379FDBC6597DCBE5A0DE0",
+  "contribHost": "x86_64-w64-mingw32",
+  "excludedPlugins": [
+    "libdolby_surround_decoder_plugin.dll",
+    "libheadphone_channel_mixer_plugin.dll"
+  ]
+}

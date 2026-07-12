@@ -61,6 +61,7 @@ const homeHref = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
 const githubUrl = "https://github.com/SpontaneousAct/PotatoMaker";
+const thirdPartyNoticesUrl = `${githubUrl}/blob/main/third_party/notices/THIRD-PARTY-NOTICES.txt`;
 const iconUrl = `${homeHref}potato.ico`;
 const screenshotUrl = `${homeHref}images/app-screenshot.png`;
 const previewVideoUrl = `${homeHref}images/preview.mp4`;
@@ -125,6 +126,12 @@ const workflowDuration = workflowLoopDuration;
               Learn more
             </a>
           </div>
+          <p class="max-w-2xl text-xs leading-5 text-stone-400">
+            The installer includes FFmpeg and LibVLC under their respective open-source licenses.
+            <a class="ml-1 underline decoration-stone-500 underline-offset-2 hover:text-white" href={thirdPartyNoticesUrl}>
+              Third-party licenses and source
+            </a>
+          </p>
         </div>
 
         <div class="hero-image-shell">
@@ -224,6 +231,7 @@ const workflowDuration = workflowLoopDuration;
             <a class="hover:text-white" href="#home">Home</a>
             <a class="hover:text-white" href={helpUrl}>Help</a>
             <a class="hover:text-white" href={privacyUrl}>Privacy policy</a>
+            <a class="hover:text-white" href={thirdPartyNoticesUrl}>Third-party licenses</a>
             <a class="hover:text-white" href={githubUrl}>Source code</a>
           </nav>
         </div>

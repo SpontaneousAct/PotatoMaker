@@ -12,12 +12,12 @@ The workflow must be present on the default `master` branch before GitHub displa
 
 ## Create a release
 
-1. Decide the next semantic version, for example `1.8.0`.
+1. Decide the next semantic version, for example `1.9.0`.
 2. Change `VersionPrefix` in `Directory.Build.props` to that version.
 3. Commit the version change and all intended release changes, then push or merge them to `master`.
 4. Open the repository on GitHub and select **Actions → Release PotatoMaker → Run workflow**.
 5. Leave the branch set to `master`.
-6. Enter the same version from `Directory.Build.props`, without a leading `v`—for example, `1.8.0`.
+6. Enter the same version from `Directory.Build.props`, without a leading `v`—for example, `1.9.0`.
 7. Select **Mark the draft as a prerelease** only for beta or other non-stable builds.
 8. Select **Run workflow** and wait for it to finish.
 9. Open the draft release from the workflow summary or from the repository's **Releases** page.
@@ -27,7 +27,7 @@ The workflow must be present on the default `master` branch before GitHub displa
 
 Publishing makes the release visible to users, updates the `/releases/latest/` installer link used by the website, and makes the release available to PotatoMaker's updater.
 
-For a prerelease version such as `1.8.0-beta.1`, keep `VersionPrefix` as `1.8.0`, add `VersionSuffix` with the value `beta.1`, enter `1.8.0-beta.1` in the workflow, and select the prerelease checkbox.
+For a prerelease version such as `1.9.0-beta.1`, keep `VersionPrefix` as `1.9.0`, add `VersionSuffix` with the value `beta.1`, enter `1.9.0-beta.1` in the workflow, and select the prerelease checkbox.
 
 ## Safety checks
 
@@ -45,9 +45,32 @@ If a run fails after creating a draft, delete that abandoned draft and its tag b
 
 ## FFmpeg handling
 
-To avoid downloading an unpinned third-party binary during every release, the workflow extracts `ffmpeg.exe` and `ffprobe.exe` from the latest published PotatoMaker full package and bundles those same binaries into the new release.
+The release workflow builds `ffmpeg.exe` and `ffprobe.exe` from pinned source
+using `scripts/build-ffmpeg-runtime.ps1`. The recipe produces a GPL executable
+build with FFmpeg's cropdetect filter, SVT-AV1, NVIDIA encoding headers, and
+zlib. It explicitly disables nonfree components. PotatoMaker invokes FFmpeg as
+a separate process and does not link its libraries into the MIT-licensed app.
 
-Changing the bundled FFmpeg build is a separate maintenance operation: place the reviewed replacement binaries and their license files in `third_party/ffmpeg/win-x64`, produce and test a release locally, and then publish it. Subsequent Action-built releases will inherit that reviewed FFmpeg build.
+The source inputs, immutable revisions, and SHA-256 hashes are reviewed in
+`third_party/ffmpeg/manifests/source-win-x64.json`. The build generates a
+runtime manifest containing the executable hashes and observed configuration;
+packaging validates against that manifest and stops on a mismatch.
+
+Changing the bundled FFmpeg build is a separate maintenance operation:
+
+1. Update the pinned source revision and archive hash in
+   `third_party/ffmpeg/manifests/source-win-x64.json`.
+2. Review the license and configure changes, keeping `--enable-gpl` and
+   `--disable-nonfree` mandatory.
+3. Run `scripts/build-ffmpeg-runtime.ps1`, then exercise probing, thumbnailing,
+   CPU AV1 encoding, and (where hardware is available) NVENC.
+4. Produce and test a release locally before publishing it.
+
+Every package includes `THIRD-PARTY-NOTICES.txt`, canonical license texts, and
+`ffmpeg/FFMPEG-SOURCE.txt`. Releases also attach the complete FFmpeg and LibVLC
+corresponding-source zip files generated during the same run. The LibVLC Dolby Surround and headphone mixer
+plugins are intentionally excluded because those two files are GPL-only even
+though the containing NuGet package is labelled LGPL.
 
 ## Local draft upload fallback
 

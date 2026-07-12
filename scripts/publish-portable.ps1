@@ -6,6 +6,7 @@ param(
     [bool]$SingleFile = $false,
     [bool]$ReadyToRun = $false,
     [string]$FfmpegDir = "",
+    [string]$FfmpegManifestPath = "",
     [switch]$SkipFfmpeg,
     [switch]$SkipZip
 )
@@ -22,6 +23,8 @@ $guiProject = Join-Path $repoRoot "PotatoMaker.GUI\PotatoMaker.GUI.csproj"
 $versionPropsPath = Join-Path $repoRoot "Directory.Build.props"
 $publishRoot = Join-Path $artifactsDir "publish"
 $portableRoot = Join-Path $artifactsDir "portable"
+$noticesSourceDir = Join-Path $repoRoot "third_party\notices"
+$defaultFfmpegManifestPath = Join-Path $repoRoot "third_party\ffmpeg\$Runtime\runtime-manifest.json"
 
 function Read-ChoiceValue {
     param(
@@ -172,6 +175,115 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
     $Version = Get-DefaultSemanticVersion -Path $versionPropsPath
 }
 
+if ([string]::IsNullOrWhiteSpace($FfmpegManifestPath)) {
+    $FfmpegManifestPath = $defaultFfmpegManifestPath
+}
+
+function Get-ExecutableVersionOutput {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath
+    )
+
+    $output = & $FilePath -hide_banner -version 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not inspect executable: $FilePath"
+    }
+
+    return $output.Trim()
+}
+
+function Test-ApprovedFfmpegBuild {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FfmpegPath,
+        [Parameter(Mandatory = $true)]
+        [string]$FfprobePath,
+        [Parameter(Mandatory = $true)]
+        [string]$ManifestPath,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedRuntime
+    )
+
+    if (-not (Test-Path -LiteralPath $ManifestPath)) {
+        throw "Approved FFmpeg manifest not found: $ManifestPath"
+    }
+
+    $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    if ($manifest.runtime -ne $ExpectedRuntime) {
+        throw "FFmpeg manifest runtime '$($manifest.runtime)' does not match '$ExpectedRuntime'."
+    }
+
+    foreach ($property in @(
+        "versionContains",
+        "license",
+        "sourceUrl",
+        "sourceArchiveUrl",
+        "ffmpegSha256",
+        "ffprobeSha256")) {
+        if ([string]::IsNullOrWhiteSpace($manifest.$property)) {
+            throw "FFmpeg manifest is missing '$property': $ManifestPath"
+        }
+    }
+
+    $ffmpegHash = (Get-FileHash -LiteralPath $FfmpegPath -Algorithm SHA256).Hash
+    $ffprobeHash = (Get-FileHash -LiteralPath $FfprobePath -Algorithm SHA256).Hash
+    if ($ffmpegHash -ne $manifest.ffmpegSha256) {
+        throw "ffmpeg.exe is not the approved build for $ExpectedRuntime. Expected $($manifest.ffmpegSha256), got $ffmpegHash."
+    }
+    if ($ffprobeHash -ne $manifest.ffprobeSha256) {
+        throw "ffprobe.exe is not the approved build for $ExpectedRuntime. Expected $($manifest.ffprobeSha256), got $ffprobeHash."
+    }
+
+    $ffmpegOutput = Get-ExecutableVersionOutput -FilePath $FfmpegPath
+    $ffprobeOutput = Get-ExecutableVersionOutput -FilePath $FfprobePath
+    if (-not $ffmpegOutput.Contains($manifest.versionContains, [System.StringComparison]::OrdinalIgnoreCase) -or
+        -not $ffprobeOutput.Contains($manifest.versionContains, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "FFmpeg executables do not report approved version '$($manifest.versionContains)'."
+    }
+
+    foreach ($flag in @($manifest.requiredConfigurationFlags)) {
+        if (-not $ffmpegOutput.Contains($flag, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Approved FFmpeg build is missing required configuration flag '$flag'."
+        }
+    }
+    foreach ($flag in @($manifest.forbiddenConfigurationFlags)) {
+        if ($ffmpegOutput.Contains($flag, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "FFmpeg build is not redistributable because it contains forbidden configuration flag '$flag'."
+        }
+    }
+
+    return [pscustomobject]@{
+        Manifest = $manifest
+        FfmpegHash = $ffmpegHash
+        FfprobeHash = $ffprobeHash
+        FfmpegOutput = $ffmpegOutput
+        FfprobeOutput = $ffprobeOutput
+    }
+}
+
+function Copy-ThirdPartyNotices {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Destination
+    )
+
+    $noticesPath = Join-Path $noticesSourceDir "THIRD-PARTY-NOTICES.txt"
+    $licenseSourceDir = Join-Path $noticesSourceDir "licenses"
+    $potatoMakerLicense = Join-Path $repoRoot "LICENSE.txt"
+    foreach ($requiredPath in @($noticesPath, $licenseSourceDir, $potatoMakerLicense)) {
+        if (-not (Test-Path -LiteralPath $requiredPath)) {
+            throw "Required license material not found: $requiredPath"
+        }
+    }
+
+    $licenseDestination = Join-Path $Destination "licenses"
+    New-Item -ItemType Directory -Path $licenseDestination -Force | Out-Null
+    Copy-Item -LiteralPath $noticesPath -Destination (Join-Path $Destination "THIRD-PARTY-NOTICES.txt") -Force
+    Copy-Item -Path (Join-Path $licenseSourceDir "*") -Destination $licenseDestination -Recurse -Force
+    Copy-Item -LiteralPath $potatoMakerLicense -Destination (Join-Path $licenseDestination "PotatoMaker-MIT.txt") -Force
+}
+
 if (-not $PSBoundParameters.ContainsKey("Configuration")) {
     $Configuration = Read-ChoiceValue -Prompt "Configuration?" -Choices @("Release", "Debug") -Default $Configuration
 }
@@ -263,6 +375,19 @@ if (-not (Test-Path $packageDir)) {
     throw "Publish output not found: $packageDir"
 }
 
+Copy-ThirdPartyNotices -Destination $packageDir
+
+$forbiddenLibVlcPlugins = @(
+    "libdolby_surround_decoder_plugin.dll",
+    "libheadphone_channel_mixer_plugin.dll"
+)
+foreach ($pluginName in $forbiddenLibVlcPlugins) {
+    $matches = @(Get-ChildItem -LiteralPath $packageDir -Recurse -File -Filter $pluginName -ErrorAction SilentlyContinue)
+    if ($matches.Count -ne 0) {
+        throw "GPL-only LibVLC plugin must not be packaged: $($matches[0].FullName)"
+    }
+}
+
 if (-not $SkipFfmpeg) {
     if ([string]::IsNullOrWhiteSpace($FfmpegDir)) {
         throw "FFmpeg directory not provided. Add ffmpeg.exe + ffprobe.exe to third_party\\ffmpeg\\$Runtime, or pass -FfmpegDir <path>, or install both tools on PATH, or use -SkipFfmpeg."
@@ -274,6 +399,11 @@ if (-not $SkipFfmpeg) {
 
     if (-not (Test-Path $ffmpegExe)) { throw "Missing ffmpeg.exe in $ffmpegDirPath" }
     if (-not (Test-Path $ffprobeExe)) { throw "Missing ffprobe.exe in $ffmpegDirPath" }
+    $approvedFfmpeg = Test-ApprovedFfmpegBuild `
+        -FfmpegPath $ffmpegExe `
+        -FfprobePath $ffprobeExe `
+        -ManifestPath $FfmpegManifestPath `
+        -ExpectedRuntime $Runtime
     Write-Host "Bundling FFmpeg from: $ffmpegDirPath"
 
     $targetFfmpegDir = Join-Path $packageDir "ffmpeg"
@@ -282,8 +412,37 @@ if (-not $SkipFfmpeg) {
     Copy-Item $ffmpegExe -Destination $targetFfmpegDir -Force
     Copy-Item $ffprobeExe -Destination $targetFfmpegDir -Force
 
-    Get-ChildItem -Path $ffmpegDirPath -File -Include *.txt,LICENSE* -ErrorAction SilentlyContinue |
-        Copy-Item -Destination $targetFfmpegDir -Force
+    $manifest = $approvedFfmpeg.Manifest
+    $sourceNotice = @"
+FFmpeg binary, source, and build information
+============================================
+
+Distributor: $($manifest.distributor)
+Reported version contains: $($manifest.versionContains)
+License: $($manifest.license)
+FFmpeg source commit: $($manifest.sourceCommit)
+Source: $($manifest.sourceUrl)
+Source archive: $($manifest.sourceArchiveUrl)
+Corresponding source bundle: $($manifest.sourceBundleName)
+Corresponding source bundle SHA-256: $($manifest.sourceBundleSha256)
+Build recipe: $($manifest.buildRecipe)
+ffmpeg.exe SHA-256: $($approvedFfmpeg.FfmpegHash)
+ffprobe.exe SHA-256: $($approvedFfmpeg.FfprobeHash)
+
+Configuration and versions
+--------------------------
+$($approvedFfmpeg.FfmpegOutput)
+
+$($approvedFfmpeg.FfprobeOutput)
+"@
+    [System.IO.File]::WriteAllText(
+        (Join-Path $targetFfmpegDir "FFMPEG-SOURCE.txt"),
+        $sourceNotice,
+        [System.Text.UTF8Encoding]::new($false))
+    Copy-Item -LiteralPath (Join-Path $noticesSourceDir "licenses\GPL-2.0.txt") -Destination $targetFfmpegDir -Force
+    Copy-Item -LiteralPath (Join-Path $noticesSourceDir "licenses\SVT-AV1-BSD-3-Clause-Clear.txt") -Destination $targetFfmpegDir -Force
+    Copy-Item -LiteralPath (Join-Path $noticesSourceDir "licenses\NVIDIA-Codec-Headers-MIT.txt") -Destination $targetFfmpegDir -Force
+    Copy-Item -LiteralPath (Join-Path $noticesSourceDir "licenses\zlib.txt") -Destination $targetFfmpegDir -Force
 }
 
 if ($SkipZip) {

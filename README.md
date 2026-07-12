@@ -6,6 +6,8 @@ Choose a video, trim it down to the part you want, and press **Compress**. Potat
 
 Everything runs on your PC. Your videos are not uploaded anywhere.
 
+[Visit the PotatoMaker website](https://spontaneousact.github.io/PotatoMaker/)
+
 ## Download
 
 [Download the latest Windows installer](https://github.com/SpontaneousAct/PotatoMaker/releases/latest/download/PotatoMaker-win-x64-Setup.exe)
@@ -82,3 +84,7 @@ Bug reports and pull requests are welcome. If you change compression rules, outp
 ## License
 
 PotatoMaker is available under the [MIT License](LICENSE.txt).
+
+Windows packages also contain FFmpeg, LibVLC, and LibVLCSharp under their own
+open-source licenses. Exact source and attribution information is listed in the
+[third-party notices](third_party/notices/THIRD-PARTY-NOTICES.txt).

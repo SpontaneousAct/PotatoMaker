@@ -47,7 +47,12 @@ public sealed class HelpViewModel : ViewModelBase
             "License",
             "MIT License.",
             AppLinkCatalog.LicenseUrl,
-            "Open license")
+            "Open license"),
+        new(
+            "Third-party software",
+            "FFmpeg and LibVLC license, source, and attribution information.",
+            AppLinkCatalog.ThirdPartyNoticesUrl,
+            "Open notices")
     ];
 }
 

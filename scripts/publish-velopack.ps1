@@ -10,6 +10,7 @@ param(
     [string]$GitHubRepoUrl = "",
     [string]$GitHubToken = "",
     [string]$FfmpegDir = "",
+    [string]$FfmpegManifestPath = "",
     [switch]$SkipFfmpeg,
     [bool]$SingleFile = $false,
     [bool]$ReadyToRun = $false,
@@ -362,6 +363,7 @@ $velopackCliVersion = Get-CentralPackageVersion -Path $packagesPropsPath -Packag
     -SingleFile:$SingleFile `
     -ReadyToRun:$ReadyToRun `
     -FfmpegDir $FfmpegDir `
+    -FfmpegManifestPath $FfmpegManifestPath `
     -SkipFfmpeg:$SkipFfmpeg `
     -SkipZip
 
