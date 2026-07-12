@@ -1,0 +1,279 @@
+name: Release PotatoMaker
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (must match Directory.Build.props)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark the draft as a prerelease"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: potatomaker-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and create draft release
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      SOURCE_REF: ${{ github.ref }}
+      SOURCE_SHA: ${{ github.sha }}
+      REQUESTED_VERSION: ${{ inputs.version }}
+      REQUESTED_PRERELEASE: ${{ inputs.prerelease }}
+
+    steps:
+      - name: Require master
+        shell: pwsh
+        run: |
+          if ($env:SOURCE_REF -ne "refs/heads/master") {
+              throw "Releases must be run from master. Selected ref: $env:SOURCE_REF"
+          }
+
+      - name: Check out source
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Validate version and release target
+        id: release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [xml]$props = Get-Content .\Directory.Build.props
+          $versionNode = @($props.Project.PropertyGroup) |
+              Where-Object { $_.PSObject.Properties.Name -contains "VersionPrefix" } |
+              Select-Object -First 1
+          $versionPrefix = $versionNode.VersionPrefix.InnerText.Trim()
+          $suffixNode = @($props.Project.PropertyGroup) |
+              Where-Object { $_.PSObject.Properties.Name -contains "VersionSuffix" } |
+              Select-Object -First 1
+          $versionSuffix = if ($null -ne $suffixNode) { $suffixNode.VersionSuffix.InnerText.Trim() } else { "" }
+          $version = if ([string]::IsNullOrWhiteSpace($versionSuffix)) {
+              $versionPrefix
+          }
+          else {
+              "$versionPrefix-$versionSuffix"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($versionPrefix)) {
+              throw "VersionPrefix was not found in Directory.Build.props."
+          }
+
+          if ($version -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
+              throw "Version '$version' is not a supported semantic version."
+          }
+
+          if ($env:REQUESTED_VERSION.Trim() -ne $version) {
+              throw "Requested version '$env:REQUESTED_VERSION' does not match VersionPrefix '$version'."
+          }
+
+          $tag = "v$version"
+          $null = git ls-remote --exit-code --tags origin "refs/tags/$tag"
+          if ($LASTEXITCODE -eq 0) {
+              throw "Tag '$tag' already exists. Bump VersionPrefix before releasing."
+          }
+          if ($LASTEXITCODE -ne 2) {
+              throw "Could not check whether tag '$tag' exists."
+          }
+
+          $releaseLookup = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag" --silent 2>&1
+          if ($LASTEXITCODE -eq 0) {
+              throw "A GitHub release for '$tag' already exists. Delete an abandoned draft or bump the version."
+          }
+          if ($releaseLookup -notmatch 'HTTP 404|Not Found') {
+              throw "Could not check whether a GitHub release for '$tag' exists: $releaseLookup"
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          Write-Host "Preparing $tag from $env:SOURCE_SHA"
+
+      - name: Restore
+        run: dotnet restore .\PotatoMaker.slnx
+
+      - name: Test
+        run: dotnet test .\PotatoMaker.Tests -c Release --no-restore
+
+      - name: Reuse FFmpeg from latest published release
+        id: ffmpeg
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $downloadDir = Join-Path $env:RUNNER_TEMP "previous-release"
+          $ffmpegDir = Join-Path $env:RUNNER_TEMP "ffmpeg"
+          New-Item -ItemType Directory -Path $downloadDir, $ffmpegDir -Force | Out-Null
+
+          gh release download `
+              --repo $env:GITHUB_REPOSITORY `
+              --pattern "PotatoMaker-*-win-x64-full.nupkg" `
+              --dir $downloadDir
+          if ($LASTEXITCODE -ne 0) {
+              throw "Could not download the full package from the latest published release."
+          }
+
+          $packages = @(Get-ChildItem $downloadDir -Filter "*-full.nupkg" -File)
+          if ($packages.Count -ne 1) {
+              throw "Expected exactly one previous full package, found $($packages.Count)."
+          }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($packages[0].FullName)
+          try {
+              $toolEntries = @{}
+              foreach ($toolName in @("ffmpeg.exe", "ffprobe.exe")) {
+                  $matches = @($archive.Entries | Where-Object {
+                      [System.IO.Path]::GetFileName($_.FullName) -ieq $toolName
+                  })
+                  if ($matches.Count -ne 1) {
+                      throw "Expected exactly one $toolName in $($packages[0].Name), found $($matches.Count)."
+                  }
+
+                  $toolEntries[$toolName] = $matches[0]
+                  $destination = Join-Path $ffmpegDir $toolName
+                  [System.IO.Compression.ZipFileExtensions]::ExtractToFile($matches[0], $destination, $true)
+              }
+
+              $ffmpegParent = $toolEntries["ffmpeg.exe"].FullName.Substring(
+                  0,
+                  $toolEntries["ffmpeg.exe"].FullName.LastIndexOf('/') + 1)
+              $licenseEntries = @($archive.Entries | Where-Object {
+                  $_.FullName.StartsWith($ffmpegParent, [System.StringComparison]::OrdinalIgnoreCase) -and
+                  ([System.IO.Path]::GetFileName($_.FullName) -match '^(LICENSE|COPYING).*')
+              })
+              foreach ($entry in $licenseEntries) {
+                  $name = [System.IO.Path]::GetFileName($entry.FullName)
+                  if (-not [string]::IsNullOrWhiteSpace($name)) {
+                      [System.IO.Compression.ZipFileExtensions]::ExtractToFile(
+                          $entry,
+                          (Join-Path $ffmpegDir $name),
+                          $true)
+                  }
+              }
+          }
+          finally {
+              $archive.Dispose()
+          }
+
+          foreach ($toolName in @("ffmpeg.exe", "ffprobe.exe")) {
+              $toolPath = Join-Path $ffmpegDir $toolName
+              if (-not (Test-Path $toolPath)) {
+                  throw "Failed to extract $toolName from the previous release."
+              }
+              Get-FileHash $toolPath -Algorithm SHA256 | Format-List
+          }
+
+          "dir=$ffmpegDir" >> $env:GITHUB_OUTPUT
+          "source_package=$($packages[0].Name)" >> $env:GITHUB_OUTPUT
+
+      - name: Package and upload draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          FFMPEG_DIR: ${{ steps.ffmpeg.outputs.dir }}
+        run: |
+          $prerelease = [bool]::Parse($env:REQUESTED_PRERELEASE)
+          .\scripts\publish-velopack.ps1 `
+              -Version $env:RELEASE_VERSION `
+              -Configuration Release `
+              -Runtime win-x64 `
+              -Framework net10.0 `
+              -PackTitle PotatoMaker `
+              -Authors PotatoMaker `
+              -Channel win-x64 `
+              -GitHubRepoUrl "https://github.com/$env:GITHUB_REPOSITORY" `
+              -GitHubToken $env:GH_TOKEN `
+              -FfmpegDir $env:FFMPEG_DIR `
+              -SingleFile:$false `
+              -ReadyToRun:$false `
+              -DownloadPreviousReleases:$true `
+              -UploadToGitHub:$true `
+              -PublishRelease:$false `
+              -Prerelease:$prerelease `
+              -MergeAssets:$false `
+              -ReleaseName "PotatoMaker $env:RELEASE_VERSION" `
+              -ReleaseTag $env:RELEASE_TAG `
+              -TargetCommitish $env:SOURCE_SHA
+
+      - name: Add checksums and generated release notes
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          FFMPEG_SOURCE_PACKAGE: ${{ steps.ffmpeg.outputs.source_package }}
+        run: |
+          $releaseDir = Join-Path $env:GITHUB_WORKSPACE "artifacts\velopack\win-x64"
+          $assetNames = @(
+              "PotatoMaker-$env:RELEASE_VERSION-win-x64-full.nupkg",
+              "PotatoMaker-win-x64-Portable.zip",
+              "PotatoMaker-win-x64-Setup.exe"
+          )
+
+          $checksumLines = foreach ($assetName in $assetNames) {
+              $assetPath = Join-Path $releaseDir $assetName
+              if (-not (Test-Path $assetPath)) {
+                  throw "Expected release asset was not created: $assetName"
+              }
+              $hash = (Get-FileHash $assetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+              "$hash  $assetName"
+          }
+
+          $checksumPath = Join-Path $releaseDir "SHA256SUMS.txt"
+          $checksumLines | Set-Content $checksumPath
+          gh release upload $env:RELEASE_TAG $checksumPath --clobber
+          if ($LASTEXITCODE -ne 0) {
+              throw "Failed to upload SHA256SUMS.txt."
+          }
+
+          $generated = gh api `
+              --method POST `
+              "repos/$env:GITHUB_REPOSITORY/releases/generate-notes" `
+              -f tag_name=$env:RELEASE_TAG `
+              -f target_commitish=$env:SOURCE_SHA | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) {
+              throw "Failed to generate release notes."
+          }
+
+          $notesPath = Join-Path $env:RUNNER_TEMP "release-notes.md"
+          $generated.body | Set-Content $notesPath
+          gh release edit $env:RELEASE_TAG --notes-file $notesPath
+          if ($LASTEXITCODE -ne 0) {
+              throw "Failed to update the draft release notes."
+          }
+
+          $release = gh release view $env:RELEASE_TAG --json isDraft,isPrerelease,targetCommitish,url | ConvertFrom-Json
+          if (-not $release.isDraft) {
+              throw "The release was unexpectedly published instead of remaining a draft."
+          }
+          if ($release.targetCommitish -ne $env:SOURCE_SHA) {
+              throw "Release target '$($release.targetCommitish)' does not match build commit '$env:SOURCE_SHA'."
+          }
+
+          @(
+              "## Draft release created",
+              "",
+              "- Release: [$env:RELEASE_TAG]($($release.url))",
+              "- Commit: ``$env:SOURCE_SHA``",
+              "- FFmpeg source: ``$env:FFMPEG_SOURCE_PACKAGE``",
+              "- Status: draft; review and publish it from GitHub Releases"
+          ) | Add-Content $env:GITHUB_STEP_SUMMARY

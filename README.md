@@ -73,6 +73,8 @@ Packaging scripts are available in [`scripts`](scripts):
 .\scripts\publish-velopack.ps1
 ```
 
+Maintainers can create a tested draft GitHub release with the manual **Release PotatoMaker** workflow. See [the release guide](docs/RELEASING.md) for the versioning, review, and publishing steps.
+
 ## Contributing
 
 Bug reports and pull requests are welcome. If you change compression rules, output naming, or visible app behavior, please add or update the relevant tests in `PotatoMaker.Tests`.

@@ -19,7 +19,8 @@ param(
     [bool]$Prerelease = $false,
     [bool]$MergeAssets = $true,
     [string]$ReleaseName = "",
-    [string]$ReleaseTag = ""
+    [string]$ReleaseTag = "",
+    [string]$TargetCommitish = ""
 )
 
 Set-StrictMode -Version Latest
@@ -444,6 +445,11 @@ if ($UploadToGitHub) {
 
     if ($MergeAssets) {
         $uploadArgs += "--merge"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($TargetCommitish)) {
+        $uploadArgs += "--targetCommitish"
+        $uploadArgs += $TargetCommitish
     }
 
     Write-Host "Uploading Velopack release feed assets to GitHub..."
