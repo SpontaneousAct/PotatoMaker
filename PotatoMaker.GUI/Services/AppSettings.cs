@@ -11,7 +11,7 @@ public sealed record AppSettings
 
     public AppTheme Theme { get; init; } = AppTheme.Light;
 
-    public bool UseNvencEncoder { get; init; } = true;
+    public bool UseNvencEncoder { get; init; }
 
     public string OutputNamePrefix { get; init; } = EncodeSettings.DefaultOutputNamePrefix;
 

@@ -6,19 +6,19 @@ const workflowLoopDuration = 20;
 const steps = [
   {
     title: "Open",
-    description: "Drop in a clip or choose one from the latest videos.",
+    description: "Drop in a recording, or grab one straight from your recent videos.",
     start: 0,
     end: 3
   },
   {
     title: "Trim",
-    description: "Grab only the part you want.",
+    description: "Keep the good bit. If there is more than one, add each highlight to the queue.",
     start: 3,
     end: 12
   },
   {
     title: "Compress",
-    description: "Export a file that will always be under 10 MB.",
+    description: "PotatoMaker does the maths and hands back a smaller MP4, split when needed.",
     start: 12,
     end: workflowLoopDuration
   }
@@ -27,32 +27,32 @@ const steps = [
 const capabilities = [
   {
     title: "Trim the part you actually want",
-    description: "Cut straight to the highlight instead of exporting the whole recording.",
+    description: "Cut the loading screens, dead air, and everything before the moment worth sharing.",
     icon: "content_cut"
   },
   {
-    title: "Queue up multiple clips",
-    description: "Line up a few exports and let them run without babysitting each one.",
+    title: "Make several clips from one recording",
+    description: "Queue each moment as you find it, then export the whole batch in one go.",
     icon: "queue_play_next"
   },
   {
     title: "Adjust crop and FPS",
-    description: "Tighten framing or lower frame rate when the raw capture is bigger than it needs to be.",
+    description: "Tighten the frame or ease back the frame rate when the source is doing a bit too much.",
     icon: "tune"
   },
   {
     title: "Auto-detect crop for ultrawide",
-    description: "Works with ultrawide and super ultrawide footage so empty space does not waste size.",
+    description: "PotatoMaker spots black bars and trims them away before they eat into the file size.",
     icon: "crop"
   },
   {
-    title: "Built-in auto-updates",
-    description: "Keeps the desktop app current without making updates a chore.",
-    icon: "system_update_alt"
+    title: "Nothing gets uploaded",
+    description: "Your recordings stay on your computer—no uploads and no waiting on your internet connection.",
+    icon: "lock"
   },
   {
-    title: "Recent videos ready to pick",
-    description: "Jump back into your latest saved captures without digging through folders.",
+    title: "Your latest recordings, ready to pick",
+    description: "Point PotatoMaker at your recordings folder once. Your newest clips will be waiting.",
     icon: "video_library"
   }
 ];
@@ -73,8 +73,8 @@ const workflowDuration = workflowLoopDuration;
 ---
 
 <BaseLayout
-  title="PotatoMaker | Compress any video to under 10 MB"
-  description="PotatoMaker helps you trim and compress videos into smaller shareable MP4 clips without manual FFmpeg tuning."
+  title="PotatoMaker"
+  description="Trim large recordings and turn them into smaller, shareable MP4 clips. Everything runs locally on your Windows PC."
 >
   <main id="home" class="mx-auto min-h-screen w-full max-w-6xl px-5 py-6 sm:px-8 lg:px-10">
     <div class="grid min-h-screen grid-rows-[auto_1fr]">
@@ -103,11 +103,11 @@ const workflowDuration = workflowLoopDuration;
         <div class="space-y-8">
           <div class="space-y-5">
             <h1 class="max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Compress any video to under <br /> 10 MB.
+              Make large clips <br /> easier to share.
             </h1>
             <p class="max-w-2xl text-base leading-7 text-stone-300 sm:text-lg">
-              Open a video, trim the part you want, and let PotatoMaker choose a practical export
-              strategy.
+              Turn the recording you have into the clip you actually want. PotatoMaker handles the
+              number-crunching and keeps everything on your PC.
             </p>
           </div>
 
@@ -143,7 +143,7 @@ const workflowDuration = workflowLoopDuration;
     >
       <div class="space-y-2">
         <p class="text-sm font-medium uppercase tracking-[0.26em] text-[#d7af81]">Workflow</p>
-        <h2 class="text-2xl font-semibold text-white sm:text-3xl">Built for quickly sharing clips</h2>
+        <h2 class="text-2xl font-semibold text-white sm:text-3xl">Find the moment. Make the clip.</h2>
       </div>
 
       <div class="grid items-center">
@@ -192,9 +192,9 @@ const workflowDuration = workflowLoopDuration;
     <section class="border-t border-[#332b25] py-16">
       <div class="space-y-8">
         <div class="max-w-2xl space-y-3">
-          <h2 class="text-2xl font-semibold text-white sm:text-3xl">Everything you need to make a clip fit</h2>
+          <h2 class="text-2xl font-semibold text-white sm:text-3xl">The fiddly parts are handled</h2>
           <p class="text-sm leading-7 text-stone-300 sm:text-base">
-            The basics are built in, so you can go from raw capture to something postable without a lot of fiddling.
+            You choose the moment. PotatoMaker sorts out the crop, queue, bitrate, and export.
           </p>
         </div>
 

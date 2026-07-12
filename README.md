@@ -1,172 +1,82 @@
 # PotatoMaker
 
-PotatoMaker is a small video compression tool for making clips easier to share.
+PotatoMaker turns large video recordings into clips that are small enough to share on Discord and similar services.
 
-Open a video, trim the part you want, let the app figure out a sensible export strategy, and save a smaller MP4 that is easier to post in chats, communities, and social apps.
+Choose a video, trim it down to the part you want, and press **Compress**. PotatoMaker works out the bitrate and resolution, removes black bars when it can, and exports a shareable MP4. If a longer clip cannot fit into one file without looking terrible, it can split the result into numbered parts instead.
 
-## What It Does
+Everything runs on your PC. Your videos are not uploaded anywhere.
 
-- Loads common video files such as `.mp4`, `.mkv`, `.avi`, `.mov`, `.webm`, `.wmv`, and `.flv`
-- Lets you trim a clip before exporting
-- Detects crop automatically when it helps
-- Chooses bitrate, resolution, and splitting strategy for you
-- Exports one MP4 or multiple parts when a single file would be too large
-- Supports both AV1 NVENC and SVT-AV1 CPU encoding
-- Includes both a desktop GUI and a CLI
+## Download
 
-## Why You Might Want It
+[Download the latest Windows installer](https://github.com/SpontaneousAct/PotatoMaker/releases/latest/download/PotatoMaker-win-x64-Setup.exe)
 
-PotatoMaker is built for the "I just need this video to be smaller and still watchable" workflow.
+PotatoMaker is currently built for 64-bit Windows. The packaged release includes the video tools it needs, so there should be nothing else to install.
 
-Instead of manually juggling FFmpeg commands, guessing bitrates, or re-exporting the same clip a few times, you can:
+## Using PotatoMaker
 
-1. Pick a file
-2. Trim the section you want
-3. Check the preview plan
-4. Click `Compress`
+1. Drag a video into the window, or choose one with **Browse**.
+2. Set the start and end points if you only want part of the recording.
+3. Check the proposed crop, frame rate, and output plan.
+4. Choose where to save the result, then press **Compress**.
 
-## Screenshots
+In **Settings**, you can point PotatoMaker at the folder where your recordings are saved. Your latest videos will then appear in the **Recent videos** menu, ready to open without digging through folders.
 
-Add your images here when you are ready.
+You can also make several clips from the same recording: choose a section, add it to the queue, then adjust the start and end points and add the next one. When the queue is ready, PotatoMaker will work through the clips in order.
 
-<!-- Replace this block with a real screenshot -->
-<!-- Example: ![Main window](docs/media/main-window.png) -->
+PotatoMaker accepts MP4, MKV, AVI, MOV, WebM, WMV, and FLV files. Exports are MP4 files and use the `_discord` suffix by default.
 
-`[ Screenshot placeholder: main app window ]`
+### Keyboard shortcuts
 
-`[ Screenshot placeholder: strategy preview / output settings ]`
+| Key | Action |
+| --- | --- |
+| `Space` | Play or pause |
+| `Q` / `E` | Jump back or forward 10 seconds |
+| `A` | Set the start point |
+| `D` | Set the end point |
 
-## Demo GIFs
+## A note about file size and speed
 
-This section is intentionally left open for short workflow demos.
+The default settings aim to keep each output below 10 MB. Video compression is not perfectly predictable, so PotatoMaker may occasionally miss the exact target or divide a long video into several parts.
 
-<!-- Replace this block with a real GIF -->
-<!-- Example: ![Trim and compress demo](docs/media/trim-and-compress.gif) -->
+PotatoMaker uses CPU encoding by default. If your computer supports NVIDIA AV1 encoding, you can enable it in **Settings** for faster exports, though GPU encoding is less predictable when aiming for an exact file size.
 
-`[ GIF placeholder: drag a file in and trim it ]`
+## Command line
 
-`[ GIF placeholder: compressing a clip ]`
-
-## Main Workflow
-
-1. Open a video with `Browse...` or drag and drop it into the app.
-2. Preview the file and set trim start/end points.
-3. Review the generated strategy preview.
-4. Choose your output folder and naming options.
-5. Compress immediately or add the job to the queue.
-
-## Desktop App Highlights
-
-- User-friendly Windows GUI built with Avalonia
-- Built-in video preview
-- Keyboard shortcuts for quick trimming
-- Queue for lining up multiple compressions
-- Recent videos panel
-- Light/dark theme support
-- Built-in update plumbing for packaged releases
-
-### Keyboard Shortcuts
-
-- `Space`: play or pause
-- `Q`: jump back 10 seconds
-- `E`: jump forward 10 seconds
-- `A`: set trim start
-- `D`: set trim end
-
-## CLI Usage
-
-The repo also includes a command-line app for quick or scripted use.
-
-### Basic command
+There is also a small CLI for scripts and quick conversions. It currently runs from the source tree:
 
 ```powershell
 dotnet run --project .\PotatoMaker.Cli -- "C:\clips\example.mp4"
 ```
 
-### Force CPU encoding
+The CLI uses NVIDIA AV1 encoding by default. Pass `--cpu` to use the CPU encoder:
 
 ```powershell
 dotnet run --project .\PotatoMaker.Cli -- --cpu "C:\clips\example.mp4"
 ```
 
-### CLI help summary
+Unlike the desktop app, the CLI does not switch encoders automatically. It will ask you to use `--cpu` if NVIDIA AV1 encoding is unavailable.
 
-```text
-potatomaker [--cpu] <video_file>
-```
+## Building from source
 
-By default the CLI uses AV1 NVENC and exits with an error if it is unavailable. Use `--cpu` to select the SVT-AV1 CPU encoder instead.
-
-## Requirements
-
-### For end users
-
-- Windows for the desktop app
-- FFmpeg and FFprobe available either:
-  - from a bundled `ffmpeg` folder in the app/package, or
-  - from your system `PATH`
-
-### For development
-
-- .NET SDK `10.0.103`
-- PowerShell for the packaging scripts
-
-## Running The GUI
-
-```powershell
-dotnet run --project .\PotatoMaker.GUI
-```
-
-## Building The Solution
+You will need the .NET SDK version listed in [`global.json`](global.json), along with FFmpeg and FFprobe either on your `PATH` or in the expected bundled location.
 
 ```powershell
 dotnet build .\PotatoMaker.slnx
-```
-
-## Running Tests
-
-```powershell
 dotnet test .\PotatoMaker.Tests
+dotnet run --project .\PotatoMaker.GUI
 ```
 
-## Packaging
-
-### Portable build
+Packaging scripts are available in [`scripts`](scripts):
 
 ```powershell
 .\scripts\publish-portable.ps1
-```
-
-### Velopack package
-
-```powershell
 .\scripts\publish-velopack.ps1
 ```
 
-Both scripts can bundle FFmpeg if you provide it or keep it in the expected `third_party\ffmpeg\<runtime>` location.
-
-## Project Structure
-
-```text
-PotatoMaker.Core   Core video analysis, planning, and encoding pipeline
-PotatoMaker.GUI    Desktop app
-PotatoMaker.Cli    Command-line app
-PotatoMaker.Tests  Unit tests
-scripts            Publishing and diagnostics scripts
-third_party        External runtime dependencies such as FFmpeg
-```
-
-## Notes
-
-- The default output suffix is `_discord`
-- Output files are written as `.mp4`
-- Trimmed clips include time markers in the output filename
-- If a clip would end up too large as a single file, PotatoMaker can split it into multiple parts
-
 ## Contributing
 
-Issues and pull requests are welcome. If you are changing compression logic, output naming, or UI behavior, adding or updating tests in `PotatoMaker.Tests` will make the change much easier to review.
+Bug reports and pull requests are welcome. If you change compression rules, output naming, or visible app behavior, please add or update the relevant tests in `PotatoMaker.Tests`.
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE.txt](LICENSE.txt).
+PotatoMaker is available under the [MIT License](LICENSE.txt).

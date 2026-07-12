@@ -7,6 +7,14 @@ namespace PotatoMaker.Tests.Settings;
 public sealed class JsonAppSettingsServiceTests
 {
     [Fact]
+    public void AppSettings_DefaultsToCpuEncoding()
+    {
+        var settings = new AppSettings();
+
+        Assert.False(settings.UseNvencEncoder);
+    }
+
+    [Fact]
     public void Load_InvalidJson_ReturnsDefaultsAndReportsWarning()
     {
         string tempDirectory = Path.Combine(Path.GetTempPath(), $"potatomaker-settings-{Guid.NewGuid():N}");
