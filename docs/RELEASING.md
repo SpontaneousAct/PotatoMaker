@@ -43,38 +43,34 @@ The workflow stops instead of releasing when:
 
 If a run fails after creating a draft, delete that abandoned draft and its tag before retrying the same version. Otherwise, bump the version and run a new release.
 
-## FFmpeg handling
+## Native media-tools handling
 
-The release workflow builds `ffmpeg.exe` and `ffprobe.exe` from pinned source
-using `scripts/build-ffmpeg-runtime.ps1`. The recipe produces a GPL executable
-build with FFmpeg's cropdetect filter, SVT-AV1, NVIDIA encoding headers, and
-zlib. It explicitly disables nonfree components. PotatoMaker invokes FFmpeg as
-a separate process and does not link its libraries into the MIT-licensed app.
+FFmpeg and native VLC are not built by the release workflow and are not included
+in the installer, portable ZIP, Velopack package, or release assets. The desktop
+app requires its own pinned copies under `%LOCALAPPDATA%\PotatoMaker\runtimes`.
+On first launch—or whenever either runtime is missing or invalid—it presents one
+setup dialog and, after consent, downloads both directly from their upstream
+providers. Developer environment overrides remain available for local work.
 
-The source inputs, immutable revisions, and SHA-256 hashes are reviewed in
-`third_party/ffmpeg/manifests/source-win-x64.json`. The build generates a
-runtime manifest containing the executable hashes and observed configuration;
-packaging validates against that manifest and stops on a mismatch.
+The download URL, expected size, and upstream SHA-256 are pinned in
+`PotatoMaker.Core/FfmpegRuntimePackage.cs`. VLC's archive URL, size, and SHA-256
+are pinned in `PotatoMaker.GUI/Services/LibVlcRuntimePackage.cs`. Updating either
+package is a small, explicit maintenance operation:
 
-Changing the bundled FFmpeg build is a separate maintenance operation:
+1. Select a retained BtbN monthly build rather than a short-lived daily asset.
+2. Copy the archive SHA-256 from the upstream release or checksum listing.
+3. Update the package constants and user-visible version/size.
+4. Test download cancellation, hash rejection, runtime activation, probing,
+   thumbnails, 10-bit AV1 decoding, CPU AV1 encoding, and NVENC where available.
 
-1. Update the pinned source revision and archive hash in
-   `third_party/ffmpeg/manifests/source-win-x64.json`.
-2. Review the license and configure changes, keeping `--enable-gpl` and
-   `--disable-nonfree` mandatory.
-3. Run `scripts/build-ffmpeg-runtime.ps1`, then exercise probing, thumbnailing,
-   CPU AV1 encoding, and (where hardware is available) NVENC.
-4. Produce and test a release locally before publishing it.
-
-Every package includes `THIRD-PARTY-NOTICES.txt`, canonical license texts, and
-`ffmpeg/FFMPEG-SOURCE.txt`. Releases also attach the complete FFmpeg and LibVLC
-corresponding-source zip files generated during the same run. The LibVLC Dolby Surround and headphone mixer
-plugins are intentionally excluded because those two files are GPL-only even
-though the containing NuGet package is labelled LGPL.
+Every PotatoMaker package still includes `THIRD-PARTY-NOTICES.txt` and relevant
+canonical license texts. Native VLC is not built, packaged, or attached to
+releases; it is fetched from VideoLAN only after user consent. The managed
+LibVLCSharp integration remains a normal NuGet dependency.
 
 ## Local draft upload fallback
 
-If GitHub Actions is unavailable, the existing script can still create a draft from a Windows development machine that has the required FFmpeg files:
+If GitHub Actions is unavailable, the existing script can still create a draft from a Windows development machine; packaging does not require locally installed media tools:
 
 ```powershell
 $env:POTATOMAKER_GITHUB_TOKEN = "<token with repository Contents write access>"

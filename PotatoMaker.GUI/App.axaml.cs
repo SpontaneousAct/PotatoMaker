@@ -17,6 +17,8 @@ namespace PotatoMaker.GUI;
 /// </summary>
 public partial class App : Application
 {
+    private string[] _startupArgs = [];
+
     public IServiceProvider Services { get; private set; } = null!;
 
     public override void Initialize()
@@ -40,35 +42,45 @@ public partial class App : Application
 
             var mainWindow = Services.GetRequiredService<MainWindow>();
             desktop.MainWindow = mainWindow;
+            _startupArgs = desktop.Args ?? [];
             mainWindow.Opened += OnMainWindowOpened;
 
             if (mainWindow.DataContext is MainWindowViewModel viewModel)
             {
-                viewModel.OpenExternalFiles(desktop.Args ?? []);
-
                 if (Program.SingleInstanceManager is { IsPrimaryInstance: true } singleInstanceManager)
                 {
                     singleInstanceManager.RegisterActivationHandler(args =>
                     {
-                        Dispatcher.UIThread.Post(() =>
+                        Dispatcher.UIThread.Post(async () =>
                         {
                             if (mainWindow.DataContext is not MainWindowViewModel currentViewModel)
                                 return;
 
-                            currentViewModel.OpenExternalFiles(args);
                             WindowsWindowActivation.Activate(mainWindow);
+                            try
+                            {
+                                var runtimePrompt = Services.GetRequiredService<IMediaToolsRuntimePromptService>();
+                                if (await runtimePrompt.EnsureAvailableAsync())
+                                {
+                                    await currentViewModel.Workspace.InitializeRuntimeDependentStateAsync();
+                                    currentViewModel.Workspace.VideoPlayer.EnsureInitializedAfterRuntimeSetup();
+                                    currentViewModel.OpenExternalFiles(args);
+                                }
+                            }
+                            catch
+                            {
+                                // The setup window contains the actionable error state.
+                            }
                         });
                     });
                 }
-
-                _ = viewModel.InitializeAsync();
             }
         }
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static async void OnMainWindowOpened(object? sender, EventArgs e)
+    private async void OnMainWindowOpened(object? sender, EventArgs e)
     {
         if (sender is not MainWindow mainWindow)
             return;
@@ -76,18 +88,44 @@ public partial class App : Application
         mainWindow.Opened -= OnMainWindowOpened;
 
         CrashReport? pendingReport = CrashReportService.Shared.TryGetLatestPendingReport();
-        if (pendingReport is null)
+        if (pendingReport is not null)
+        {
+            try
+            {
+                var dialog = new CrashReportWindow(pendingReport, CrashReportService.Shared);
+                await dialog.ShowDialog(mainWindow);
+                CrashReportService.Shared.MarkReportAsReviewed(pendingReport);
+            }
+            catch
+            {
+                // Avoid a follow-up startup crash if the crash prompt itself cannot be shown.
+            }
+        }
+
+        if (mainWindow.DataContext is not MainWindowViewModel viewModel)
             return;
+
+        _ = viewModel.InitializeAsync();
 
         try
         {
-            var dialog = new CrashReportWindow(pendingReport, CrashReportService.Shared);
-            await dialog.ShowDialog(mainWindow);
-            CrashReportService.Shared.MarkReportAsReviewed(pendingReport);
+            var runtimePrompt = Services.GetRequiredService<IMediaToolsRuntimePromptService>();
+            if (await runtimePrompt.EnsureAvailableAsync())
+            {
+                await viewModel.Workspace.InitializeRuntimeDependentStateAsync();
+                viewModel.Workspace.VideoPlayer.EnsureInitializedAfterRuntimeSetup();
+                viewModel.OpenExternalFiles(_startupArgs);
+                return;
+            }
+
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                desktop.Shutdown();
         }
         catch
         {
-            // Avoid a follow-up startup crash if the crash prompt itself cannot be shown.
+            // The media tools are required for the application to function correctly.
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                desktop.Shutdown();
         }
     }
 

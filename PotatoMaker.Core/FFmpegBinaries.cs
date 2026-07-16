@@ -4,12 +4,11 @@ using System.Diagnostics;
 namespace PotatoMaker.Core;
 
 /// <summary>
-/// Resolves FFmpeg/FFprobe binaries from a bundled folder when present,
-/// and falls back to PATH otherwise.
+/// Resolves FFmpeg/FFprobe binaries from a configured folder or PATH.
 /// </summary>
 public static class FFmpegBinaries
 {
-    private const string FfmpegDirEnvironmentVariable = "POTATOMAKER_FFMPEG_DIR";
+    public const string FfmpegDirEnvironmentVariable = "POTATOMAKER_FFMPEG_DIR";
 
     private static readonly object Sync = new();
     private static bool _configured;
@@ -18,8 +17,30 @@ public static class FFmpegBinaries
     private static string? _versionSummary;
 
     /// <summary>
-    /// Configures FFMpegCore global options once per process.
-    /// Returns the resolved binary folder when bundled binaries are found; otherwise null.
+    /// Configures FFMpegCore using an explicitly selected binary folder. Pass null to use PATH.
+    /// The setting may be changed when the user selects or downloads a runtime.
+    /// </summary>
+    public static void Configure(string? binaryFolder)
+    {
+        string? normalizedFolder = string.IsNullOrWhiteSpace(binaryFolder)
+            ? null
+            : Path.GetFullPath(binaryFolder);
+
+        if (normalizedFolder is not null && !ContainsBinaries(normalizedFolder))
+            throw new DirectoryNotFoundException($"FFmpeg and FFprobe were not found in '{normalizedFolder}'.");
+
+        lock (Sync)
+        {
+            _binaryFolder = normalizedFolder;
+            GlobalFFOptions.Configure(options => options.BinaryFolder = normalizedFolder ?? string.Empty);
+            _configured = true;
+            _versionSummary = null;
+        }
+    }
+
+    /// <summary>
+    /// Configures FFMpegCore from the explicit environment override or PATH.
+    /// Runtime discovery in front ends should prefer <see cref="FfmpegRuntimeLocator"/>.
     /// </summary>
     public static string? EnsureConfigured()
     {
@@ -28,7 +49,7 @@ public static class FFmpegBinaries
             if (_configured)
                 return _binaryFolder;
 
-            _binaryFolder = ResolveBinaryFolder();
+            _binaryFolder = ResolveEnvironmentFolder();
             if (!string.IsNullOrWhiteSpace(_binaryFolder))
                 GlobalFFOptions.Configure(options => options.BinaryFolder = _binaryFolder);
 
@@ -40,6 +61,15 @@ public static class FFmpegBinaries
     public static string FfmpegExecutable() => ResolveExecutablePath("ffmpeg");
 
     public static string FfprobeExecutable() => ResolveExecutablePath("ffprobe");
+
+    public static string? ConfiguredBinaryFolder
+    {
+        get
+        {
+            lock (Sync)
+                return _binaryFolder;
+        }
+    }
 
     /// <summary>
     /// Returns a cached one-line summary of ffmpeg/ffprobe versions and source location.
@@ -77,14 +107,11 @@ public static class FFmpegBinaries
         return bundled ?? name;
     }
 
-    private static string? ResolveBinaryFolder()
+    private static string? ResolveEnvironmentFolder()
     {
         string[] candidates =
         [
-            Environment.GetEnvironmentVariable(FfmpegDirEnvironmentVariable) ?? string.Empty,
-            Path.Combine(AppContext.BaseDirectory, "ffmpeg"),
-            AppContext.BaseDirectory,
-            Path.Combine(Environment.CurrentDirectory, "ffmpeg")
+            Environment.GetEnvironmentVariable(FfmpegDirEnvironmentVariable) ?? string.Empty
         ];
 
         foreach (string candidate in candidates)
@@ -93,14 +120,14 @@ public static class FFmpegBinaries
                 continue;
 
             string fullPath = Path.GetFullPath(candidate);
-            if (ContainsBundledBinaries(fullPath))
+            if (ContainsBinaries(fullPath))
                 return fullPath;
         }
 
         return null;
     }
 
-    private static bool ContainsBundledBinaries(string folder) =>
+    public static bool ContainsBinaries(string folder) =>
         FindExecutableInFolder(folder, "ffmpeg") is not null &&
         FindExecutableInFolder(folder, "ffprobe") is not null;
 

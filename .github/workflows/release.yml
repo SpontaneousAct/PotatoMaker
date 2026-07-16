@@ -132,67 +132,12 @@ jobs:
       - name: Test
         run: dotnet test .\PotatoMaker.Tests -c Release --no-restore
 
-      - name: Set up pinned MSYS2 build environment
-        id: msys2
-        uses: msys2/setup-msys2@66cd2cce69caa17b53920067426061ca1de3a884
-        with:
-          msystem: MINGW64
-          update: true
-          install: >-
-            base-devel
-            autoconf
-            automake
-            diffutils
-            git
-            libtool
-            make
-            tar
-            unzip
-            wget
-            zip
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-nasm
-            mingw-w64-x86_64-ninja
-            mingw-w64-x86_64-pkgconf
-            mingw-w64-x86_64-toolchain
-
-      - name: Build FFmpeg and corresponding-source bundles
-        id: third_party
-        shell: pwsh
-        run: |
-          $bash = Join-Path '${{ steps.msys2.outputs.msys2-location }}' "usr\bin\bash.exe"
-          $ffmpegDir = Join-Path $env:RUNNER_TEMP "potatomaker-ffmpeg"
-          $ffmpegWork = Join-Path $env:RUNNER_TEMP "potatomaker-ffmpeg-work"
-          $ffmpegManifest = Join-Path $env:RUNNER_TEMP "potatomaker-ffmpeg-runtime.json"
-          $ffmpegSource = Join-Path $env:RUNNER_TEMP "PotatoMaker-ffmpeg-source-6695528af6-win-x64.zip"
-          $libVlcWork = Join-Path $env:RUNNER_TEMP "potatomaker-libvlc-source-work"
-          $libVlcSource = Join-Path $env:RUNNER_TEMP "PotatoMaker-libvlc-source-3.0.23-win-x64.zip"
-
-          .\scripts\build-ffmpeg-runtime.ps1 `
-              -BashPath $bash `
-              -WorkDir $ffmpegWork `
-              -OutputDir $ffmpegDir `
-              -RuntimeManifestPath $ffmpegManifest `
-              -SourceBundlePath $ffmpegSource
-
-          .\scripts\build-libvlc-source-bundle.ps1 `
-              -BashPath $bash `
-              -WorkDir $libVlcWork `
-              -OutputPath $libVlcSource
-
-          "ffmpeg_dir=$ffmpegDir" >> $env:GITHUB_OUTPUT
-          "ffmpeg_manifest=$ffmpegManifest" >> $env:GITHUB_OUTPUT
-          "ffmpeg_source=$ffmpegSource" >> $env:GITHUB_OUTPUT
-          "libvlc_source=$libVlcSource" >> $env:GITHUB_OUTPUT
-
       - name: Package and upload draft release
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_VERSION: ${{ steps.release.outputs.version }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
-          FFMPEG_DIR: ${{ steps.third_party.outputs.ffmpeg_dir }}
-          FFMPEG_MANIFEST: ${{ steps.third_party.outputs.ffmpeg_manifest }}
         run: |
           $prerelease = [bool]::Parse($env:REQUESTED_PRERELEASE)
           .\scripts\publish-velopack.ps1 `
@@ -205,8 +150,6 @@ jobs:
               -Channel win-x64 `
               -GitHubRepoUrl "https://github.com/$env:GITHUB_REPOSITORY" `
               -GitHubToken $env:GH_TOKEN `
-              -FfmpegDir $env:FFMPEG_DIR `
-              -FfmpegManifestPath $env:FFMPEG_MANIFEST `
               -SingleFile:$false `
               -ReadyToRun:$false `
               -DownloadPreviousReleases:$true `
@@ -224,23 +167,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_VERSION: ${{ steps.release.outputs.version }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
-          FFMPEG_SOURCE_PATH: ${{ steps.third_party.outputs.ffmpeg_source }}
-          LIBVLC_SOURCE_PATH: ${{ steps.third_party.outputs.libvlc_source }}
         run: |
           $releaseDir = Join-Path $env:GITHUB_WORKSPACE "artifacts\velopack\win-x64"
-          foreach ($sourcePath in @($env:FFMPEG_SOURCE_PATH, $env:LIBVLC_SOURCE_PATH)) {
-              if (-not (Test-Path -LiteralPath $sourcePath)) {
-                  throw "Expected corresponding source bundle was not created: $sourcePath"
-              }
-              Copy-Item -LiteralPath $sourcePath -Destination $releaseDir -Force
-          }
-
           $assetNames = @(
               "PotatoMaker-$env:RELEASE_VERSION-win-x64-full.nupkg",
               "PotatoMaker-win-x64-Portable.zip",
-              "PotatoMaker-win-x64-Setup.exe",
-              (Split-Path -Leaf $env:FFMPEG_SOURCE_PATH),
-              (Split-Path -Leaf $env:LIBVLC_SOURCE_PATH)
+              "PotatoMaker-win-x64-Setup.exe"
           )
 
           $checksumLines = foreach ($assetName in $assetNames) {
@@ -256,8 +188,6 @@ jobs:
           $checksumLines | Set-Content $checksumPath
           gh release upload `
               $env:RELEASE_TAG `
-              $env:FFMPEG_SOURCE_PATH `
-              $env:LIBVLC_SOURCE_PATH `
               $checksumPath `
               --clobber
           if ($LASTEXITCODE -ne 0) {
@@ -293,7 +223,5 @@ jobs:
               "",
               "- Release: [$env:RELEASE_TAG]($($release.url))",
               "- Commit: ``$env:SOURCE_SHA``",
-              "- FFmpeg corresponding source: ``$(Split-Path -Leaf $env:FFMPEG_SOURCE_PATH)``",
-              "- LibVLC corresponding source: ``$(Split-Path -Leaf $env:LIBVLC_SOURCE_PATH)``",
               "- Status: draft; review and publish it from GitHub Releases"
           ) | Add-Content $env:GITHUB_STEP_SUMMARY

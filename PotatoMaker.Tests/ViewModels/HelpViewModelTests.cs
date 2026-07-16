@@ -15,6 +15,7 @@ public sealed class HelpViewModelTests
             viewModel.Links,
             item => item.Title == "Third-party software");
         Assert.Equal(AppLinkCatalog.ThirdPartyNoticesUrl, link.Url);
+        Assert.Contains("/blob/master/", link.Url, StringComparison.Ordinal);
         Assert.Contains("FFmpeg", link.Description, StringComparison.Ordinal);
         Assert.Contains("LibVLC", link.Description, StringComparison.Ordinal);
     }

@@ -17,8 +17,8 @@ public static class AppLinkCatalog
 
     public const string ReleasesUrl = $"{GitHubRepositoryUrl}/releases";
 
-    public const string LicenseUrl = $"{GitHubRepositoryUrl}/blob/main/LICENSE.txt";
+    public const string LicenseUrl = $"{GitHubRepositoryUrl}/blob/master/LICENSE.txt";
 
     public const string ThirdPartyNoticesUrl =
-        $"{GitHubRepositoryUrl}/blob/main/third_party/notices/THIRD-PARTY-NOTICES.txt";
+        $"{GitHubRepositoryUrl}/blob/master/third_party/notices/THIRD-PARTY-NOTICES.txt";
 }

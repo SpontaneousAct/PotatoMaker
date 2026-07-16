@@ -137,16 +137,26 @@
                     </StackPanel>
 
                     <StackPanel IsVisible="{Binding VideoPlayer.HasPlayerError}"
-                                Spacing="6"
+                                Spacing="10"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                MaxWidth="280"
+                                MaxWidth="390"
                                 Margin="16">
                         <TextBlock Text="{Binding VideoPlayer.PlayerErrorMessage}"
                                    Foreground="{DynamicResource PmErrorForeground}"
                                    TextAlignment="Center"
                                    TextWrapping="Wrap"
                                    IsVisible="{Binding VideoPlayer.HasPlayerError}"/>
+                        <TextBlock Text="Restart PotatoMaker to repair or reinstall its required media tools."
+                                   Classes="pm-caption"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Spacing="8">
+                            <Button Content="Try again"
+                                    Command="{Binding VideoPlayer.RetryPlayerInitializationCommand}"/>
+                        </StackPanel>
                     </StackPanel>
 
                     <Border IsVisible="{Binding FileInput.HasNoFile}"

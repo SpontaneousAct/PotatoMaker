@@ -12,7 +12,11 @@ Everything runs on your PC. Your videos are not uploaded anywhere.
 
 [Download the latest Windows installer](https://github.com/SpontaneousAct/PotatoMaker/releases/latest/download/PotatoMaker-win-x64-Setup.exe)
 
-PotatoMaker is currently built for 64-bit Windows. The packaged release includes the video tools it needs, so there should be nothing else to install.
+PotatoMaker is currently built for 64-bit Windows. On first launch it explains
+that FFmpeg and VLC are required, then—with your confirmation—downloads verified,
+pinned versions directly from their upstream providers. They are installed only
+for PotatoMaker under `%LOCALAPPDATA%\PotatoMaker\runtimes`, checked on every
+launch, and removed when PotatoMaker is uninstalled.
 
 ## Using PotatoMaker
 
@@ -60,7 +64,7 @@ Unlike the desktop app, the CLI does not switch encoders automatically. It will 
 
 ## Building from source
 
-You will need the .NET SDK version listed in [`global.json`](global.json), along with FFmpeg and FFprobe either on your `PATH` or in the expected bundled location.
+You will need the .NET SDK version listed in [`global.json`](global.json). The desktop app provisions its own verified FFmpeg and VLC runtimes. Developers can bypass the managed copies with `POTATOMAKER_FFMPEG_DIR` and `POTATOMAKER_LIBVLC_DIR`; the CLI can also use FFmpeg from `PATH`.
 
 ```powershell
 dotnet build .\PotatoMaker.slnx
@@ -85,6 +89,8 @@ Bug reports and pull requests are welcome. If you change compression rules, outp
 
 PotatoMaker is available under the [MIT License](LICENSE.txt).
 
-Windows packages also contain FFmpeg, LibVLC, and LibVLCSharp under their own
-open-source licenses. Exact source and attribution information is listed in the
-[third-party notices](third_party/notices/THIRD-PARTY-NOTICES.txt).
+Windows packages contain the managed LibVLCSharp preview integration under its
+own open-source license. Native VLC and FFmpeg are not included. After the user
+confirms first-run setup, PotatoMaker downloads verified, pinned builds directly
+from VideoLAN and BtbN into the current user's app data. Exact source and
+attribution information is listed in the [third-party notices](third_party/notices/THIRD-PARTY-NOTICES.txt).

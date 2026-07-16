@@ -1,0 +1,58 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="PotatoMaker.GUI.Views.MediaToolsSetupWindow"
+        Icon="/Assets/potato.ico"
+        Title="Set up PotatoMaker media tools"
+        Width="520"
+        Height="350"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="28"
+          RowDefinitions="Auto,66,Auto"
+          RowSpacing="22">
+        <StackPanel Grid.Row="0" Spacing="7">
+            <TextBlock Text="PotatoMaker needs two additional dependencies"
+                       FontSize="24"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap" />
+            <TextBlock x:Name="DownloadSummaryTextBlock"
+                       TextWrapping="Wrap"
+                       Opacity="0.78" />
+            <TextBlock Text="FFmpeg 8.1.2 from BtbN  •  VLC 3.0.23 from VideoLAN"
+                       TextWrapping="Wrap"
+                       FontWeight="SemiBold" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1"
+                    Height="66"
+                    Spacing="8">
+            <ProgressBar x:Name="DownloadProgressBar"
+                         Minimum="0"
+                         Maximum="100"
+                         Height="6"
+                         IsVisible="False" />
+            <TextBlock x:Name="StatusTextBlock"
+                       TextWrapping="Wrap"
+                       MaxHeight="44"
+                       IsVisible="False"
+                       Opacity="0.78" />
+        </StackPanel>
+
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+            <Button Grid.Column="0"
+                    Content="Licenses &amp; notices"
+                    Click="OnOpenLicensingClick" />
+            <Button x:Name="ExitButton"
+                    Grid.Column="2"
+                    MinWidth="80"
+                    Content="Exit"
+                    Click="OnExitClick" />
+            <Button x:Name="DownloadButton"
+                    Grid.Column="3"
+                    Content="Download"
+                    Classes="pm-primary"
+                    FontWeight="SemiBold"
+                    Click="OnDownloadClick" />
+        </Grid>
+    </Grid>
+</Window>

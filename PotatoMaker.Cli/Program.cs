@@ -6,8 +6,6 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
-        string? ffmpegFolder = FFmpegBinaries.EnsureConfigured();
-
         using var loggerFactory = LoggerFactory.Create(builder =>
         {
             builder.SetMinimumLevel(LogLevel.Information);
@@ -17,10 +15,15 @@ class Program
         var logger   = loggerFactory.CreateLogger<ProcessingPipeline>();
         var progress = new ConsoleProgressHandler();
 
-        if (!string.IsNullOrWhiteSpace(ffmpegFolder))
-            logger.LogInformation("Using bundled FFmpeg binaries from: {Path}", ffmpegFolder);
-        else
-            logger.LogInformation("Using FFmpeg from PATH.");
+        FfmpegRuntimeValidationResult runtime = await FfmpegRuntimeLocator.FindAndConfigureAsync();
+        if (!runtime.IsValid)
+        {
+            logger.LogError("A compatible FFmpeg installation is required: {Message}", runtime.Message);
+            logger.LogError("Install a full GPL FFmpeg build on PATH, set POTATOMAKER_FFMPEG_DIR, or run the PotatoMaker desktop app to download one.");
+            return 2;
+        }
+
+        logger.LogInformation("{Message}", runtime.Message);
 
         string ffmpegVersionSummary = await FFmpegBinaries.GetVersionSummaryAsync();
         logger.LogInformation("FFmpeg runtime: {Version}", ffmpegVersionSummary);

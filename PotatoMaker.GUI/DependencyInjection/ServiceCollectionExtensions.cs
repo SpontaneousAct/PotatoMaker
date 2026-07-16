@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using PotatoMaker.Core;
 using PotatoMaker.GUI.Services;
 using PotatoMaker.GUI.ViewModels;
 using PotatoMaker.GUI.Views;
@@ -32,11 +33,19 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IVideoAnalysisService, VideoAnalysisService>();
         services.AddSingleton<IVideoEncodingService, VideoEncodingService>();
         services.AddSingleton<IEncoderCapabilityService, EncoderCapabilityService>();
+        services.AddSingleton(_ => new FfmpegRuntimeInstaller());
+        services.AddSingleton<IFfmpegRuntimeService, FfmpegRuntimeService>();
+        services.AddSingleton(_ => new LibVlcRuntimeInstaller());
+        services.AddSingleton<ILibVlcRuntimeService, LibVlcRuntimeService>();
+        services.AddSingleton<IMediaToolsRuntimeService, MediaToolsRuntimeService>();
+        services.AddSingleton<IMediaToolsRuntimePromptService, MediaToolsRuntimePromptService>();
         services.AddSingleton<IEncodeCompletionNotifier, WindowsEncodeCompletionNotifier>();
         services.AddSingleton<EncodeExecutionCoordinator>();
         services.AddSingleton<CompressionQueueViewModel>();
 
-        services.AddTransient(_ => new VideoPlayerViewModel(initializePlayer: false));
+        services.AddTransient(sp => new VideoPlayerViewModel(
+            initializePlayer: false,
+            libVlcRuntimeService: sp.GetRequiredService<ILibVlcRuntimeService>()));
         services.AddTransient(sp => new EncodeWorkspaceViewModel(
             sp.GetRequiredService<IVideoAnalysisService>(),
             sp.GetRequiredService<IVideoEncodingService>(),
@@ -48,7 +57,8 @@ public static class ServiceCollectionExtensions
             true,
             sp.GetRequiredService<IEncodeCompletionNotifier>(),
             null,
-            sp.GetRequiredService<IProcessedVideoTracker>()));
+            sp.GetRequiredService<IProcessedVideoTracker>(),
+            sp.GetRequiredService<IMediaToolsRuntimePromptService>()));
         services.AddTransient(sp => new MainWindowViewModel(
             sp.GetRequiredService<EncodeWorkspaceViewModel>(),
             sp.GetRequiredService<IThemeService>(),

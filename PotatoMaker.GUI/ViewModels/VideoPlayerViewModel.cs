@@ -2,6 +2,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using LibVLCSharp.Shared;
 using PotatoMaker.Core;
+using PotatoMaker.GUI.Services;
 
 namespace PotatoMaker.GUI.ViewModels;
 
@@ -30,6 +31,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private readonly DispatcherTimer _positionTimer;
     private readonly DispatcherTimer _seekPreviewTimer;
     private readonly DispatcherTimer _pausedSeekRefreshTimer;
+    private readonly ILibVlcRuntimeService _libVlcRuntimeService;
 
     private Task<PlayerInitializationResult>? _playerInitializationTask;
     private LibVLC? _libVlc;
@@ -76,8 +78,11 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     {
     }
 
-    public VideoPlayerViewModel(bool initializePlayer)
+    public VideoPlayerViewModel(
+        bool initializePlayer,
+        ILibVlcRuntimeService? libVlcRuntimeService = null)
     {
+        _libVlcRuntimeService = libVlcRuntimeService ?? new LibVlcRuntimeService();
         _positionTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(33)
@@ -109,6 +114,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         _hasAttemptedPlayerInitialization = true;
         _isPlayerInitializationInProgress = true;
+        RetryPlayerInitializationCommand.NotifyCanExecuteChanged();
         var initializationTask = Task.Run(CreatePlayerInitializationResult);
         _playerInitializationTask = initializationTask;
         _ = CompletePlayerInitializationAsync(initializationTask);
@@ -198,6 +204,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
                 ToggleMuteCommand.NotifyCanExecuteChanged();
                 SetTrimStartCommand.NotifyCanExecuteChanged();
                 SetTrimEndCommand.NotifyCanExecuteChanged();
+                RetryPlayerInitializationCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -335,6 +342,26 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
     public bool HasPlayerError => !string.IsNullOrWhiteSpace(PlayerErrorMessage);
 
+    [RelayCommand(CanExecute = nameof(CanRetryPlayerInitialization))]
+    private void RetryPlayerInitialization()
+        => EnsureInitializedAfterRuntimeSetup();
+
+    public void EnsureInitializedAfterRuntimeSetup()
+    {
+        if (!CanRetryPlayerInitialization())
+            return;
+
+        _hasAttemptedPlayerInitialization = false;
+        PlayerErrorMessage = null;
+        StatusMessage = "Starting video preview...";
+        EnsureInitialized();
+    }
+
+    private bool CanRetryPlayerInitialization() =>
+        !_isDisposed &&
+        !_isPlayerInitializationInProgress &&
+        !IsPlayerAvailable;
+
     [RelayCommand(CanExecute = nameof(CanTogglePlayback))]
     private void TogglePlayback()
     {
@@ -457,9 +484,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             bool shouldDeferLoad =
                 !_hasAttemptedPlayerInitialization ||
                 _isPlayerInitializationInProgress;
-            _pendingSourceLoad = shouldDeferLoad
-                ? (_sourcePath, duration, selection)
-                : null;
+            _pendingSourceLoad = (_sourcePath, duration, selection);
             PlayerErrorMessage = shouldDeferLoad
                 ? null
                 : PlayerErrorMessage;
@@ -653,17 +678,20 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static PlayerInitializationResult CreatePlayerInitializationResult()
+    private PlayerInitializationResult CreatePlayerInitializationResult()
     {
         LibVLC? libVlc = null;
         MediaPlayer? mediaPlayer = null;
+        LibVlcRuntimeValidationResult runtime = _libVlcRuntimeService.DetectAndInitialize();
+
+        if (!runtime.IsValid)
+            return new PlayerInitializationResult(null, null, null, runtime);
 
         try
         {
-            LibVlcRuntime.EnsureInitialized();
             libVlc = new LibVLC(LibVlcStartupArguments);
             mediaPlayer = new MediaPlayer(libVlc);
-            return new PlayerInitializationResult(libVlc, mediaPlayer, null);
+            return new PlayerInitializationResult(libVlc, mediaPlayer, null, runtime);
         }
         catch (Exception ex)
         {
@@ -683,7 +711,12 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
             {
             }
 
-            return new PlayerInitializationResult(null, null, ex);
+            LibVlcRuntimeValidationResult failedRuntime = runtime with
+            {
+                IsValid = false,
+                Message = $"VLC was found but video preview could not start: {ex.Message}"
+            };
+            return new PlayerInitializationResult(null, null, ex, failedRuntime);
         }
     }
 
@@ -705,6 +738,7 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
 
         _playerInitializationTask = null;
         _isPlayerInitializationInProgress = false;
+        RetryPlayerInitializationCommand.NotifyCanExecuteChanged();
 
         if (_isDisposed)
         {
@@ -715,9 +749,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
         if (result.Error is not null || result.LibVlc is null || result.MediaPlayer is null)
         {
             IsPlayerAvailable = false;
-            PlayerErrorMessage = result.Error?.Message ?? "Unable to initialize the video player.";
-            StatusMessage = "Video player could not be initialized.";
-            _pendingSourceLoad = null;
+            PlayerErrorMessage = result.Runtime.Message;
+            StatusMessage = "Video preview is unavailable.";
             return;
         }
 
@@ -778,7 +811,8 @@ public partial class VideoPlayerViewModel : ViewModelBase, IDisposable
     private readonly record struct PlayerInitializationResult(
         LibVLC? LibVlc,
         MediaPlayer? MediaPlayer,
-        Exception? Error);
+        Exception? Error,
+        LibVlcRuntimeValidationResult Runtime);
 
     private void OnPositionTimerTick(object? sender, EventArgs e)
     {

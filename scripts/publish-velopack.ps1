@@ -9,9 +9,6 @@ param(
     [string]$Channel = "win-x64",
     [string]$GitHubRepoUrl = "",
     [string]$GitHubToken = "",
-    [string]$FfmpegDir = "",
-    [string]$FfmpegManifestPath = "",
-    [switch]$SkipFfmpeg,
     [bool]$SingleFile = $false,
     [bool]$ReadyToRun = $false,
     [bool]$DownloadPreviousReleases = $true,
@@ -206,24 +203,6 @@ function Get-CentralPackageVersion {
     return $packageNode.Version
 }
 
-function Resolve-PathFfmpegDirFromPath {
-    $ffmpegCmd = Get-Command ffmpeg -ErrorAction SilentlyContinue
-    $ffprobeCmd = Get-Command ffprobe -ErrorAction SilentlyContinue
-
-    if ($null -eq $ffmpegCmd -or $null -eq $ffprobeCmd) {
-        return $null
-    }
-
-    $ffmpegPathDir = Split-Path -Parent $ffmpegCmd.Source
-    $ffprobePathDir = Split-Path -Parent $ffprobeCmd.Source
-
-    if ($ffmpegPathDir -ne $ffprobePathDir) {
-        return $null
-    }
-
-    return $ffmpegPathDir
-}
-
 if (-not (Test-Path $portableScript)) {
     throw "Portable packaging script not found: $portableScript"
 }
@@ -270,35 +249,6 @@ if (-not $PSBoundParameters.ContainsKey("SingleFile")) {
 
 if (-not $PSBoundParameters.ContainsKey("ReadyToRun")) {
     $ReadyToRun = Read-YesNo -Prompt "Enable ReadyToRun precompilation?" -Default $ReadyToRun
-}
-
-if (-not $SkipFfmpeg -and [string]::IsNullOrWhiteSpace($FfmpegDir)) {
-    $defaultFfmpegDir = Join-Path $repoRoot "third_party\ffmpeg\$Runtime"
-    if (Test-Path $defaultFfmpegDir) {
-        $FfmpegDir = $defaultFfmpegDir
-    }
-    else {
-        $pathFfmpegDir = Resolve-PathFfmpegDirFromPath
-        if (-not [string]::IsNullOrWhiteSpace($pathFfmpegDir)) {
-            $FfmpegDir = $pathFfmpegDir
-        }
-    }
-}
-
-if (-not $PSBoundParameters.ContainsKey("SkipFfmpeg") -and -not $PSBoundParameters.ContainsKey("FfmpegDir")) {
-    $bundleFfmpeg = Read-YesNo -Prompt "Bundle FFmpeg into the package?" -Default (-not [string]::IsNullOrWhiteSpace($FfmpegDir))
-    if (-not $bundleFfmpeg) {
-        $SkipFfmpeg = $true
-    }
-    elseif (-not [string]::IsNullOrWhiteSpace($FfmpegDir)) {
-        $useDetectedFfmpeg = Read-YesNo -Prompt "Use detected FFmpeg directory '$FfmpegDir'?" -Default $true
-        if (-not $useDetectedFfmpeg) {
-            $FfmpegDir = Read-Host "Enter FFmpeg directory"
-        }
-    }
-    else {
-        $FfmpegDir = Read-Host "Enter FFmpeg directory"
-    }
 }
 
 if ([string]::IsNullOrWhiteSpace($GitHubToken)) {
@@ -362,9 +312,6 @@ $velopackCliVersion = Get-CentralPackageVersion -Path $packagesPropsPath -Packag
     -Version $Version `
     -SingleFile:$SingleFile `
     -ReadyToRun:$ReadyToRun `
-    -FfmpegDir $FfmpegDir `
-    -FfmpegManifestPath $FfmpegManifestPath `
-    -SkipFfmpeg:$SkipFfmpeg `
     -SkipZip
 
 if (-not (Test-Path $packageDir)) {

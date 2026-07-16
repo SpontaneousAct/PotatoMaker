@@ -61,7 +61,7 @@ const homeHref = import.meta.env.BASE_URL.endsWith("/")
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
 const githubUrl = "https://github.com/SpontaneousAct/PotatoMaker";
-const thirdPartyNoticesUrl = `${githubUrl}/blob/main/third_party/notices/THIRD-PARTY-NOTICES.txt`;
+const thirdPartyNoticesUrl = `${githubUrl}/blob/master/third_party/notices/THIRD-PARTY-NOTICES.txt`;
 const iconUrl = `${homeHref}potato.ico`;
 const screenshotUrl = `${homeHref}images/app-screenshot.png`;
 const previewVideoUrl = `${homeHref}images/preview.mp4`;
@@ -127,7 +127,7 @@ const workflowDuration = workflowLoopDuration;
             </a>
           </div>
           <p class="max-w-2xl text-xs leading-5 text-stone-400">
-            The installer includes FFmpeg and LibVLC under their respective open-source licenses.
+            FFmpeg and VLC are required but are not bundled. On first launch, PotatoMaker asks before downloading verified, pinned versions directly from BtbN and VideoLAN for its own use.
             <a class="ml-1 underline decoration-stone-500 underline-offset-2 hover:text-white" href={thirdPartyNoticesUrl}>
               Third-party licenses and source
             </a>

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Xml.Linq;
 using Xunit;
 
@@ -18,68 +17,42 @@ public sealed class PackagingComplianceTests
         AssertCanonicalLicense(Path.Combine(noticesDirectory, "licenses", "GPL-3.0.txt"), "Version 3, 29 June 2007");
         AssertCanonicalLicense(Path.Combine(noticesDirectory, "licenses", "LGPL-2.1.txt"), "Version 2.1, February 1999");
         Assert.True(File.Exists(Path.Combine(noticesDirectory, "licenses", "FFMpegCore-MIT.txt")));
-        Assert.True(File.Exists(Path.Combine(noticesDirectory, "licenses", "SVT-AV1-BSD-3-Clause-Clear.txt")));
-        string nvidiaNotice = File.ReadAllText(Path.Combine(noticesDirectory, "licenses", "NVIDIA-Codec-Headers-MIT.txt"));
-        Assert.Contains("Copyright (c) 2010-2024 NVIDIA Corporation", nvidiaNotice);
-        Assert.Contains("Copyright (c) 2016", nvidiaNotice);
-        Assert.Contains("Jean-loup Gailly", File.ReadAllText(Path.Combine(noticesDirectory, "licenses", "zlib.txt")));
     }
 
     [Fact]
-    public void ApprovedFfmpegSourceManifestPinsRedistributableSourcesAndCapabilities()
+    public void FfmpegRuntimeDownloadIsPinnedAndReleaseScriptsDoNotBundleIt()
     {
-        string manifestPath = Path.Combine(
-            RepositoryRoot,
-            "third_party",
-            "ffmpeg",
-            "manifests",
-            "source-win-x64.json");
-        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(manifestPath));
-        JsonElement root = document.RootElement;
+        Assert.StartsWith("https://github.com/BtbN/FFmpeg-Builds/releases/download/", PotatoMaker.Core.FfmpegRuntimePackage.DownloadUrl);
+        Assert.Equal(64, PotatoMaker.Core.FfmpegRuntimePackage.ArchiveSha256.Length);
+        Assert.True(PotatoMaker.Core.FfmpegRuntimePackage.ArchiveSizeBytes > 0);
 
-        Assert.Equal("GPL-2.0-or-later", root.GetProperty("license").GetString());
-        Assert.All(root.GetProperty("sources").EnumerateArray(), source =>
-        {
-            Assert.StartsWith("https://", source.GetProperty("url").GetString());
-            Assert.Equal(64, source.GetProperty("sha256").GetString()!.Length);
-        });
-        Assert.Contains(root.GetProperty("requiredEncoders").EnumerateArray(), value => value.GetString() == "libsvtav1");
-        Assert.Contains(root.GetProperty("requiredEncoders").EnumerateArray(), value => value.GetString() == "av1_nvenc");
-        Assert.Contains(root.GetProperty("requiredDecoders").EnumerateArray(), value => value.GetString() == "h264");
-        Assert.Contains(root.GetProperty("requiredConfigurationFlags").EnumerateArray(), value => value.GetString() == "--enable-gpl");
-        Assert.Contains(root.GetProperty("requiredFilters").EnumerateArray(), value => value.GetString() == "cropdetect");
-        Assert.Contains(
-            root.GetProperty("forbiddenConfigurationFlags").EnumerateArray(),
-            value => value.GetString() == "--enable-nonfree");
+        string portableScript = File.ReadAllText(Path.Combine(RepositoryRoot, "scripts", "publish-portable.ps1"));
+        string velopackScript = File.ReadAllText(Path.Combine(RepositoryRoot, "scripts", "publish-velopack.ps1"));
+        string releaseWorkflow = File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "release.yml"));
+        Assert.DoesNotContain("FfmpegDir", portableScript, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("FfmpegDir", velopackScript, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("build-ffmpeg-runtime", releaseWorkflow, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void LibVlcManifestPinsBinarySourcePackagingAndExcludedPlugins()
-    {
-        string manifestPath = Path.Combine(RepositoryRoot, "third_party", "libvlc", "manifests", "win-x64.json");
-        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(manifestPath));
-        JsonElement root = document.RootElement;
-
-        Assert.Equal("3.0.23", root.GetProperty("version").GetString());
-        Assert.Equal(64, root.GetProperty("nugetSha256").GetString()!.Length);
-        Assert.Equal(64, root.GetProperty("sourceSha256").GetString()!.Length);
-        Assert.Equal(40, root.GetProperty("packagingCommit").GetString()!.Length);
-        Assert.Contains(root.GetProperty("excludedPlugins").EnumerateArray(), value =>
-            value.GetString()!.Contains("dolby_surround", StringComparison.OrdinalIgnoreCase));
-    }
-
-    [Fact]
-    public void GuiProjectExcludesKnownGplOnlyLibVlcPlugins()
+    public void NativeLibVlcIsNotAPackageOrReleaseAsset()
     {
         string projectPath = Path.Combine(RepositoryRoot, "PotatoMaker.GUI", "PotatoMaker.GUI.csproj");
         XDocument project = XDocument.Load(projectPath);
         string projectText = project.ToString();
+        string portableScript = File.ReadAllText(Path.Combine(RepositoryRoot, "scripts", "publish-portable.ps1"));
+        string releaseWorkflow = File.ReadAllText(Path.Combine(RepositoryRoot, ".github", "workflows", "release.yml"));
 
-        Assert.Contains("libdolby_surround_decoder_plugin.dll", projectText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("libheadphone_channel_mixer_plugin.dll", projectText, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("VlcWindowsX64ExcludeFiles", projectText, StringComparison.Ordinal);
-        Assert.Contains("VlcWindowsX86ExcludeFiles", projectText, StringComparison.Ordinal);
-        Assert.DoesNotContain("CopyLibVlcRuntimeAfterPublish", projectText, StringComparison.Ordinal);
+        Assert.Contains("LibVLCSharp", projectText, StringComparison.Ordinal);
+        Assert.Contains("LibVLCSharp.Avalonia", projectText, StringComparison.Ordinal);
+        Assert.DoesNotContain("VideoLAN.LibVLC.Windows", projectText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("VlcWindowsX64", projectText, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("build-libvlc-source-bundle", releaseWorkflow, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("libvlc_source", releaseWorkflow, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Native LibVLC must not be bundled", portableScript, StringComparison.Ordinal);
+        Assert.StartsWith("https://download.videolan.org/", PotatoMaker.GUI.Services.LibVlcRuntimePackage.DownloadUrl);
+        Assert.Equal(64, PotatoMaker.GUI.Services.LibVlcRuntimePackage.ArchiveSha256.Length);
+        Assert.True(PotatoMaker.GUI.Services.LibVlcRuntimePackage.ArchiveSizeBytes > 0);
     }
 
     private static void AssertCanonicalLicense(string path, string versionMarker)

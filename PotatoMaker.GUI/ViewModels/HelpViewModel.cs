@@ -50,7 +50,7 @@ public sealed class HelpViewModel : ViewModelBase
             "Open license"),
         new(
             "Third-party software",
-            "FFmpeg and LibVLC license, source, and attribution information.",
+            "FFmpeg, VLC / LibVLC, and managed-library license, source, and attribution information.",
             AppLinkCatalog.ThirdPartyNoticesUrl,
             "Open notices")
     ];

@@ -1,22 +1,14 @@
-Place FFmpeg binaries here for portable packaging.
+# FFmpeg runtime policy
 
-Expected default layout for `scripts/publish-portable.ps1`:
+PotatoMaker release packages do not contain FFmpeg binaries. Do not add
+`ffmpeg.exe` or `ffprobe.exe` under this directory.
 
-```text
-third_party/ffmpeg/
-`- win-x64/
-   |- ffmpeg.exe
-   |- ffprobe.exe
-   `- runtime-manifest.json
-```
+The desktop app uses its pinned local-app-data runtime and offers a verified
+download directly from BtbN's upstream GitHub release when that runtime is
+missing or invalid. `POTATOMAKER_FFMPEG_DIR` is retained as an explicit
+developer override. The CLI can still discover FFmpeg from `PATH`.
 
-The script also supports a custom location via `-FfmpegDir`.
-
-Build the approved GPL runtime and its corresponding-source bundle with
-`scripts/build-ffmpeg-runtime.ps1`. The source inputs and their hashes are pinned
-in `third_party/ffmpeg/manifests/source-win-x64.json`; the build writes a runtime
-manifest beside the binaries. Pass a custom output with `-FfmpegManifestPath`.
-Packaging fails when supplied binaries do not match that generated manifest.
-
-Never approve a build containing `--enable-nonfree`; keep `--enable-gpl` so
-PotatoMaker's required cropdetect filter remains present.
+The pinned URL and SHA-256 live in
+`PotatoMaker.Core/FfmpegRuntimePackage.cs`. Downloaded tools are stored under
+`%LOCALAPPDATA%\PotatoMaker\runtimes\ffmpeg`; this repository and PotatoMaker's
+release assets do not redistribute them.

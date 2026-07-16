@@ -1,0 +1,49 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "dotnet build ${workspaceFolder}/PotatoMaker.slnx -c Debug",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build-cli",
+            "type": "shell",
+            "command": "dotnet build ${workspaceFolder}/PotatoMaker.Cli/PotatoMaker.Cli.csproj -c Debug",
+            "group": "build",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build-gui",
+            "type": "shell",
+            "command": "dotnet build ${workspaceFolder}/PotatoMaker.GUI/PotatoMaker.GUI.csproj -c Debug",
+            "group": "build",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "website-dev",
+            "type": "shell",
+            "command": "npm run dev -- --open",
+            "options": {
+                "cwd": "${workspaceFolder}/website"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "custom",
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*astro dev.*",
+                    "endsPattern": ".*Local.*http://.*"
+                }
+            }
+        }
+    ]
+}

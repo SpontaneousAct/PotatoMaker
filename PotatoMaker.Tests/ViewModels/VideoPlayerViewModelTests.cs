@@ -1,5 +1,6 @@
 using System.Reflection;
 using PotatoMaker.Core;
+using PotatoMaker.GUI.Services;
 using PotatoMaker.GUI.ViewModels;
 using Xunit;
 
@@ -376,4 +377,5 @@ public sealed class VideoPlayerViewModelTests
         Assert.Equal("Select a video to preview it.", viewModel.StatusMessage);
         Assert.Null(viewModel.PlayerErrorMessage);
     }
+
 }
