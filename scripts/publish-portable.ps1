@@ -239,11 +239,6 @@ if (-not (Test-Path $packageDir)) {
 
 Copy-ThirdPartyNotices -Destination $packageDir
 
-$bundledLibVlc = @(Get-ChildItem -LiteralPath $packageDir -Recurse -File -Filter "libvlc.dll" -ErrorAction SilentlyContinue)
-if ($bundledLibVlc.Count -ne 0) {
-    throw "Native LibVLC must not be bundled: $($bundledLibVlc[0].FullName)"
-}
-
 if ($SkipZip) {
     Write-Host "Portable publish staging ready:"
     Write-Host "  Folder: $packageDir"

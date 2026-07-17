@@ -12,11 +12,7 @@ Everything runs on your PC. Your videos are not uploaded anywhere.
 
 [Download the latest Windows installer](https://github.com/SpontaneousAct/PotatoMaker/releases/latest/download/PotatoMaker-win-x64-Setup.exe)
 
-PotatoMaker is currently built for 64-bit Windows. On first launch it explains
-that FFmpeg and VLC are required, then—with your confirmation—downloads verified,
-pinned versions directly from their upstream providers. They are installed only
-for PotatoMaker under `%LOCALAPPDATA%\PotatoMaker\runtimes`, checked on every
-launch, and removed when PotatoMaker is uninstalled.
+PotatoMaker is built for 64-bit Windows. The first time you open it, it asks to download FFmpeg and VLC. These tools are kept in your local app data and removed when you uninstall PotatoMaker.
 
 ## Using PotatoMaker
 
@@ -64,7 +60,7 @@ Unlike the desktop app, the CLI does not switch encoders automatically. It will 
 
 ## Building from source
 
-You will need the .NET SDK version listed in [`global.json`](global.json). The desktop app provisions its own verified FFmpeg and VLC runtimes. Developers can bypass the managed copies with `POTATOMAKER_FFMPEG_DIR` and `POTATOMAKER_LIBVLC_DIR`; the CLI can also use FFmpeg from `PATH`.
+You will need the .NET SDK version listed in [`global.json`](global.json). The desktop app downloads FFmpeg and VLC when it first runs. To use local copies instead, set `POTATOMAKER_FFMPEG_DIR` and `POTATOMAKER_LIBVLC_DIR`. The CLI can also find FFmpeg on `PATH`.
 
 ```powershell
 dotnet build .\PotatoMaker.slnx
@@ -87,10 +83,4 @@ Bug reports and pull requests are welcome. If you change compression rules, outp
 
 ## License
 
-PotatoMaker is available under the [MIT License](LICENSE.txt).
-
-Windows packages contain the managed LibVLCSharp preview integration under its
-own open-source license. Native VLC and FFmpeg are not included. After the user
-confirms first-run setup, PotatoMaker downloads verified, pinned builds directly
-from VideoLAN and BtbN into the current user's app data. Exact source and
-attribution information is listed in the [third-party notices](third_party/notices/THIRD-PARTY-NOTICES.txt).
+PotatoMaker is available under the [MIT License](LICENSE.txt). Releases also include FFMpegCore and LibVLCSharp; see the [third-party notices](third_party/notices/THIRD-PARTY-NOTICES.txt) for their licenses. FFmpeg and VLC are downloaded separately and are not part of the PotatoMaker package.

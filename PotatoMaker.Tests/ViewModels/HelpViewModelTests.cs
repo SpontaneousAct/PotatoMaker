@@ -7,7 +7,7 @@ namespace PotatoMaker.Tests.ViewModels;
 public sealed class HelpViewModelTests
 {
     [Fact]
-    public void Links_IncludeThirdPartyLicenseAndSourceNotices()
+    public void Links_IncludeThirdPartyNotices()
     {
         var viewModel = new HelpViewModel(new StubVersionService());
 
@@ -16,8 +16,8 @@ public sealed class HelpViewModelTests
             item => item.Title == "Third-party software");
         Assert.Equal(AppLinkCatalog.ThirdPartyNoticesUrl, link.Url);
         Assert.Contains("/blob/master/", link.Url, StringComparison.Ordinal);
-        Assert.Contains("FFmpeg", link.Description, StringComparison.Ordinal);
-        Assert.Contains("LibVLC", link.Description, StringComparison.Ordinal);
+        Assert.Contains("FFMpegCore", link.Description, StringComparison.Ordinal);
+        Assert.Contains("LibVLCSharp", link.Description, StringComparison.Ordinal);
     }
 
     private sealed class StubVersionService : IAppVersionService

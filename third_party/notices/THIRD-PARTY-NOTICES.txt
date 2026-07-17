@@ -1,9 +1,8 @@
 PotatoMaker third-party software notices
 ========================================
 
-PotatoMaker itself is licensed under the MIT License. The following software is
-distributed with the Windows application or can be downloaded separately at the
-user's request, and remains subject to its own license.
+The following libraries are included with PotatoMaker and remain subject to
+their own licenses.
 
 FFMpegCore 5.4.0
 ----------------
@@ -12,50 +11,9 @@ License: MIT
 Source: https://github.com/rosenbjerg/FFMpegCore/tree/ed8f899d04a1f71c481e02b2123176d5cd097a4a
 License text: licenses/FFMpegCore-MIT.txt
 
-FFmpeg (required external runtime)
-----------------------------------
-Copyright (c) 2000-2026 the FFmpeg developers.
-License of the offered BtbN full GPL build: GNU General Public License version 3
-or later.
-Project: https://ffmpeg.org/
-BtbN build project and source recipes: https://github.com/BtbN/FFmpeg-Builds
-Offered archive: https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-06-30-13-34/ffmpeg-n8.1.2-21-gce3c09c101-win64-gpl-8.1.zip
-Archive SHA-256: 682361e32c9631caec09e5d9f09077101c9ed90c14e275f62014fefa6d397990
-License text: licenses/GPL-3.0.txt
-
-FFmpeg is not included in PotatoMaker installers, packages, or release assets.
-If the user accepts automatic setup, PotatoMaker downloads the archive directly
-from BtbN, verifies the upstream SHA-256, validates required capabilities, and
-extracts ffmpeg.exe and ffprobe.exe into that user's local application data.
-PotatoMaker invokes those separate command-line programs and does not link
-FFmpeg libraries into the application.
-
-VLC / LibVLC (required external runtime)
-----------------------------------------
-Copyright (c) VideoLAN and VLC authors.
-License: GNU Lesser General Public License version 2.1 or later; individual VLC
-plugins and contributed libraries may use other licenses.
-Project, downloads, and source: https://www.videolan.org/vlc/
-Offered archive: https://download.videolan.org/pub/videolan/vlc/3.0.23/win64/vlc-3.0.23-win64.zip
-Archive SHA-256: 992d19dbd0b8a7cde9167d2f7780b1ef6f92acc8a71acfa736101a21f35181e1
-License texts: licenses/LGPL-2.1.txt and licenses/GPL-2.0.txt
-
-Native LibVLC, LibVLCcore, codec plugins, and VLC installers are not included in
-PotatoMaker installers, packages, or release assets. If the user accepts
-first-run setup, PotatoMaker downloads the archive directly from VideoLAN,
-verifies its SHA-256, validates the native runtime, and extracts the preview
-runtime into that user's local application data.
-
 LibVLCSharp and LibVLCSharp.Avalonia 3.9.6
 -----------------------------------------
 Copyright (c) the VideoLAN and LibVLCSharp contributors.
 License: GNU Lesser General Public License version 2.1 or later.
 Source: https://github.com/videolan/LibVLCSharp/tree/4badd9ff352cc0824a3eafd20c7e660a89bba879
-Source archive: https://github.com/videolan/LibVLCSharp/archive/4badd9ff352cc0824a3eafd20c7e660a89bba879.zip
-License texts: licenses/LGPL-2.1.txt and licenses/GPL-2.0.txt
-
-No warranty
------------
-These components are provided without warranty, as described by their
-respective licenses. License and source obligations for each component remain
-with that component's copyright holders.
+License text: licenses/LGPL-2.1.txt

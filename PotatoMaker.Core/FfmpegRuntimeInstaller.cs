@@ -67,14 +67,6 @@ public sealed class FfmpegRuntimeInstaller : IDisposable
             ExtractTool(archivePath, "ffmpeg.exe", Path.Combine(stagingBin, "ffmpeg.exe"));
             ExtractTool(archivePath, "ffprobe.exe", Path.Combine(stagingBin, "ffprobe.exe"));
 
-            await File.WriteAllTextAsync(
-                Path.Combine(stagingDirectory, "SOURCE.txt"),
-                $"Downloaded directly from {FfmpegRuntimePackage.ProviderName}.{Environment.NewLine}" +
-                $"Source: {FfmpegRuntimePackage.DownloadUrl}{Environment.NewLine}" +
-                $"SHA-256: {FfmpegRuntimePackage.ArchiveSha256}{Environment.NewLine}" +
-                $"FFmpeg licensing: {FfmpegRuntimePackage.FfmpegLicenseUrl}{Environment.NewLine}",
-                ct).ConfigureAwait(false);
-
             FfmpegRuntimeValidationResult staged = await FfmpegRuntimeValidator.ValidateAsync(stagingBin, ct).ConfigureAwait(false);
             if (!staged.IsValid)
                 throw new InvalidDataException(staged.Message);
@@ -105,7 +97,7 @@ public sealed class FfmpegRuntimeInstaller : IDisposable
         CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, FfmpegRuntimePackage.DownloadUrl);
-        request.Headers.UserAgent.ParseAdd("PotatoMaker/1.9.1");
+        request.Headers.UserAgent.ParseAdd("PotatoMaker/1.9.5");
         using HttpResponseMessage response = await _httpClient.SendAsync(
             request,
             HttpCompletionOption.ResponseHeadersRead,

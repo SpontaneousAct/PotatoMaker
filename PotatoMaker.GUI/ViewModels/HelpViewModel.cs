@@ -50,7 +50,7 @@ public sealed class HelpViewModel : ViewModelBase
             "Open license"),
         new(
             "Third-party software",
-            "FFmpeg, VLC / LibVLC, and managed-library license, source, and attribution information.",
+            "Licenses for FFMpegCore and LibVLCSharp, which are included with PotatoMaker.",
             AppLinkCatalog.ThirdPartyNoticesUrl,
             "Open notices")
     ];

@@ -4,23 +4,22 @@
         Icon="/Assets/potato.ico"
         Title="Set up PotatoMaker media tools"
         Width="520"
-        Height="350"
+        Height="310"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
     <Grid Margin="28"
           RowDefinitions="Auto,66,Auto"
           RowSpacing="22">
         <StackPanel Grid.Row="0" Spacing="7">
-            <TextBlock Text="PotatoMaker needs two additional dependencies"
+            <TextBlock Text="PotatoMaker needs FFmpeg and VLC"
                        FontSize="24"
                        FontWeight="SemiBold"
                        TextWrapping="Wrap" />
             <TextBlock x:Name="DownloadSummaryTextBlock"
                        TextWrapping="Wrap"
                        Opacity="0.78" />
-            <TextBlock Text="FFmpeg 8.1.2 from BtbN  •  VLC 3.0.23 from VideoLAN"
-                       TextWrapping="Wrap"
-                       FontWeight="SemiBold" />
+            <TextBlock Text="They are downloaded from BtbN and VideoLAN and kept in your local app data."
+                       TextWrapping="Wrap" />
         </StackPanel>
 
         <StackPanel Grid.Row="1"
@@ -38,17 +37,14 @@
                        Opacity="0.78" />
         </StackPanel>
 
-        <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
-            <Button Grid.Column="0"
-                    Content="Licenses &amp; notices"
-                    Click="OnOpenLicensingClick" />
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
             <Button x:Name="ExitButton"
-                    Grid.Column="2"
+                    Grid.Column="1"
                     MinWidth="80"
                     Content="Exit"
                     Click="OnExitClick" />
             <Button x:Name="DownloadButton"
-                    Grid.Column="3"
+                    Grid.Column="2"
                     Content="Download"
                     Classes="pm-primary"
                     FontWeight="SemiBold"

@@ -18,6 +18,7 @@ namespace PotatoMaker.GUI;
 public partial class App : Application
 {
     private string[] _startupArgs = [];
+    private Task<bool>? _mediaToolsSetupTask;
 
     public IServiceProvider Services { get; private set; } = null!;
 
@@ -59,17 +60,12 @@ public partial class App : Application
                             WindowsWindowActivation.Activate(mainWindow);
                             try
                             {
-                                var runtimePrompt = Services.GetRequiredService<IMediaToolsRuntimePromptService>();
-                                if (await runtimePrompt.EnsureAvailableAsync())
-                                {
-                                    await currentViewModel.Workspace.InitializeRuntimeDependentStateAsync();
-                                    currentViewModel.Workspace.VideoPlayer.EnsureInitializedAfterRuntimeSetup();
+                                if (await EnsureMediaToolsAvailableAsync())
                                     currentViewModel.OpenExternalFiles(args);
-                                }
                             }
                             catch
                             {
-                                // The setup window contains the actionable error state.
+                                // Startup handles setup failures by closing the app.
                             }
                         });
                     });
@@ -109,8 +105,7 @@ public partial class App : Application
 
         try
         {
-            var runtimePrompt = Services.GetRequiredService<IMediaToolsRuntimePromptService>();
-            if (await runtimePrompt.EnsureAvailableAsync())
+            if (await EnsureMediaToolsAvailableAsync())
             {
                 await viewModel.Workspace.InitializeRuntimeDependentStateAsync();
                 viewModel.Workspace.VideoPlayer.EnsureInitializedAfterRuntimeSetup();
@@ -127,6 +122,12 @@ public partial class App : Application
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 desktop.Shutdown();
         }
+    }
+
+    private Task<bool> EnsureMediaToolsAvailableAsync()
+    {
+        return _mediaToolsSetupTask ??=
+            Services.GetRequiredService<IMediaToolsRuntimePromptService>().EnsureAvailableAsync();
     }
 
     private static void DisableAvaloniaDataAnnotationValidation()

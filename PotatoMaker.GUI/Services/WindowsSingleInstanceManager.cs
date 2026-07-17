@@ -15,7 +15,6 @@ namespace PotatoMaker.GUI.Services;
 /// </summary>
 internal sealed class WindowsSingleInstanceManager : IDisposable
 {
-    internal const string DisableEnvironmentVariable = "POTATOMAKER_DISABLE_SINGLE_INSTANCE";
     private const int ConnectRetryDelayMilliseconds = 100;
     private static readonly TimeSpan ConnectRetryWindow = TimeSpan.FromSeconds(3);
     private static readonly JsonSerializerOptions SerializerOptions = new();
@@ -46,7 +45,7 @@ internal sealed class WindowsSingleInstanceManager : IDisposable
     [SupportedOSPlatform("windows")]
     public static WindowsSingleInstanceManager? Create(string[] args)
     {
-        if (!OperatingSystem.IsWindows() || IsDisabled(Environment.GetEnvironmentVariable(DisableEnvironmentVariable)))
+        if (!OperatingSystem.IsWindows())
             return null;
 
         ArgumentNullException.ThrowIfNull(args);
@@ -62,11 +61,6 @@ internal sealed class WindowsSingleInstanceManager : IDisposable
 
         return manager;
     }
-
-    internal static bool IsDisabled(string? value) =>
-        value?.Equals("1", StringComparison.OrdinalIgnoreCase) == true ||
-        value?.Equals("true", StringComparison.OrdinalIgnoreCase) == true ||
-        value?.Equals("yes", StringComparison.OrdinalIgnoreCase) == true;
 
     public void RegisterActivationHandler(Action<IReadOnlyList<string>> activationHandler)
     {

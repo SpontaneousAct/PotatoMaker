@@ -6,19 +6,19 @@ const workflowLoopDuration = 20;
 const steps = [
   {
     title: "Open",
-    description: "Drop in a recording, or grab one straight from your recent videos.",
+    description: "Choose a recording or pick one from Recent videos.",
     start: 0,
     end: 3
   },
   {
     title: "Trim",
-    description: "Keep the good bit. If there is more than one, add each highlight to the queue.",
+    description: "Set the start and end. Queue more clips if you want.",
     start: 3,
     end: 12
   },
   {
     title: "Compress",
-    description: "PotatoMaker does the maths and hands back a smaller MP4, split when needed.",
+    description: "Export a smaller MP4.",
     start: 12,
     end: workflowLoopDuration
   }
@@ -26,33 +26,33 @@ const steps = [
 
 const capabilities = [
   {
-    title: "Trim the part you actually want",
-    description: "Cut the loading screens, dead air, and everything before the moment worth sharing.",
+    title: "Trim videos",
+    description: "Set the exact start and end.",
     icon: "content_cut"
   },
   {
-    title: "Make several clips from one recording",
-    description: "Queue each moment as you find it, then export the whole batch in one go.",
+    title: "Queue clips",
+    description: "Export several clips in one batch.",
     icon: "queue_play_next"
   },
   {
     title: "Adjust crop and FPS",
-    description: "Tighten the frame or ease back the frame rate when the source is doing a bit too much.",
+    description: "Override the suggested settings when needed.",
     icon: "tune"
   },
   {
-    title: "Auto-detect crop for ultrawide",
-    description: "PotatoMaker spots black bars and trims them away before they eat into the file size.",
+    title: "Remove black bars",
+    description: "Crop detection handles them automatically.",
     icon: "crop"
   },
   {
-    title: "Nothing gets uploaded",
-    description: "Your recordings stay on your computer—no uploads and no waiting on your internet connection.",
+    title: "Keep videos local",
+    description: "Nothing is uploaded.",
     icon: "lock"
   },
   {
-    title: "Your latest recordings, ready to pick",
-    description: "Point PotatoMaker at your recordings folder once. Your newest clips will be waiting.",
+    title: "Find recent recordings",
+    description: "Open the latest files from your recordings folder.",
     icon: "video_library"
   }
 ];
@@ -107,8 +107,7 @@ const workflowDuration = workflowLoopDuration;
               Make large clips <br /> easier to share.
             </h1>
             <p class="max-w-2xl text-base leading-7 text-stone-300 sm:text-lg">
-              Turn the recording you have into the clip you actually want. PotatoMaker handles the
-              number-crunching and keeps everything on your PC.
+              Trim recordings and export smaller MP4s. Everything stays on your PC.
             </p>
           </div>
 
@@ -126,12 +125,6 @@ const workflowDuration = workflowLoopDuration;
               Learn more
             </a>
           </div>
-          <p class="max-w-2xl text-xs leading-5 text-stone-400">
-            FFmpeg and VLC are required but are not bundled. On first launch, PotatoMaker asks before downloading verified, pinned versions directly from BtbN and VideoLAN for its own use.
-            <a class="ml-1 underline decoration-stone-500 underline-offset-2 hover:text-white" href={thirdPartyNoticesUrl}>
-              Third-party licenses and source
-            </a>
-          </p>
         </div>
 
         <div class="hero-image-shell">
@@ -149,8 +142,8 @@ const workflowDuration = workflowLoopDuration;
       class="grid min-h-screen grid-rows-[auto_1fr] border-t border-[#332b25] py-10"
     >
       <div class="space-y-2">
-        <p class="text-sm font-medium uppercase tracking-[0.26em] text-[#d7af81]">Workflow</p>
-        <h2 class="text-2xl font-semibold text-white sm:text-3xl">Find the moment. Make the clip.</h2>
+        <p class="text-sm font-medium uppercase tracking-[0.26em] text-[#d7af81]">How it works</p>
+        <h2 class="text-2xl font-semibold text-white sm:text-3xl">Open, trim, compress.</h2>
       </div>
 
       <div class="grid items-center">
@@ -198,12 +191,7 @@ const workflowDuration = workflowLoopDuration;
 
     <section class="border-t border-[#332b25] py-16">
       <div class="space-y-8">
-        <div class="max-w-2xl space-y-3">
-          <h2 class="text-2xl font-semibold text-white sm:text-3xl">The fiddly parts are handled</h2>
-          <p class="text-sm leading-7 text-stone-300 sm:text-base">
-            You choose the moment. PotatoMaker sorts out the crop, queue, bitrate, and export.
-          </p>
-        </div>
+        <h2 class="text-2xl font-semibold text-white sm:text-3xl">What it does</h2>
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {capabilities.map((item) => (

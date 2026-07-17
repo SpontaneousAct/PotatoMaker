@@ -9,37 +9,6 @@ namespace PotatoMaker.Tests.ViewModels;
 public sealed class EncodeWorkspaceViewModelTests
 {
     [Fact]
-    public async Task SelectingFile_WhenMediaToolsSetupIsDeclined_DoesNotStartAnalysis()
-    {
-        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
-        await File.WriteAllTextAsync(inputPath, "video");
-
-        try
-        {
-            var analysisService = new RecordingAnalysisService();
-            var runtimePrompt = new StaticMediaToolsRuntimePromptService(available: false);
-            var workspace = new EncodeWorkspaceViewModel(
-                analysisService,
-                new NoOpEncodingService(),
-                new StaticEncoderCapabilityService(),
-                null,
-                initializeEncoderSupport: false,
-                mediaToolsRuntimePromptService: runtimePrompt);
-
-            Assert.True(workspace.FileInput.SetFile(inputPath));
-            await runtimePrompt.WaitForCallAsync();
-
-            Assert.Equal(0, analysisService.ProbeCallCount);
-            Assert.Equal(ConversionStatus.Idle, workspace.ConversionLog.Status);
-            Assert.Contains("media tools are required", workspace.ConversionLog.StatusText, StringComparison.OrdinalIgnoreCase);
-        }
-        finally
-        {
-            File.Delete(inputPath);
-        }
-    }
-
-    [Fact]
     public async Task SelectingFile_PopulatesProbeAndStrategySummary()
     {
         string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
@@ -1272,13 +1241,8 @@ public sealed class EncodeWorkspaceViewModelTests
 
         public string? DetectedCropFilter { get; set; } = "crop=1920:800:0:140";
 
-        public int ProbeCallCount { get; private set; }
-
-        public Task<VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default)
-        {
-            ProbeCallCount++;
-            return Task.FromResult(new VideoInfo(TimeSpan.FromSeconds(95), 1920, 1080, 59.94));
-        }
+        public Task<VideoInfo> ProbeAsync(string inputPath, CancellationToken ct = default) =>
+            Task.FromResult(new VideoInfo(TimeSpan.FromSeconds(95), 1920, 1080, 59.94));
 
         public int StrategyCount
         {
@@ -1480,19 +1444,6 @@ public sealed class EncodeWorkspaceViewModelTests
     private sealed class StaticEncoderCapabilityService : IEncoderCapabilityService
     {
         public Task<bool> IsAv1NvencSupportedAsync(CancellationToken ct = default) => Task.FromResult(true);
-    }
-
-    private sealed class StaticMediaToolsRuntimePromptService(bool available) : IMediaToolsRuntimePromptService
-    {
-        private readonly TaskCompletionSource _called = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public Task<bool> EnsureAvailableAsync(CancellationToken ct = default)
-        {
-            _called.TrySetResult();
-            return Task.FromResult(available);
-        }
-
-        public Task WaitForCallAsync() => _called.Task;
     }
 
     private sealed class RecordingEncodeCompletionNotifier : IEncodeCompletionNotifier

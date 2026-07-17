@@ -43,34 +43,15 @@ The workflow stops instead of releasing when:
 
 If a run fails after creating a draft, delete that abandoned draft and its tag before retrying the same version. Otherwise, bump the version and run a new release.
 
-## Native media-tools handling
+## Media tools
 
-FFmpeg and native VLC are not built by the release workflow and are not included
-in the installer, portable ZIP, Velopack package, or release assets. The desktop
-app requires its own pinned copies under `%LOCALAPPDATA%\PotatoMaker\runtimes`.
-On first launch—or whenever either runtime is missing or invalid—it presents one
-setup dialog and, after consent, downloads both directly from their upstream
-providers. Developer environment overrides remain available for local work.
+Releases do not contain FFmpeg or native VLC. The app downloads its pinned versions from BtbN and VideoLAN after the user agrees to the first-run setup.
 
-The download URL, expected size, and upstream SHA-256 are pinned in
-`PotatoMaker.Core/FfmpegRuntimePackage.cs`. VLC's archive URL, size, and SHA-256
-are pinned in `PotatoMaker.GUI/Services/LibVlcRuntimePackage.cs`. Updating either
-package is a small, explicit maintenance operation:
-
-1. Select a retained BtbN monthly build rather than a short-lived daily asset.
-2. Copy the archive SHA-256 from the upstream release or checksum listing.
-3. Update the package constants and user-visible version/size.
-4. Test download cancellation, hash rejection, runtime activation, probing,
-   thumbnails, 10-bit AV1 decoding, CPU AV1 encoding, and NVENC where available.
-
-Every PotatoMaker package still includes `THIRD-PARTY-NOTICES.txt` and relevant
-canonical license texts. Native VLC is not built, packaged, or attached to
-releases; it is fetched from VideoLAN only after user consent. The managed
-LibVLCSharp integration remains a normal NuGet dependency.
+The URLs, sizes, and SHA-256 hashes live in `PotatoMaker.Core/FfmpegRuntimePackage.cs` and `PotatoMaker.GUI/Services/LibVlcRuntimePackage.cs`. When changing either download, update those constants and test setup, cancellation, video preview, probing, CPU encoding, and NVENC where available.
 
 ## Local draft upload fallback
 
-If GitHub Actions is unavailable, the existing script can still create a draft from a Windows development machine; packaging does not require locally installed media tools:
+If GitHub Actions is unavailable, the existing script can still create a draft from a Windows development machine:
 
 ```powershell
 $env:POTATOMAKER_GITHUB_TOKEN = "<token with repository Contents write access>"

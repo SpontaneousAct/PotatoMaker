@@ -14,7 +14,7 @@ PotatoMaker is a Windows-first video compression tool for making clips easier to
 - `PotatoMaker.Tests`: xUnit test project for core and GUI-facing behavior
 - `website`: Astro marketing/help site
 - `scripts`: PowerShell packaging and diagnostics scripts
-- `third_party`: external runtime dependencies such as FFmpeg payloads
+- `third_party/notices`: licenses for managed libraries included in releases
 
 Treat `.tmp`, `.codex-build`, `.codex-verify`, `artifacts`, `website/dist`, and `website/node_modules` as generated or scratch areas unless a task explicitly targets them.
 

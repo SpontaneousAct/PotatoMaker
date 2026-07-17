@@ -81,14 +81,6 @@ public sealed class LibVlcRuntimeInstaller : IDisposable
                 LibVlcRuntimePackage.ArchiveSizeBytes,
                 "Installing VLC"));
             ExtractRuntime(archivePath, stagingDirectory);
-            await File.WriteAllTextAsync(
-                Path.Combine(stagingDirectory, "SOURCE.txt"),
-                $"Downloaded directly from {LibVlcRuntimePackage.ProviderName}.{Environment.NewLine}" +
-                $"Source: {LibVlcRuntimePackage.DownloadUrl}{Environment.NewLine}" +
-                $"SHA-256: {LibVlcRuntimePackage.ArchiveSha256}{Environment.NewLine}" +
-                $"VLC licensing: {LibVlcRuntimePackage.LicenseUrl}{Environment.NewLine}",
-                ct).ConfigureAwait(false);
-
             LibVlcRuntimeValidationResult staged = LibVlcRuntimeValidator.ValidateDirectory(stagingDirectory);
             if (!staged.IsValid)
                 throw new InvalidDataException(staged.Message);
@@ -121,7 +113,7 @@ public sealed class LibVlcRuntimeInstaller : IDisposable
         CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, LibVlcRuntimePackage.DownloadUrl);
-        request.Headers.UserAgent.ParseAdd("PotatoMaker/1.9.1");
+        request.Headers.UserAgent.ParseAdd("PotatoMaker/1.9.5");
         using HttpResponseMessage response = await _httpClient.SendAsync(
             request,
             HttpCompletionOption.ResponseHeadersRead,

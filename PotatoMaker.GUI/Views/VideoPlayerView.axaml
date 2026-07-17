@@ -147,16 +147,9 @@
                                    TextAlignment="Center"
                                    TextWrapping="Wrap"
                                    IsVisible="{Binding VideoPlayer.HasPlayerError}"/>
-                        <TextBlock Text="Restart PotatoMaker to repair or reinstall its required media tools."
-                                   Classes="pm-caption"
-                                   TextAlignment="Center"
-                                   TextWrapping="Wrap"/>
-                        <StackPanel Orientation="Horizontal"
-                                    HorizontalAlignment="Center"
-                                    Spacing="8">
-                            <Button Content="Try again"
-                                    Command="{Binding VideoPlayer.RetryPlayerInitializationCommand}"/>
-                        </StackPanel>
+                        <Button Content="Try again"
+                                HorizontalAlignment="Center"
+                                Command="{Binding VideoPlayer.RetryPlayerInitializationCommand}"/>
                     </StackPanel>
 
                     <Border IsVisible="{Binding FileInput.HasNoFile}"

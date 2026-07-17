@@ -58,7 +58,7 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IEncodeCompletionNotifier>(),
             null,
             sp.GetRequiredService<IProcessedVideoTracker>(),
-            sp.GetRequiredService<IMediaToolsRuntimePromptService>()));
+            deferEncoderSupportInitialization: true));
         services.AddTransient(sp => new MainWindowViewModel(
             sp.GetRequiredService<EncodeWorkspaceViewModel>(),
             sp.GetRequiredService<IThemeService>(),

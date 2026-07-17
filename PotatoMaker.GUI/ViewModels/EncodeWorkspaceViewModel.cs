@@ -22,7 +22,6 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private readonly IAppSettingsCoordinator? _settingsCoordinator;
     private readonly CompressionQueueViewModel _compressionQueue;
     private readonly EncodeExecutionCoordinator _executionCoordinator;
-    private readonly IMediaToolsRuntimePromptService? _mediaToolsRuntimePromptService;
     private readonly bool _initializeEncoderSupport;
     private readonly TimeSpan _cancelledStatusDuration;
     private readonly TimeSpan _queueCelebrationPulseDuration = TimeSpan.FromMilliseconds(180);
@@ -94,7 +93,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         IEncodeCompletionNotifier? encodeCompletionNotifier = null,
         TimeSpan? cancelledStatusDuration = null,
         IProcessedVideoTracker? processedVideoTracker = null,
-        IMediaToolsRuntimePromptService? mediaToolsRuntimePromptService = null)
+        bool deferEncoderSupportInitialization = false)
         : this(
             analysisService,
             encodingService,
@@ -107,7 +106,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             encodeCompletionNotifier,
             cancelledStatusDuration,
             processedVideoTracker,
-            mediaToolsRuntimePromptService)
+            deferEncoderSupportInitialization)
     {
     }
 
@@ -148,7 +147,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         IEncodeCompletionNotifier? encodeCompletionNotifier = null,
         TimeSpan? cancelledStatusDuration = null,
         IProcessedVideoTracker? processedVideoTracker = null,
-        IMediaToolsRuntimePromptService? mediaToolsRuntimePromptService = null)
+        bool deferEncoderSupportInitialization = false)
     {
         _analysisService = analysisService;
         _encodingService = encodingService;
@@ -159,7 +158,6 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         _settingsCoordinator = settingsCoordinator;
         _compressionQueue = compressionQueue ?? new CompressionQueueViewModel();
         _executionCoordinator = executionCoordinator ?? new EncodeExecutionCoordinator();
-        _mediaToolsRuntimePromptService = mediaToolsRuntimePromptService;
         _initializeEncoderSupport = initializeEncoderSupport;
         _cancelledStatusDuration = cancelledStatusDuration ?? TimeSpan.FromSeconds(5);
         OutputSettings = new OutputSettingsViewModel();
@@ -184,7 +182,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         ApplyInitialSettings();
         UpdateSourceSelectionState();
         UpdateConversionIdlePrompt();
-        if (_initializeEncoderSupport && _mediaToolsRuntimePromptService is null)
+        if (_initializeEncoderSupport && !deferEncoderSupportInitialization)
             _ = InitializeRuntimeDependentStateAsync();
     }
 
@@ -379,30 +377,6 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
     private async Task LoadSelectedFileAsync(string path)
     {
         using IDisposable operation = CrashReportService.Shared.BeginOperation("Loading and analyzing video");
-
-        if (_mediaToolsRuntimePromptService is not null)
-        {
-            bool available;
-            try
-            {
-                available = await _mediaToolsRuntimePromptService.EnsureAvailableAsync();
-            }
-            catch
-            {
-                available = false;
-            }
-
-            if (!available)
-            {
-                ConversionLog.ReturnToIdle();
-                ConversionLog.SetIdleText("PotatoMaker's media tools are required to preview, analyse, and compress this video");
-                return;
-            }
-
-            await InitializeRuntimeDependentStateAsync();
-            VideoPlayer.EnsureInitializedAfterRuntimeSetup();
-        }
-
         CancelPendingPreview();
         CancelPendingStatusReset();
         var previewCts = new CancellationTokenSource();

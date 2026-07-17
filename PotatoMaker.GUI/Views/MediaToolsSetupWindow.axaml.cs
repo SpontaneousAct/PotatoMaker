@@ -2,7 +2,6 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using PotatoMaker.Core;
 using PotatoMaker.GUI.Services;
-using System.Diagnostics;
 
 namespace PotatoMaker.GUI.Views;
 
@@ -97,9 +96,6 @@ public partial class MediaToolsSetupWindow : Window
         Close(false);
     }
 
-    private static void OnOpenLicensingClick(object? sender, RoutedEventArgs e) =>
-        OpenUrl(AppLinkCatalog.ThirdPartyNoticesUrl);
-
     private void UpdateStatus(MediaToolsRuntimeStatus status)
     {
         _downloadSummaryTextBlock.Text = status.IsReady
@@ -117,17 +113,6 @@ public partial class MediaToolsSetupWindow : Window
 
     private static string FormatMegabytes(long bytes) =>
         Math.Ceiling(bytes / (1024d * 1024d)).ToString("0");
-
-    private static void OpenUrl(string url)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-        catch
-        {
-        }
-    }
 
     private static MediaToolsRuntimeStatus MissingStatus() =>
         new(

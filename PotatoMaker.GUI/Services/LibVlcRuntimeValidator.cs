@@ -92,8 +92,7 @@ public static class LibVlcRuntimeValidator
         string[] possibleDirectories =
         [
             fullPath,
-            Path.Combine(fullPath, architectureFolder),
-            Path.Combine(fullPath, "libvlc", architectureFolder)
+            Path.Combine(fullPath, architectureFolder)
         ];
 
         return possibleDirectories.FirstOrDefault(IsRuntimeDirectory);

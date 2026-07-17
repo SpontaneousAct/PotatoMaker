@@ -62,15 +62,6 @@ public static class FFmpegBinaries
 
     public static string FfprobeExecutable() => ResolveExecutablePath("ffprobe");
 
-    public static string? ConfiguredBinaryFolder
-    {
-        get
-        {
-            lock (Sync)
-                return _binaryFolder;
-        }
-    }
-
     /// <summary>
     /// Returns a cached one-line summary of ffmpeg/ffprobe versions and source location.
     /// </summary>
@@ -103,28 +94,18 @@ public static class FFmpegBinaries
     private static string ResolveExecutablePath(string name)
     {
         string? folder = EnsureConfigured();
-        string? bundled = FindExecutableInFolder(folder, name);
-        return bundled ?? name;
+        string? configured = FindExecutableInFolder(folder, name);
+        return configured ?? name;
     }
 
     private static string? ResolveEnvironmentFolder()
     {
-        string[] candidates =
-        [
-            Environment.GetEnvironmentVariable(FfmpegDirEnvironmentVariable) ?? string.Empty
-        ];
+        string? candidate = Environment.GetEnvironmentVariable(FfmpegDirEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(candidate))
+            return null;
 
-        foreach (string candidate in candidates)
-        {
-            if (string.IsNullOrWhiteSpace(candidate))
-                continue;
-
-            string fullPath = Path.GetFullPath(candidate);
-            if (ContainsBinaries(fullPath))
-                return fullPath;
-        }
-
-        return null;
+        string fullPath = Path.GetFullPath(candidate);
+        return ContainsBinaries(fullPath) ? fullPath : null;
     }
 
     public static bool ContainsBinaries(string folder) =>

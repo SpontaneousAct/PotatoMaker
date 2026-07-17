@@ -142,7 +142,27 @@ function Invoke-External {
 
     & $FilePath @Arguments
     if ($LASTEXITCODE -ne 0) {
-        throw "Command failed with exit code ${LASTEXITCODE}: $FilePath $($Arguments -join ' ')"
+        throw "Command failed with exit code ${LASTEXITCODE}: $FilePath"
+    }
+}
+
+function Invoke-Vpk {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments,
+        [string]$Token = ""
+    )
+
+    $previousToken = $env:VPK_TOKEN
+    try {
+        if (-not [string]::IsNullOrWhiteSpace($Token)) {
+            $env:VPK_TOKEN = $Token
+        }
+
+        Invoke-External -FilePath "dnx" -Arguments $Arguments
+    }
+    finally {
+        $env:VPK_TOKEN = $previousToken
     }
 }
 
@@ -279,8 +299,10 @@ if ($UploadToGitHub -and [string]::IsNullOrWhiteSpace($GitHubRepoUrl)) {
     $GitHubRepoUrl = Read-OptionalValue -Prompt "GitHub repo URL" -Default $GitHubRepoUrl
 }
 
-if (($UploadToGitHub -or $DownloadPreviousReleases) -and -not $PSBoundParameters.ContainsKey("GitHubToken")) {
-    $GitHubToken = Read-OptionalValue -Prompt "GitHub token" -Default $GitHubToken
+if ($UploadToGitHub -and
+    [string]::IsNullOrWhiteSpace($GitHubToken) -and
+    [string]::IsNullOrWhiteSpace($env:VPK_TOKEN)) {
+    throw "GitHub upload requires a token. Set POTATOMAKER_GITHUB_TOKEN, GITHUB_TOKEN, or VPK_TOKEN."
 }
 
 if ($UploadToGitHub -and -not $PSBoundParameters.ContainsKey("Prerelease")) {
@@ -331,17 +353,12 @@ if (-not [string]::IsNullOrWhiteSpace($GitHubRepoUrl) -and $DownloadPreviousRele
         "--channel", $Channel
     )
 
-    if (-not [string]::IsNullOrWhiteSpace($GitHubToken)) {
-        $downloadArgs += "--token"
-        $downloadArgs += $GitHubToken
-    }
-
     if ($Prerelease) {
         $downloadArgs += "--pre"
     }
 
     Write-Host "Downloading prior Velopack release metadata from GitHub..."
-    Invoke-External -FilePath "dnx" -Arguments $downloadArgs
+    Invoke-Vpk -Arguments $downloadArgs -Token $GitHubToken
 }
 
 $packArgs = @(
@@ -379,11 +396,6 @@ if ($UploadToGitHub) {
         "--tag", $ReleaseTag
     )
 
-    if (-not [string]::IsNullOrWhiteSpace($GitHubToken)) {
-        $uploadArgs += "--token"
-        $uploadArgs += $GitHubToken
-    }
-
     if ($Prerelease) {
         $uploadArgs += "--pre"
     }
@@ -402,7 +414,7 @@ if ($UploadToGitHub) {
     }
 
     Write-Host "Uploading Velopack release feed assets to GitHub..."
-    Invoke-External -FilePath "dnx" -Arguments $uploadArgs
+    Invoke-Vpk -Arguments $uploadArgs -Token $GitHubToken
 }
 
 Write-Host "Velopack artifacts ready:"
