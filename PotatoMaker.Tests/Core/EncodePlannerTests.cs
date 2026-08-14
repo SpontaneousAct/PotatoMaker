@@ -6,6 +6,29 @@ namespace PotatoMaker.Tests.Core;
 public sealed class EncodePlannerTests
 {
     [Fact]
+    public void EncodeSettings_DefaultLimit_KeepsTwoStagesOfSafetyHeadroom()
+    {
+        var settings = new EncodeSettings();
+
+        Assert.Equal(20.0, settings.OutputSizeLimitMb);
+        Assert.Equal(19.0, settings.TargetSizeMb);
+        Assert.Equal(18.0, settings.EffectiveTargetMb);
+    }
+
+    [Fact]
+    public void PlanStrategy_CustomOutputLimit_ChangesAvailableBitrate()
+    {
+        EncodeSettings smallerSettings = new EncodeSettings().WithOutputSizeLimit(10);
+        EncodeSettings largerSettings = new EncodeSettings().WithOutputSizeLimit(20);
+
+        EncodePlanner.EncodePlan smallerPlan = EncodePlanner.PlanStrategy(120, 1920, 1080, 60, smallerSettings);
+        EncodePlanner.EncodePlan largerPlan = EncodePlanner.PlanStrategy(120, 1920, 1080, 60, largerSettings);
+
+        Assert.Equal(2, smallerPlan.Parts);
+        Assert.Equal(1, largerPlan.Parts);
+    }
+
+    [Fact]
     public void PlanStrategy_ZeroDuration_ThrowsFriendlyError()
     {
         var ex = Assert.Throws<InvalidOperationException>(() =>
@@ -37,8 +60,8 @@ public sealed class EncodePlannerTests
             FrameRateMode = EncodeFrameRateMode.Fps30
         };
 
-        EncodePlanner.EncodePlan originalPlan = EncodePlanner.PlanStrategy(170, 1920, 1080, 60, originalSettings);
-        EncodePlanner.EncodePlan reducedFrameRatePlan = EncodePlanner.PlanStrategy(170, 1920, 1080, 60, reducedFrameRateSettings);
+        EncodePlanner.EncodePlan originalPlan = EncodePlanner.PlanStrategy(300, 1920, 1080, 60, originalSettings);
+        EncodePlanner.EncodePlan reducedFrameRatePlan = EncodePlanner.PlanStrategy(300, 1920, 1080, 60, reducedFrameRateSettings);
 
         Assert.True(originalPlan.Parts > 1);
         Assert.Equal(1, reducedFrameRatePlan.Parts);
@@ -116,8 +139,8 @@ public sealed class EncodePlannerTests
     {
         EncodeSettings settings = new();
 
-        EncodePlanner.EncodePlan uncroppedPlan = EncodePlanner.PlanStrategy(150, 1920, 1080, 60, settings);
-        EncodePlanner.EncodePlan croppedPlan = EncodePlanner.PlanStrategy(150, 1920, 820, 60, settings);
+        EncodePlanner.EncodePlan uncroppedPlan = EncodePlanner.PlanStrategy(300, 1920, 1080, 60, settings);
+        EncodePlanner.EncodePlan croppedPlan = EncodePlanner.PlanStrategy(300, 1920, 820, 60, settings);
 
         Assert.True(uncroppedPlan.Parts > croppedPlan.Parts);
         Assert.Equal("820p, 2 parts", croppedPlan.ResolutionLabel);

@@ -19,6 +19,8 @@ public sealed record AppSettings
 
     public EncodeFrameRateMode FrameRateMode { get; init; } = EncodeSettings.DefaultFrameRateMode;
 
+    public double OutputSizeLimitMb { get; init; } = EncodeSettings.DefaultOutputSizeLimitMb;
+
     public double PreviewVolumePercent { get; init; } = 100;
 
     public int SvtAv1Preset { get; init; } = EncodeSettings.DefaultSvtAv1Preset;

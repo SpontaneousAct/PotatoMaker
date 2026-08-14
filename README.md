@@ -38,7 +38,7 @@ PotatoMaker accepts MP4, MKV, AVI, MOV, WebM, WMV, and FLV files. Exports are MP
 
 ## A note about file size and speed
 
-The default settings aim to keep each output below 10 MB. Video compression is not perfectly predictable, so PotatoMaker may occasionally miss the exact target or divide a long video into several parts.
+The default settings use a 20 MB per-file upload limit. You can change the limit under **Settings > Encoding Defaults**; PotatoMaker keeps safety headroom below the selected value because video compression is not perfectly predictable. Long videos may be divided into several parts.
 
 PotatoMaker uses CPU encoding by default. If your computer supports NVIDIA AV1 encoding, you can enable it in **Settings** for faster exports, though GPU encoding is less predictable when aiming for an exact file size.
 
@@ -54,6 +54,7 @@ The CLI uses NVIDIA AV1 encoding by default. Pass `--cpu` to use the CPU encoder
 
 ```powershell
 dotnet run --project .\PotatoMaker.Cli -- --cpu "C:\clips\example.mp4"
+dotnet run --project .\PotatoMaker.Cli -- --target-size-mb 50 "C:\clips\example.mp4"
 ```
 
 Unlike the desktop app, the CLI does not switch encoders automatically. It will ask you to use `--cpu` if NVIDIA AV1 encoding is unavailable.

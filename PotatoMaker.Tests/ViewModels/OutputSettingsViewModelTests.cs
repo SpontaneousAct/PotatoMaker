@@ -7,6 +7,20 @@ namespace PotatoMaker.Tests.ViewModels;
 public sealed class OutputSettingsViewModelTests
 {
     [Fact]
+    public void OutputSizeLimit_DefaultsToDiscordLimitAndClampsInvalidValues()
+    {
+        var viewModel = new OutputSettingsViewModel();
+
+        Assert.Equal(20.0, viewModel.OutputSizeLimitMb);
+
+        viewModel.OutputSizeLimitMb = 0;
+        Assert.Equal(EncodeSettings.MinOutputSizeLimitMb, viewModel.OutputSizeLimitMb);
+
+        viewModel.OutputSizeLimitMb = double.PositiveInfinity;
+        Assert.Equal(EncodeSettings.DefaultOutputSizeLimitMb, viewModel.OutputSizeLimitMb);
+    }
+
+    [Fact]
     public void CpuPresetOptions_AreLimitedToSimplifiedChoices()
     {
         var viewModel = new OutputSettingsViewModel();

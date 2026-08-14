@@ -74,6 +74,27 @@
                                Classes="pm-section-title"/>
 
                     <Grid Classes="pm-settings-row"
+                          ColumnDefinitions="*,220"
+                          ColumnSpacing="16">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="File-size limit"
+                                       Classes="pm-settings-label"/>
+                            <TextBlock Text="Maximum upload size per output file. PotatoMaker keeps safety headroom below this limit."
+                                       Classes="pm-caption"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <NumericUpDown Grid.Column="1"
+                                       Value="{Binding OutputSettings.OutputSizeLimitMb, Mode=TwoWay}"
+                                       Minimum="{Binding OutputSettings.MinOutputSizeLimitMb}"
+                                       Maximum="{Binding OutputSettings.MaxOutputSizeLimitMb}"
+                                       Increment="1"
+                                       FormatString="0.## MB"
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Classes="pm-settings-row"
                           ColumnDefinitions="*,Auto"
                           ColumnSpacing="16">
                         <StackPanel Spacing="2">

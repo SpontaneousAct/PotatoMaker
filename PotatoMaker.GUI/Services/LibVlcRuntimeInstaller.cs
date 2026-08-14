@@ -113,7 +113,7 @@ public sealed class LibVlcRuntimeInstaller : IDisposable
         CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, LibVlcRuntimePackage.DownloadUrl);
-        request.Headers.UserAgent.ParseAdd("PotatoMaker/1.9.5");
+        request.Headers.UserAgent.ParseAdd("PotatoMaker/1.9.6");
         using HttpResponseMessage response = await _httpClient.SendAsync(
             request,
             HttpCompletionOption.ResponseHeadersRead,

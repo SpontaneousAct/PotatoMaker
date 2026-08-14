@@ -602,6 +602,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             or nameof(OutputSettingsViewModel.CustomOutputFolder)
             or nameof(OutputSettingsViewModel.SelectedCpuEncodePreset)
             or nameof(OutputSettingsViewModel.SelectedFrameRateOption)
+            or nameof(OutputSettingsViewModel.OutputSizeLimitMb)
             or nameof(OutputSettingsViewModel.OutputNamePrefix)
             or nameof(OutputSettingsViewModel.OutputNameSuffix))
         {
@@ -609,7 +610,8 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         }
 
         if (!_isApplyingSettings &&
-            e.PropertyName == nameof(OutputSettingsViewModel.SelectedFrameRateOption) &&
+            e.PropertyName is (nameof(OutputSettingsViewModel.SelectedFrameRateOption)
+                or nameof(OutputSettingsViewModel.OutputSizeLimitMb)) &&
             FileInput.InputFilePath is { } path &&
             VideoSummary.Info is { } info &&
             !_isCropDetectionPending)
@@ -647,6 +649,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
             OutputSettings.UseNvencEncoder = settings.UseNvencEncoder;
             OutputSettings.OutputNamePrefix = settings.OutputNamePrefix;
             OutputSettings.OutputNameSuffix = settings.OutputNameSuffix;
+            OutputSettings.OutputSizeLimitMb = settings.OutputSizeLimitMb;
             OutputSettings.SetFrameRateMode(settings.FrameRateMode);
             OutputSettings.SetCpuEncodePreset(settings.SvtAv1Preset);
             VideoPlayer.VolumePercent = settings.PreviewVolumePercent;
@@ -671,16 +674,17 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private EncodeSettings BuildEncodeSettings() => new()
-    {
-        Encoder = OutputSettings.UseNvencEncoder && OutputSettings.CanUseNvenc
-            ? EncoderChoice.Nvenc
-            : EncoderChoice.SvtAv1,
-        OutputNamePrefix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNamePrefix),
-        OutputNameSuffix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNameSuffix),
-        FrameRateMode = OutputSettings.FrameRateMode,
-        SvtAv1Preset = OutputSettings.CpuEncodePreset
-    };
+    private EncodeSettings BuildEncodeSettings() =>
+        new EncodeSettings
+        {
+            Encoder = OutputSettings.UseNvencEncoder && OutputSettings.CanUseNvenc
+                ? EncoderChoice.Nvenc
+                : EncoderChoice.SvtAv1,
+            OutputNamePrefix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNamePrefix),
+            OutputNameSuffix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNameSuffix),
+            FrameRateMode = OutputSettings.FrameRateMode,
+            SvtAv1Preset = OutputSettings.CpuEncodePreset
+        }.WithOutputSizeLimit(OutputSettings.OutputSizeLimitMb);
 
     public Task InitializeRuntimeDependentStateAsync()
     {
@@ -731,6 +735,7 @@ public partial class EncodeWorkspaceViewModel : ViewModelBase, IDisposable
                 OutputNamePrefix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNamePrefix),
                 OutputNameSuffix = EncodeSettings.NormalizeOutputNameAffix(OutputSettings.OutputNameSuffix),
                 FrameRateMode = OutputSettings.FrameRateMode,
+                OutputSizeLimitMb = EncodeSettings.NormalizeOutputSizeLimitMb(OutputSettings.OutputSizeLimitMb),
                 PreviewVolumePercent = VideoPlayer.VolumePercent,
                 SvtAv1Preset = OutputSettings.CpuEncodePreset,
                 LastOutputFolder = OutputSettings.CustomOutputFolder

@@ -85,7 +85,11 @@ public class ProcessingPipeline
         _logger.LogInformation("--- Determining Encoding Strategy -------------------------------");
         var encodePlan = analysis.Plan;
 
-        _logger.LogInformation("  Target size   : {Target} MB  (hard limit: {Limit} MB)", _settings.EffectiveTargetMb, _settings.TargetSizeMb);
+        _logger.LogInformation(
+            "  Upload limit  : {UploadLimit} MB  (encode budget: {Budget} MB; safety threshold: {Target} MB)",
+            _settings.OutputSizeLimitMb,
+            _settings.EffectiveTargetMb,
+            _settings.TargetSizeMb);
         _logger.LogInformation("  Audio reserve : {Audio} kbps", _settings.AudioBitrateKbps);
         _logger.LogInformation("  Resolution    : {Resolution}", encodePlan.ResolutionLabel);
         _logger.LogInformation(
@@ -236,7 +240,7 @@ public class ProcessingPipeline
             if (fits)
                 _logger.LogInformation(PipelineEvents.Success, "  {File}  -  {Size:F2} MB  OK", Path.GetFileName(path), outMb);
             else
-                _logger.LogWarning("  {File}  -  {Size:F2} MB  over target", Path.GetFileName(path), outMb);
+                _logger.LogWarning("  {File}  -  {Size:F2} MB  over safety target", Path.GetFileName(path), outMb);
         }
 
         _logger.LogInformation("");

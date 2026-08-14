@@ -97,6 +97,9 @@ public partial class OutputSettingsViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(OutputFileNamePreview))]
     private string _outputNameSuffix = EncodeSettings.DefaultOutputNameSuffix;
 
+    [ObservableProperty]
+    private double _outputSizeLimitMb = EncodeSettings.DefaultOutputSizeLimitMb;
+
     public string? OutputFolderPath =>
         string.IsNullOrWhiteSpace(CustomOutputFolder) ? SourceFolder : CustomOutputFolder;
 
@@ -110,6 +113,10 @@ public partial class OutputSettingsViewModel : ViewModelBase
         $"{EncodeSettings.NormalizeOutputNameAffix(OutputNamePrefix)}example-video{EncodeSettings.NormalizeOutputNameAffix(OutputNameSuffix)}.mp4";
 
     public int OutputNameAffixMaxLength => EncodeSettings.MaxOutputNameAffixLength;
+
+    public double MinOutputSizeLimitMb => EncodeSettings.MinOutputSizeLimitMb;
+
+    public double MaxOutputSizeLimitMb => EncodeSettings.MaxOutputSizeLimitMb;
 
     public string NvencSupportSummary =>
         !IsNvencSupportKnown
@@ -160,6 +167,13 @@ public partial class OutputSettingsViewModel : ViewModelBase
         string normalizedValue = EncodeSettings.NormalizeOutputNameAffix(value);
         if (!string.Equals(value, normalizedValue, StringComparison.Ordinal))
             OutputNameSuffix = normalizedValue;
+    }
+
+    partial void OnOutputSizeLimitMbChanged(double value)
+    {
+        double normalizedValue = EncodeSettings.NormalizeOutputSizeLimitMb(value);
+        if (!value.Equals(normalizedValue))
+            OutputSizeLimitMb = normalizedValue;
     }
 
     public void SetSourceFolder(string? folder)

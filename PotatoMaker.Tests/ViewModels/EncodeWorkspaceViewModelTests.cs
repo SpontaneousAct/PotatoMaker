@@ -427,6 +427,7 @@ public sealed class EncodeWorkspaceViewModelTests
             workspace.OutputSettings.UseNvencEncoder = false;
             workspace.OutputSettings.SetCpuEncodePreset(10);
             workspace.OutputSettings.SetFrameRateMode(EncodeFrameRateMode.Fps30);
+            workspace.OutputSettings.OutputSizeLimitMb = 50;
             workspace.OutputSettings.OutputNamePrefix = "share_";
             workspace.OutputSettings.OutputNameSuffix = "_mobile";
 
@@ -439,6 +440,8 @@ public sealed class EncodeWorkspaceViewModelTests
             Assert.Equal("share_", request.Settings.OutputNamePrefix);
             Assert.Equal("_mobile", request.Settings.OutputNameSuffix);
             Assert.Equal(EncodeFrameRateMode.Fps30, request.Settings.FrameRateMode);
+            Assert.Equal(47.5, request.Settings.TargetSizeMb);
+            Assert.Equal(45.0, request.Settings.EffectiveTargetMb);
             Assert.Equal(10, request.Settings.SvtAv1Preset);
         }
         finally
@@ -1444,6 +1447,41 @@ public sealed class EncodeWorkspaceViewModelTests
     private sealed class StaticEncoderCapabilityService : IEncoderCapabilityService
     {
         public Task<bool> IsAv1NvencSupportedAsync(CancellationToken ct = default) => Task.FromResult(true);
+    }
+
+    [Fact]
+    public async Task ChangingOutputSizeLimit_RebuildsStrategyAndPersistsThroughCoordinator()
+    {
+        string inputPath = Path.Combine(Path.GetTempPath(), $"potatomaker-{Guid.NewGuid():N}.mp4");
+        await File.WriteAllTextAsync(inputPath, "video");
+
+        try
+        {
+            var analysisService = new RecordingAnalysisService();
+            var settingsCoordinator = new RecordingSettingsCoordinator(new AppSettings());
+            var workspace = new EncodeWorkspaceViewModel(
+                analysisService,
+                new NoOpEncodingService(),
+                new StaticEncoderCapabilityService(),
+                settingsCoordinator,
+                initializeEncoderSupport: false);
+
+            Assert.True(workspace.FileInput.SetFile(inputPath));
+            await analysisService.WaitForStrategyCountAsync(1);
+
+            workspace.OutputSettings.OutputSizeLimitMb = 50;
+
+            await analysisService.WaitForStrategyCountAsync(2);
+            AppSettings persisted = await settingsCoordinator.WaitForUpdateAsync();
+
+            Assert.Equal(50, persisted.OutputSizeLimitMb);
+            Assert.Equal(47.5, analysisService.LastRequestedSettings?.TargetSizeMb);
+            Assert.Equal(45.0, analysisService.LastRequestedSettings?.EffectiveTargetMb);
+        }
+        finally
+        {
+            File.Delete(inputPath);
+        }
     }
 
     private sealed class RecordingEncodeCompletionNotifier : IEncodeCompletionNotifier
