@@ -51,7 +51,9 @@ public sealed class MediaToolsRuntimeService : IMediaToolsRuntimeService
         FfmpegRuntimeValidationResult ffmpeg = await _ffmpegRuntimeService
             .DetectAndConfigureAsync(ct)
             .ConfigureAwait(false);
-        LibVlcRuntimeValidationResult libVlc = _libVlcRuntimeService.Detect();
+        LibVlcRuntimeValidationResult libVlc = await _libVlcRuntimeService
+            .DetectAsync(ct)
+            .ConfigureAwait(false);
         return new MediaToolsRuntimeStatus(ffmpeg, libVlc);
     }
 

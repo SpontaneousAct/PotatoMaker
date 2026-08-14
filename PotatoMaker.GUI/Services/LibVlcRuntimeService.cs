@@ -7,7 +7,7 @@ public interface ILibVlcRuntimeService
 {
     LibVlcRuntimeValidationResult? Current { get; }
 
-    LibVlcRuntimeValidationResult Detect();
+    Task<LibVlcRuntimeValidationResult> DetectAsync(CancellationToken ct = default);
 
     LibVlcRuntimeValidationResult DetectAndInitialize();
 
@@ -34,7 +34,7 @@ public sealed class LibVlcRuntimeService : ILibVlcRuntimeService
 
     public LibVlcRuntimeValidationResult? Current { get; private set; }
 
-    public LibVlcRuntimeValidationResult Detect()
+    public async Task<LibVlcRuntimeValidationResult> DetectAsync(CancellationToken ct = default)
     {
         string? developerOverride = Environment.GetEnvironmentVariable("POTATOMAKER_LIBVLC_DIR");
         if (!string.IsNullOrWhiteSpace(developerOverride))
@@ -47,7 +47,7 @@ public sealed class LibVlcRuntimeService : ILibVlcRuntimeService
             }
         }
 
-        Current = LibVlcRuntimeValidator.ValidateDirectory(_installer.RuntimeDirectory);
+        Current = await _installer.DetectExistingAsync(ct).ConfigureAwait(false);
         return Current;
     }
 
@@ -58,7 +58,9 @@ public sealed class LibVlcRuntimeService : ILibVlcRuntimeService
             if (_initializedDirectory is not null)
                 return LibVlcRuntimeValidator.ValidateDirectory(_initializedDirectory);
 
-            LibVlcRuntimeValidationResult result = Detect();
+            LibVlcRuntimeValidationResult result = Current?.IsValid == true
+                ? Current
+                : DetectWithoutMigration();
             if (!result.IsValid || result.RuntimeDirectory is null)
                 return result;
 
@@ -93,5 +95,23 @@ public sealed class LibVlcRuntimeService : ILibVlcRuntimeService
         {
             _installSync.Release();
         }
+    }
+
+    private LibVlcRuntimeValidationResult DetectWithoutMigration()
+    {
+        string? developerOverride = Environment.GetEnvironmentVariable("POTATOMAKER_LIBVLC_DIR");
+        if (!string.IsNullOrWhiteSpace(developerOverride))
+        {
+            LibVlcRuntimeValidationResult overridden = LibVlcRuntimeValidator.ValidateDirectory(developerOverride);
+            if (overridden.IsValid)
+                return Current = overridden;
+        }
+
+        LibVlcRuntimeValidationResult current = LibVlcRuntimeValidator.ValidateDirectory(_installer.RuntimeDirectory);
+        if (current.IsValid)
+            return Current = current;
+
+        LibVlcRuntimeValidationResult legacy = LibVlcRuntimeValidator.ValidateDirectory(_installer.LegacyRuntimeDirectory);
+        return Current = legacy.IsValid ? legacy : current;
     }
 }

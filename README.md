@@ -12,7 +12,30 @@ Everything runs on your PC. Your videos are not uploaded anywhere.
 
 [Download the latest Windows installer](https://github.com/SpontaneousAct/PotatoMaker/releases/latest/download/PotatoMaker-win-x64-Setup.exe)
 
-PotatoMaker is built for 64-bit Windows. The first time you open it, it asks to download FFmpeg and VLC. These tools are kept in your local app data and removed when you uninstall PotatoMaker.
+PotatoMaker is built for 64-bit Windows. The first time you open it, it shows the exact FFmpeg and VLC versions, providers, archive URLs, download sizes, SHA-256 verification details, and install locations before asking for permission to download anything. These tools are kept in your local app data and removed when you uninstall PotatoMaker.
+
+### FFmpeg and VLC setup
+
+PotatoMaker does not bundle or redistribute FFmpeg or native VLC. Automatic setup downloads a pinned FFmpeg ZIP directly from [BtbN FFmpeg Builds](https://github.com/BtbN/FFmpeg-Builds) and a pinned VLC ZIP directly from [VideoLAN](https://www.videolan.org/vlc/). It verifies both archives against the SHA-256 fingerprints built into that PotatoMaker release before extracting them.
+
+The installed files use stable, manually understandable locations:
+
+```text
+%LOCALAPPDATA%\PotatoMaker\runtimes\
+├─ ffmpeg\
+│  ├─ ffmpeg.exe
+│  └─ ffprobe.exe
+└─ libvlc\
+   ├─ libvlc.dll
+   ├─ libvlccore.dll
+   ├─ plugins\
+   ├─ lua\
+   └─ hrtfs\
+```
+
+The setup window also provides direct manual-download buttons, opens the install folder, and can check the files again after they are copied. For manual FFmpeg setup, copy `ffmpeg.exe` and `ffprobe.exe` from the archive's `bin` folder into `runtimes\ffmpeg`. For VLC, copy the contents of the archive's top-level VLC folder into `runtimes\libvlc` so `libvlc.dll` and the `plugins` folder sit directly inside it.
+
+Interrupted downloads are retried and resumed when the server supports it. Installation failures are recorded in `%LOCALAPPDATA%\PotatoMaker\Logs\media-tools-setup.log` with the failed stage and technical exception.
 
 ## Using PotatoMaker
 
@@ -61,7 +84,7 @@ Unlike the desktop app, the CLI does not switch encoders automatically. It will 
 
 ## Building from source
 
-You will need the .NET SDK version listed in [`global.json`](global.json). The desktop app downloads FFmpeg and VLC when it first runs. To use local copies instead, set `POTATOMAKER_FFMPEG_DIR` and `POTATOMAKER_LIBVLC_DIR`. The CLI can also find FFmpeg on `PATH`.
+You will need the .NET SDK version listed in [`global.json`](global.json). The desktop app offers to download FFmpeg and VLC when it first runs. To use local copies elsewhere instead, set `POTATOMAKER_FFMPEG_DIR` to the folder containing `ffmpeg.exe` and `ffprobe.exe`, and `POTATOMAKER_LIBVLC_DIR` to the folder containing `libvlc.dll`, `libvlccore.dll`, and `plugins`. The FFmpeg override may also point to a parent containing a `bin` folder. The CLI can find FFmpeg on `PATH`.
 
 ```powershell
 dotnet build .\PotatoMaker.slnx

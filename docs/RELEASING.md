@@ -49,6 +49,10 @@ Releases do not contain FFmpeg or native VLC. The app downloads its pinned versi
 
 The URLs, sizes, and SHA-256 hashes live in `PotatoMaker.Core/FfmpegRuntimePackage.cs` and `PotatoMaker.GUI/Services/LibVlcRuntimePackage.cs`. When changing either download, update those constants and test setup, cancellation, video preview, probing, CPU encoding, and NVENC where available.
 
+Downloaded runtimes must retain the stable layouts shown in the README: FFmpeg executables live directly in `runtimes\ffmpeg`, and the LibVLC DLLs and support directories live directly in `runtimes\libvlc`. Package/version identifiers are metadata and legacy-migration keys, not installation subdirectory names. Existing versioned 1.9.6 layouts are migrated on detection when the destination is writable.
+
+Before releasing a package update, verify that the setup dialog accurately shows the provider, direct archive URL, size, destination, and SHA-256 hash. Test a clean automatic install, an interrupted/resumed download, retry after a partial install, both manual-download instructions, and the saved setup diagnostic log.
+
 ## Local draft upload fallback
 
 If GitHub Actions is unavailable, the existing script can still create a draft from a Windows development machine:

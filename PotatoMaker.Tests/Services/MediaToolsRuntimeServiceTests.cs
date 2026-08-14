@@ -87,13 +87,17 @@ public sealed class MediaToolsRuntimeServiceTests
 
         public LibVlcRuntimeValidationResult? Current { get; private set; }
 
-        public LibVlcRuntimeValidationResult Detect()
+        public Task<LibVlcRuntimeValidationResult> DetectAsync(CancellationToken ct = default)
+        {
+            Current = Result(_isInstalled);
+            return Task.FromResult(Current);
+        }
+
+        public LibVlcRuntimeValidationResult DetectAndInitialize()
         {
             Current = Result(_isInstalled);
             return Current;
         }
-
-        public LibVlcRuntimeValidationResult DetectAndInitialize() => Detect();
 
         public Task<LibVlcRuntimeValidationResult> DownloadAsync(
             IProgress<LibVlcDownloadProgress>? progress = null,

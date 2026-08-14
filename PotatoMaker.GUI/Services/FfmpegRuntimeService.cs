@@ -53,7 +53,7 @@ public sealed class FfmpegRuntimeService : IFfmpegRuntimeService
                 }
             }
 
-            Current = await FfmpegRuntimeValidator.ValidateAsync(_installer.BinaryFolder, ct).ConfigureAwait(false);
+            Current = await _installer.DetectExistingAsync(ct).ConfigureAwait(false);
             if (Current.IsValid)
                 FFmpegBinaries.Configure(Current.BinaryFolder);
             return Current;

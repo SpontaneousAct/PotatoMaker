@@ -13,6 +13,7 @@ public static class FfmpegRuntimeLocator
         if (!string.IsNullOrWhiteSpace(environmentFolder))
             candidates.Add(environmentFolder);
         candidates.Add(FfmpegRuntimePackage.DefaultManagedBinaryFolder);
+        candidates.Add(FfmpegRuntimePackage.LegacyManagedBinaryFolder);
         candidates.Add(null); // PATH
 
         var attemptedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
